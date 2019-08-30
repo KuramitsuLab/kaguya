@@ -1,0 +1,17 @@
+Input = {
+    'Hello'
+    #Hello
+}
+
+NounPhrase = Adj? Noun Particle
+
+NounPhrase+ Verb
+/ NounPhrase+ Adj
+/ NounPhrase+
+
+example Test AはBをCする
+example Test 赤いAは青いBをCする
+example Test AはBだ
+example Test 赤いAは青いBだ
+example Test Aは赤い
+example Test Cする青いBは赤いAだ  // 例）勉強する効果は高い

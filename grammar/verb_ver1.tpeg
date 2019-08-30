@@ -1,0 +1,310 @@
+/* 動詞と助動詞のみの文法 */
+
+/* まず動詞 */
+/* 参考：https://www.kokugobunpou.com/%E7%94%A8%E8%A8%80/%E5%8B%95%E8%A9%9E-3-%E6%B4%BB%E7%94%A8%E5%BD%A2%E3%81%A8%E3%81%9D%E3%81%AE%E7%94%A8%E6%B3%95/ */
+
+
+Sentence = {
+    Others
+    VerbPhrase
+    Remain
+    #Sentence
+} EOF
+
+EOF = !.
+EOS = [。．.\n] / EOF
+
+Others = {
+    (!VerbPhrase .)*
+    #Others
+}
+
+VerbPhrase = {
+    Verb SubVerbs
+    #VerbPhrase
+}
+
+Remain = {
+    (!EOS .)*
+    #Remain
+}
+
+
+/* 旧バージョン、未使用
+V5 =
+    / '黙' [らりるれろっ]  // 促音便（タ行、ラ行、ワ行）
+    / '書' [かきくけこい]  // イ音便（カ行、ガ行）
+    / '死' [なにぬねのん]  // 撥音便（ナ行、バ行、マ行）
+    / '話' [さしすせそ]  // 音便なし（サ行）
+    / 'ひしめき合' [わいうえおっ]  // ワ行促音便
+    / '行' [かきくけこっ]  // カ行五段なのでイ音便と思わせての促音便、辞書では「カ行促音便」
+
+VKAMI1 =
+    // '起' ('き' / 'きる' / 'きれ' / 'きろ' / 'きよ')  // 正しい日本語では語幹は「起」のみ
+    / '起き' [るれろよ]?  // だけど構文解析的にはこれで十分っぽい
+    / '煮' [るれろよ]?  // 語幹と活用語尾の区別がない、（おそらく）length=2の上一段
+
+VSIMO1 =
+    // '受' ('け' / 'ける' / 'けれ' / 'けろ' / 'けよ')  // VKAMI1と同様
+    / '受け' [るれろよ]?
+    / '寝' [るれろよ]?
+
+KAHEN =
+    / '来' [るれい]?
+    / ('こ' / 'き' / 'くる' / 'くれ' / 'こい')
+
+SAHEN =
+    / [さしすせ] [るれろよ]?
+
+Verb_old = {
+      V5
+    / VKAMI1
+    / VSIMO1
+    / KAHEN
+    / SAHEN
+    #Verb
+}
+*/
+
+
+Verb =
+    / Mizen
+    / Renyo
+    / SyushiRentai
+    / Katei
+    / Meirei
+    / KateMeirei
+    / Common
+
+Mizen = {
+      V5KA [かこ]
+    / V5SA [さそ]
+    / V5TA [たと]
+    / V5NA [なの]
+    / V5HA [はほ]
+    / V5MA [まも]
+    / V5RA [らろ]
+    / V5WA [わお]
+    / V5GA [がご]
+    / V5BA [ばぼ]
+    / V5KASOKU [かこ]
+    // KAHEN 'こ'
+    // SAHEN [せさ]
+    #Mizen
+}
+
+Renyo = {
+      V5KA [きい]
+    / V5SA [し]
+    / V5TA [ちっ]
+    / V5NA [にん]
+    / V5HA [ひ]
+    / V5MA [みん]
+    / V5RA [りっ]
+    / V5WA [いっ]
+    / V5GA [ぎい]
+    / V5BA [びん]
+    / V5KASOKU [きっ]
+    // KAHEN [き]
+    #Renyo
+}
+
+SyushiRentai = {
+      V5KA [く]
+    / V5SA [す]
+    / V5TA [つ]
+    / V5NA [ぬ]
+    / V5HA [ふ]
+    / V5MA [む]
+    / V5RA [る]
+    / V5WA [う]
+    / V5GA [ぐ]
+    / V5BA [ぶ]
+    / V5KASOKU [く]
+    / V1 [る]
+    // KAHEN ('くる' / '来る')
+    // SAHEN 'する'
+    #SyushiRentai
+}
+
+Katei = {
+      V1 [れ]
+    // KAHEN ('くれ' / '来れ')
+    // SAHEN 'すれ'
+    #Katei
+}
+
+Meirei = {
+      V1 [ろよ]
+    // KAHEN ('こい' / '来い')
+    // SAHEN ('しろ' / 'せよ')
+    #Meirei
+}
+
+KateMeirei = {
+      V5KA [け]
+    / V5SA [せ]
+    / V5TA [て]
+    / V5NA [ね]
+    / V5HA [へ]
+    / V5MA [め]
+    / V5RA [れ]
+    / V5WA [え]
+    / V5GA [げ]
+    / V5BA [べ]
+    / V5KASOKU [け]
+    #KateMeirei
+}
+
+Common =
+    / {V1 #MizenRenyo}
+    // {KAHEN '来' #MizenRenyo}
+    // {SAHEN 'し' #MizenRenyo}
+
+
+/* ここを辞書から生成する */
+V5KA = '書'  // 書く
+V5SA = '話'  // 話す
+V5TA = '立'  // 立つ
+V5NA = '死'  // 死ぬ
+V5HA = '思'  // 思ふ
+V5MA = '噛'  // 噛む
+V5RA = '黙'  // 黙る
+V5WA = '襲'  // 襲う
+V5GA = '研'  // 研ぐ
+V5BA = '並'  // 並ぶ
+V5KASOKU = '行'  // 行く
+V1 =
+    / '起き'  // 起きる
+    / '受け'  // 受ける
+    / '寝'  // 寝る
+    / '煮'  // 煮る
+
+
+/* ここから助動詞 */
+/* 参考：https://www.kokugobunpou.com/%E5%8A%A9%E5%8B%95%E8%A9%9E/%E5%8A%A9%E5%8B%95%E8%A9%9E%E6%B4%BB%E7%94%A8%E8%A1%A8/ */
+
+// 助動詞の連続がネック
+SubVerbs = {
+      (SubVerb SubVerbs)
+    / (SubVerb)?
+    #SubVerbs
+}
+
+SubVerb =
+    / SSingle SubVerb
+    / SMizen SubVerb
+    / SRenyo SubVerb
+    / SSyushi SubVerb
+    / SRentai SubVerb
+    / SKatei SubVerb
+    / SMeirei SubVerb
+    / SCommon SubVerb
+    / SSingle SubVerb
+
+
+SMizen = {
+      {'そうだろ' #Souda}
+    / {'ようだろ' #Youda}
+    / {'なかろ' #Nai}
+    / {'たがら' / 'たかろ' #TaiTagaru}
+    / {'ましょ' #Masu}
+    / {'でしょ' #Desu}
+    / {'だろ' / 'たろ' #DaTa}
+    // 「う・よう」は終止形と連体形のみ
+    // 「まい」は終止形と連体形のみ
+    // 「らしい」の未然形はない
+    #SMizen
+}
+
+SRenyo = {
+      {'たがり' / 'たがっ' / 'たかっ' / 'たく' #TaiTagaru}
+    / {'そうだっ' / 'そうで' / 'そうに' #Souda}
+    / {'ようだっ' / 'ようで' / 'ように' #Youda}
+    / {'らしかっ' / 'らしく' #Rasii}
+    / {'なかっ' / 'なく' #Nai}
+    / {'でし' #Desu}
+    / {'だっ' #Da}
+    // 「う・よう」は終止形と連体形のみ
+    // 「まい」は終止形と連体形のみ
+    // 「た」の連用形はない
+    #SRenyo
+}
+
+SSyushi = {
+      {'そうだ' #Souda}
+    / {'ようだ' #Youda}
+    #SSyushi
+}
+
+SRentai = {
+      {'そうな' #Souda}
+    / {'ような' #Youda}
+    #SRentai
+}
+
+SKatei = {
+      {'そうなら' #Souda}
+    / {'ようなら' #Youda}
+    / {'らしけれ' #Rasii}
+    / {'なけれ' #Nai}
+    / {'たがれ' / 'たけれ' #TaiTagaru}
+    / {'ますれ' #Masu}
+    / {'させれ' / 'せれ' #SeruSaseru}
+    / {'られれ' / 'れれ' #ReruRareru}
+    / {'たら' / 'だら' #Ta}
+    / {'なら' #Da}
+    // 「う・よう」は終止形と連体形のみ
+    // 「まい」は終止形と連体形のみ
+    // 「です」の仮定形はない
+    #SKatei
+}
+
+SMeirei = {
+      {'されろ' / 'されよ' / 'せろ' / 'せよ' #SeruSaseru}
+    / {'られろ' / 'られよ' / 'れろ' / 'れよ' #ReruRareru}
+    // 「ない」の命令形はない
+    // 「う・よう」は終止形と連体形のみ
+    // 「まい」は終止形と連体形のみ
+    // 「たい・たがる」の命令形はない
+    // 「た」の命令形はない
+    // 「そうだ」の命令形はない
+    // 「ようだ」の命令形はない
+    // 「らしい」の命令形はない
+    // 「だ」の命令形はない
+    // 「です」の命令形はない
+    #SMeirei
+}
+
+SCommon = /* 複数の活用形で活用語尾が同じもの */
+      {{'らしい' #Rasii} #SSyushiSRentai}
+    / {{'させる' / 'せる' #SeruSaseru} #SSyushiSRentai}
+    / {{'られる' / 'れる' #ReruRareru} #SSyushiSRentai}
+    / {{'たがる' / 'たい' #TaiTagaru} #SSyushiSRentai}
+    / {{'させ' #SeruSaseru} #SMizenSRenyo}
+    / {{'られ' #ReruRareru} #SMizenSRenyo}
+    / {{'ませ' #Masu} #SMizenSMeirei}
+    / {{'まし' #Masu} #SRenyoSMeirei}
+    / {{'ない' #Nai} #SSyushiSRentai}
+    / {{'よう' #UYou} #SSyushiSRentai}
+    / {{'まい' #Mai} #SSyushiSRentai}
+    / {{'ます' #Masu} #SSyushiSRentai}
+    / {{'です' #Desu} #SSyushiSRentai}
+
+SSingle =
+      {{'だ' #DaTa} #SSyushi}
+    // {{'な' #Da} #SRentai}  // 動詞にはつかない（e.g. 睡眠不足なため眠い）
+    / {{'で' #Da} #SRenyo}
+    / {{'ん' #Nai} #SSyushiSRentai}
+    / {{'う' #UYou} #SSyushiSRentai}
+    / {{'た' #Ta} #SSyushiSRentai}
+    / {{'せ' #SeruSaseru} #SMizenSRenyo}
+    / {{'れ' #ReruRareru} #SMizenSRenyo}
+
+
+example Sentence 彼は誰にも話せなかったらしい
+example Sentence 彼は黙りたがりだったようです
+example Sentence 朝の4時に起きられたなら電話する
+
+example Sentence 彼に話したら楽になった
+example Sentence 彼に話したらしい

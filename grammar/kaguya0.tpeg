@@ -1,0 +1,301 @@
+/* KAGUYA文法 */
+
+Sentence = {
+    (
+        Sov
+        Particle?
+        [,、，\n]?
+    )+
+    EOS
+    #Sentence
+} EOF
+
+Sov = {
+    NounPhrases? VerbPhrase
+    #SOV
+}
+
+example Sentence 要求は認められないので代案を用意せよ
+example Sentence 僕は転びそうだったが持ちこたえた
+example Sentence 紅茶を入れますわ
+example Sentence 駐車場に車を止める
+example Sentence 駐車場に車が止まる
+example Sentence 駐車場に車が止まらない
+example Sentence 雨が止む
+example Sentence 酒は飲んでも飲まれるな
+example Sentence スマホを充電してあげる
+example Sentence 変数を定義して数値を代入する
+example Sentence 会いたくて震える
+example Sentence 期限を過ぎなければ提出を認めるだろう
+example Sentence 階段を駆け上がったので息が切れた
+example Sentence 雨が降ったらしいけれど家に居たので何も知らなかった
+example Sentence 変数に数値を代入し計算を実行し結果をコンソールに出力する
+example Sentence 変数に数値を代入し、計算を実行し、結果をコンソールに出力する。
+
+EOF = !.
+EOS = [。．.\n] / EOF
+KANJI = [㐀-䶵一-龠々〇〻ーご]
+KATA = [ァ-ヶー・]
+ALPHA = [a-zA-Zａ-ｚＡ-Ｚ]
+NUM = [0-9０-９]
+
+
+NounPhrases = {
+    (!VerbPhrase NounPhrase)+
+    #NounPhrases
+}
+
+/* TODO: 助詞の考慮 */
+NounPhrase = {
+    Noun {[はをにがのもで] #Particle}
+    #NounPhrase
+}
+
+example NounPhrase チームが
+example NounPhrase 大会は
+example NounPhrase タピオカ屋の
+example NounPhrase KAGUYAを
+example NounPhrase "Blockchain"も
+
+
+VerbPhrase = {
+      Verb AuxVerbs VerbPhrase?
+    / Verb VerbPhrase?
+    #VerbPhrase
+}
+
+example VerbPhrase 話したく思う
+example VerbPhrase 攻撃され始めた
+example VerbPhrase 話し終わる
+example VerbPhrase 駆け上がる
+example VerbPhrase 立ち止まる
+example VerbPhrase 止まる
+
+AdjNoun = {
+    AdjectivePhrase (Noun/EOS)
+    #AdjNoun
+}
+
+AdjectivePhrase = {
+    (
+        (Adjective/AdjectiveVerb) AuxVerbs AdjectivePhrase?
+      / (Adjective/AdjectiveVerb) AdjectivePhrase?
+    ) &(Noun/EOS)
+    #AdjectivePhrase
+}
+
+example AdjectivePhrase 赤いボール
+example AdjectivePhrase 赤かろうボール
+example AdjectivePhrase うるさい
+example AdjectivePhrase うるさかった
+example AdjectivePhrase うるさくない
+example AdjectivePhrase うるさかろう
+example AdjectivePhrase うるさそうだった
+example AdjectivePhrase うるさいらしい
+example AdjectivePhrase うるさいでしょう
+example AdjectivePhrase 赤くない
+example AdjectivePhrase 赤くなく青い
+example AdjectivePhrase 赤くかっこいい
+example AdjectivePhrase 健康な
+example AdjectivePhrase 健康だった
+example AdjectivePhrase 健康でしょう
+example AdjectivePhrase ぞっこんだ
+example AdjectivePhrase なめい
+example AdjectivePhrase なめかった
+example AdjectivePhrase なめらかだ
+example AdjectivePhrase なめらかなやわらかい布
+
+
+/* 助動詞 */
+/* 参考：https://www.kokugobunpou.com/%E5%8A%A9%E5%8B%95%E8%A9%9E/%E5%8A%A9%E5%8B%95%E8%A9%9E%E6%B4%BB%E7%94%A8%E8%A1%A8/ */
+AuxVerbs = {
+    AUXVERB
+    #AuxVerbs
+}
+
+AUXVERB = @choice('dic/auxverbs.txt')
+
+
+/* 助詞 */
+/* TODO: 接続を考えた細分化が必要 */
+/* 参考：https://www.kokugobunpou.com/%E5%8A%A9%E8%A9%9E/%E5%8A%A9%E8%A9%9E%E3%81%AE%E6%80%A7%E8%B3%AA%E3%81%A8%E5%83%8D%E3%81%8D/ */
+Particle = {
+    PARTICLE
+    #Particle
+}
+
+PARTICLE = @choice('dic/particles.txt')
+
+/* 名詞 */
+/* 漢字カタカナ英語の繰り返し（混合可）、括弧やクォーテーションでくくったもの */
+Noun = (
+      { (KANJI/KATA/ALPHA/NUM)+ #Noun }
+    / B_START { (!B_END .)* #Noun } B_END
+)
+
+B_START = [\[\{\(\"\'<（「『”’［｛【〔“]
+B_END   = [\]\}\)\"\'>）」』”’］｝】〕“]
+
+
+/* 形容詞 */
+Adjective =
+    / {ADJ 'かろ' #ADJMizen}
+    / {ADJ ('かっ'/'く') #ADJRenyo}
+    / {ADJ 'けれ' #ADJKatei}
+    / {ADJ 'い' #ADJSyushiRentai}
+    / {ADJ &ADJGOKANAUX #ADJGokan}
+
+ADJ = @choice('dic/adjectives.txt')
+
+/* こんな感じで先読みを入れる必要がある */
+ADJGOKANAUX =
+    / 'そうだ'
+
+/* 形容動詞 */
+AdjectiveVerb =
+    / {ADJVERB 'だろ' #ADJVMizen}
+    / {ADJVERB ('だっ'/'で'/'に') #ADJVRenyo}
+    / {ADJVERB 'なら' #ADJVKatei}
+    / {ADJVERB 'だ' #ADJVSyushi}
+    / {ADJVERB 'な' #ADJVRentai}
+    / {ADJVERB &ADJVGOKANAUX #ADJVGokan}
+
+ADJVERB = @choice('dic/adjectiveverbs.txt')
+
+ADJVGOKANAUX =
+    / 'そうだ'
+    / 'らしい'
+    / 'です'
+
+
+/* 動詞 */
+/* 参考：https://www.kokugobunpou.com/%E7%94%A8%E8%A8%80/%E5%8B%95%E8%A9%9E-3-%E6%B4%BB%E7%94%A8%E5%BD%A2%E3%81%A8%E3%81%9D%E3%81%AE%E7%94%A8%E6%B3%95/ */
+Verb =
+    / Mizen
+    / Renyo
+    / SyushiRentai
+    / Katei
+    / Meirei
+    / KateMeirei
+    / Common
+
+example Verb 歩く
+example Verb 認める
+example Verb 会う
+example Verb 止む
+example Verb 止まる
+example Verb 止める
+
+
+Mizen = {
+      VERB5KA [かこ]
+    / VERB5SA [さそ]
+    / VERB5TA [たと]
+    / VERB5NA [なの]
+    / VERB5MA [まも] &AuxVerbs
+    / VERB5RA [らろ]
+    / VERB5WA [わお]
+    / VERB5GA [がご]
+    / VERB5BA [ばぼ]
+    / VERB5KASOKU [かこ]
+    / SAHEN_SURU [さ]
+    / SAHEN_ZURU [ざ]
+    / (KANJI/KATA)* [さ]
+    #Mizen
+}
+
+Renyo = {
+      VERB5KA [きい]
+    / VERB5SA [し]
+    / VERB5TA [ちっ]
+    / VERB5NA [にん]
+    / VERB5MA [みん]
+    / VERB5RA [りっ]
+    / VERB5WA [いっ]
+    / VERB5GA [ぎい]
+    / VERB5BA [びん]
+    / VERB5KASOKU [きっ]
+    / KAHEN? [き]
+    #Renyo
+}
+
+SyushiRentai = {
+      VERB5KA [く]
+    / VERB5SA [す]
+    / VERB5TA [つ]
+    / VERB5NA [ぬ]
+    / VERB5MA [む]
+    / VERB5RA [る]
+    / VERB5WA [う]
+    / VERB5GA [ぐ]
+    / VERB5BA [ぶ]
+    / VERB5KASOKU [く]
+    / VERB1 [る]
+    / KAHEN? ('くる' / '来る')
+    / SAHEN_SURU 'する'
+    / SAHEN_ZURU 'ずる'
+    / (KANJI/KATA)* 'する'
+    #SyushiRentai
+}
+
+Katei = {
+      VERB1 [れ]
+    / KAHEN? ('くれ' / '来れ')
+    / SAHEN_SURU 'すれ'
+    / SAHEN_ZURU 'ずれ'
+    / (KANJI/KATA)+ 'すれ'
+    #Katei
+}
+
+Meirei = {
+      VERB1 [ろよ]
+    / KAHEN? ('こい' / '来い')
+    / SAHEN_SURU ('しろ' / 'せよ')
+    / SAHEN_ZURU ('じろ' / 'ぜよ')
+    / (KANJI/KATA)+ ('しろ' / 'せよ')
+    #Meirei
+}
+
+KateMeirei = {
+      VERB5KA [け]
+    / VERB5SA [せ]
+    / VERB5TA [て]
+    / VERB5NA [ね]
+    / VERB5MA [め]
+    / VERB5RA [れ]
+    / VERB5WA [え]
+    / VERB5GA [げ]
+    / VERB5BA [べ]
+    / VERB5KASOKU [け]
+    #KateMeirei
+}
+
+Common =
+    / {VERB1 #MizenRenyo}
+    / {KAHEN? [来] #MizenRenyo}
+    / {KAHEN? [こ] #Mizen}  // 命令形の活用語尾「こい」との競合避け
+    / {SAHEN_SURU [し] #MizenRenyo}
+    / {SAHEN_ZURU [じ] #MizenRenyo}
+    / {(KANJI/KATA)* [し] #MizenRenyo}
+    / {SAHEN_SURU [せ] #Mizen}  // 命令形の活用語尾「せよ」との競合避け
+    / {SAHEN_ZURU [ぜ] #Mizen}  // 命令形の活用語尾「ぜよ」との競合避け
+    / {(KANJI/KATA)* [せ] #Mizen}  // 命令形の活用語尾「せよ」との競合避け
+
+
+/* 特殊な動詞 */
+/* 「行く」はカ行五段活用だが、イ音便ではなく促音便 */
+VERB5KASOKU = '行'
+VERB5KA = @choice('dic/verbs/VERB5KA.txt')
+VERB5SA = @choice('dic/verbs/VERB5SA.txt')
+VERB5TA = @choice('dic/verbs/VERB5TA.txt')
+VERB5NA = @choice('dic/verbs/VERB5NA.txt')
+VERB5MA = @choice('dic/verbs/VERB5MA.txt')
+VERB5RA = @choice('dic/verbs/VERB5RA.txt')
+VERB5WA = @choice('dic/verbs/VERB5WA.txt')
+VERB5GA = @choice('dic/verbs/VERB5GA.txt')
+VERB5BA = @choice('dic/verbs/VERB5BA.txt')
+VERB1 = @choice('dic/verbs/VERB1.txt')
+KAHEN = @choice('dic/verbs/KAHEN.txt')
+SAHEN_SURU = @choice('dic/verbs/SAHEN_SURU.txt')
+SAHEN_ZURU = @choice('dic/verbs/SAHEN_ZURU.txt')
+
