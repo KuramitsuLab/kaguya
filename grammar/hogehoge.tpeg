@@ -1,17 +1,15 @@
-Input = {
-    'Hello'
-    #Hello
-}
+Test1 = { RED &BALL #Test1 }
+Test2 = { RED &{BALL} #Test2 }
+Test3 = { RED &{BALL} {BALL} #Test3 }
+Test4 = { (!BALL .)* #Test4 }
+Test5 = { (!{BALL} .)* #Test5 }
 
-NounPhrase = Adj? Noun Particle
+RED  = '赤い'
+BALL = 'ボール'
 
-NounPhrase+ Verb
-/ NounPhrase+ Adj
-/ NounPhrase+
-
-example Test AはBをCする
-example Test 赤いAは青いBをCする
-example Test AはBだ
-example Test 赤いAは青いBだ
-example Test Aは赤い
-example Test Cする青いBは赤いAだ  // 例）勉強する効果は高い
+example Test1,Test2,Test3,Test4,Test5 赤いボール
+// OK Test1 => [#Test1 '赤い']
+// OK Test2 => [#Test2 [#Ball 'ボール']]
+// OK Test3 => [#Test3 [#Ball 'ボール'] [#Ball 'ボール']]
+// OK Test4 => [#Test4 '赤い']
+// OK Test5 => [#Test5 '赤い']
