@@ -2,48 +2,17 @@
 
 /*
 トップの規則
-もっともスモールなケースはSov文のみの場合
-接続助詞と読点は任意で、Sov文の繰り返しに対応している
+入力をChunkの繰り返しとみる
 */
 Sentence = {
-    (
-        Sov
-        Particle?
-        TEN?
-    )+
-    EOS
+    Chunck*
     #Sentence
-} EOF
-
-/*
-入力をPreInfoの繰り返しとみる規則
-*/
-TestSentence = {
-    PreInfo*
-    #TestSentence
 }
 
-example TestSentence 要求は認められないので代案を用意せよ
-example TestSentence 僕は転びそうだったが持ちこたえた
-example TestSentence 紅茶を入れますわ
-example TestSentence 駐車場に車を止める
-example TestSentence 駐車場に車が止まる
-example TestSentence 駐車場に車が止まらない
-example TestSentence 雨が止む
-example TestSentence 酒は飲んでも飲まれるな
-example TestSentence スマホを充電してあげる
-example TestSentence 変数を定義して数値を代入する
-example TestSentence 会いたくて震える
-example TestSentence 期限を過ぎなければ提出を認めるだろう
-example TestSentence 階段を駆け上がったので息が切れた
-example TestSentence 雨が降ったらしいけれど家に居たので何も知らなかった
-example TestSentence 変数に数値を代入し計算を実行し結果をコンソールに出力する
-example TestSentence 変数に数値を代入し、計算を実行し、結果をコンソールに出力する。
-
 /*
-形容詞や形容動詞、動詞や連体詞などのひとかたまり（チャンク）ごとにマッチする規則
+形容詞や形容動詞、動詞や連体詞などのひとかたまりごとにマッチする規則
 */
-PreInfo = {
+Chunck = {
       AdjectivePhrase
     / VerbPhrase
     / Adverb
@@ -51,31 +20,7 @@ PreInfo = {
     / Noun Postp
     / Postp
     / {TEN}
-    #PreInfo
-}
-
-Postp = {
-      'より'
-    / 'から'
-    / [をにがとでのへや]
-    / PARTICLE
-    #Postp
-}
-
-TestNoun = {
-    Noun
-    #TestNoun
-}
-
-/* ここまでが未統合文法 */
-
-/*
-正確にはSOVではなく、SVやVも表せる
-主語や目的語となる名詞節群と動詞節からなる
-*/
-Sov = {
-    NounPhrases? VerbPhrase
-    #SOV
+    #Chunck
 }
 
 example Sentence 要求は認められないので代案を用意せよ
@@ -104,30 +49,6 @@ KATA = [ァ-ヶー・]
 ALPHA = [a-zA-Zａ-ｚＡ-Ｚ]
 NUM = [0-9０-９]
 
-/*
-名詞節群
-動詞節が始まらないことを確認しつつ名詞節にマッチしていく
-*/
-NounPhrases = {
-    (!VerbPhrase NounPhrase)+
-    #NounPhrases
-}
-
-
-/*
-名詞節
-名詞と一部の助詞のセット
-*/
-NounPhrase = {
-    Noun {[はをにがのもで] #Particle}
-    #NounPhrase
-}
-
-example NounPhrase チームが
-example NounPhrase 大会は
-example NounPhrase タピオカ屋の
-example NounPhrase KAGUYAを
-example NounPhrase "Blockchain"も
 
 /*
 動詞節
@@ -161,7 +82,6 @@ AdjectivePhrase = {
     #AdjectivePhrase
 }
 
-
 example AdjectivePhrase 赤いボール
 example AdjectivePhrase 赤かったボール
 example AdjectivePhrase うるさい
@@ -183,98 +103,25 @@ example AdjectivePhrase なめかった
 example AdjectivePhrase なめらかだ
 example AdjectivePhrase なめらかなやわらかい布
 
-
-/* 助動詞 */
-AuxVerbs = {
-    AUXVERB
-    #AuxVerbs
-}
-
-
-/* 接続助詞 */
-Particle = {
-    PARTICLE
-    #Particle
-}
-
-/* 連体詞 */
-Adnominal = {
-    ADNM
-    #Adnominal
-}
-
-/* 副詞 */
-Adverb = {
-    ADV
-    #Adverb
-}
-
-
-/* 名詞 */
-Noun = {
-    NOUN
-    #Noun
-}
-
-/*
-漢字カタカナアルファベット数字
-混合した場合も可（例：アップル社
-括弧で括ったものも名詞
-*/
-NOUN =
-    / (KANJI/KATA/ALPHA/NUM)+
-    / B_START (!B_END .)* B_END
-
-B_START = [\[\{\(\"\'<（「『”’［｛【〔“]
-B_END   = [\]\}\)\"\'>）」』”’］｝】〕“]
-
-
 /*
 形容詞の語幹と活用語尾
 実験的に助動詞や助詞、動詞を先読みで入れている
-助動詞は連続するものや活用したものが存在するため、より正確に記述する必要がある
+語幹は辞書の"Adjective.dic"と"Noun.nai.dic"から生成
 */
 Adjective =
     / {ADJ 'かろ' &'う' #ADJMizen}
     / {ADJ 'かっ' &'た' #ADJRenyo}
-    / {ADJ 'く' #ADJRenyo} &([ては]/Verb/Adjective/AdjectiveVerb)
+    / {ADJ 'く' &([ては]/Verb/Adjective/AdjectiveVerb) #ADJRenyo}
     / {ADJ 'けれ' &'ば' #ADJKatei}
     / {ADJ 'い' &('そう'/'らし'/'でしょ'/'だろ'/NOUN/EOL) #ADJSyushiRentai}
     / {ADJ  &'そう' #ADJGokan}
 
-/* 実験段階
-Adjective =
-    / {ADJ 'かろ' &AFTERADJMIZEN #ADJMizen}
-    / {ADJ ('かっ'/'く') &AFTERADJRENYO #ADJRenyo}
-    / {ADJ 'けれ' &AFTERADJKATEI #ADJKatei}
-    / {ADJ 'い' &AFTERADJSYUSHIRENTAI #ADJSyushiRentai}
-    / {ADJ &AFTERADJGOKAN #ADJGokan}
-
-AFTERADJMIZEN =
-    / @choice('dic/Auxverb/AFTERADJMIZEN.txt')
-
-AFTERADJRENYO =
-    / @choice('dic/Auxverb/AFTERADJRENYO.txt')
-    / @choice('dic/Postp/AFTERADJRENYO.txt')
-    / (Verb / Adjective / AdjectiveVerb)
-
-AFTERADJKATEI =
-    / @choice('dic/Auxverb/AFTERADJKATEI.txt')
-    / @choice('')
-
-AFTERADJSYUSHIRENTAI =
-    / @choice('dic/Auxverb/AFTERADJSYUSHIRENTAI.txt')
-    / @choice('')
-
-AFTERADJGOKAN =
-    / @choice('dic/Auxverb/AFTERADJGOKAN.txt')
-    / @choice('')
-*/
-
+ADJ = @choice('dic/ADJ.txt')
 
 /*
 形容動詞の語幹と活用語尾
 形容詞とやっていることは同じ
+語幹は辞書の"Noun.adjv.dic"から生成
 */
 AdjectiveVerb =
     / {ADJV 'だろ' &'う' #ADJVMizen}
@@ -286,11 +133,14 @@ AdjectiveVerb =
     / {ADJV 'な' &('ようだ'/NOUN/AdjectivePhrase) #ADJVRentai}
     / {ADJV &('そう'/'らし'/'でしょ') #ADJVGokan}
 
+ADJV = @choice('dic/ADJV.txt')
+
 /*
 補助動詞の「ある」と「ない」
 */
 SUBARU = 'あ' [らりるれろっ]
 SUBNAI = 'な' ('かろ' / 'かっ' / 'く' / 'い' / 'けれ')
+
 
 /*
 動詞の語幹と活用語尾
@@ -336,17 +186,17 @@ Mizen = {
 }
 
 Renyo = {
-      VERB5KA [きい] &(AuxVerbs/[てで]/Sov/EOL)
-    / VERB5SA [し] &(AuxVerbs/[てで]/Sov/EOL)
-    / VERB5TA [ちっ] &(AuxVerbs/[てで]/Sov/EOL)
-    / VERB5NA [にん] &(AuxVerbs/[てで]/Sov/EOL)
-    / VERB5MA [みん] &(AuxVerbs/[てで]/Sov/EOL)
-    / VERB5RA [りっ] &(AuxVerbs/[てで]/Sov/EOL)
-    / VERB5WA [いっ] &(AuxVerbs/[てで]/Sov/EOL)
-    / VERB5GA [ぎい] &(AuxVerbs/[てで]/Sov/EOL)
-    / VERB5BA [びん] &(AuxVerbs/[てで]/Sov/EOL)
-    / VERB5KASOKU [きっ] &(AuxVerbs/[てで]/Sov/EOL)
-    / KAHEN? [き] &(AuxVerbs/[てで]/Sov/EOL)
+      VERB5KA [きい] &(AuxVerbs/[てで]/Verb/TEN/EOL)
+    / VERB5SA [し] &(AuxVerbs/[てで]/Verb/TEN/EOL)
+    / VERB5TA [ちっ] &(AuxVerbs/[てで]/Verb/TEN/EOL)
+    / VERB5NA [にん] &(AuxVerbs/[てで]/Verb/TEN/EOL)
+    / VERB5MA [みん] &(AuxVerbs/[てで]/Verb/TEN/EOL)
+    / VERB5RA [りっ] &(AuxVerbs/[てで]/Verb/TEN/EOL)
+    / VERB5WA [いっ] &(AuxVerbs/[てで]/Verb/TEN/EOL)
+    / VERB5GA [ぎい] &(AuxVerbs/[てで]/Verb/TEN/EOL)
+    / VERB5BA [びん] &(AuxVerbs/[てで]/Verb/TEN/EOL)
+    / VERB5KASOKU [きっ] &(AuxVerbs/[てで]/Verb/TEN/EOL)
+    / KAHEN? [き] &(AuxVerbs/[てで]/Verb/TEN/EOL)
     #Renyo
 }
 
@@ -402,25 +252,20 @@ KateiMeirei = {
 }
 
 Common =
-    / {VERB1 &(AuxVerbs/[てで]/Sov/EOL) #MizenRenyo}
-    / {KAHEN? [来] &(AuxVerbs/[てで]/Sov/EOL) #MizenRenyo}
+    / {VERB1 &(AuxVerbs/[てで]/Verb/TEN/EOL) #MizenRenyo}
+    / {KAHEN? [来] &(AuxVerbs/[てで]/Verb/TEN/EOL) #MizenRenyo}
     / {KAHEN? [こ] &AuxVerbs #Mizen}  // 命令形の活用語尾「こい」との競合避け
-    / {SAHEN_SURU [し] &(AuxVerbs/[てで]/Sov/EOL) #MizenRenyo}
-    / {SAHEN_ZURU [じ] &(AuxVerbs/[てで]/Sov/EOL) #MizenRenyo}
-    / {(KANJI/KATA)* [し] &(AuxVerbs/[てで]/Sov/EOL) #MizenRenyo}
+    / {SAHEN_SURU [し] &(AuxVerbs/[てで]/Verb/TEN/EOL) #MizenRenyo}
+    / {SAHEN_ZURU [じ] &(AuxVerbs/[てで]/Verb/TEN/EOL) #MizenRenyo}
+    / {(KANJI/KATA)* [し] &(AuxVerbs/[てで]/Verb/TEN/EOL) #MizenRenyo}
     / {SAHEN_SURU [せ] &AuxVerbs #Mizen}  // 命令形の活用語尾「せよ」との競合避け
     / {SAHEN_ZURU [ぜ] &AuxVerbs #Mizen}  // 命令形の活用語尾「ぜよ」との競合避け
     / {(KANJI/KATA)* [せ] &AuxVerbs #Mizen}  // 命令形の活用語尾「せよ」との競合避け
 
 /*
-特殊な動詞
-「行く」はカ行五段活用だが、イ音便ではなく促音便なので活用が異なる
+活用型ごとの動詞の語幹を辞書から生成
+「行く」はカ行五段活用だが、イ音便ではなく促音便で活用が異なるため別枠
 */
-VERB5KASOKU = '行'
-
-
-/* @choiceによる読み込み部分 */
-/* 動詞 */
 VERB5KA = @choice('dic/Verb/VERB5KA.txt')
 VERB5SA = @choice('dic/Verb/VERB5SA.txt')
 VERB5TA = @choice('dic/Verb/VERB5TA.txt')
@@ -434,22 +279,56 @@ VERB1 = @choice('dic/Verb/VERB1.txt')
 KAHEN = @choice('dic/Verb/KAHEN.txt')
 SAHEN_SURU = @choice('dic/Verb/SAHEN_SURU.txt')
 SAHEN_ZURU = @choice('dic/Verb/SAHEN_ZURU.txt')
+VERB5KASOKU = '行'
 
-/* 形容詞 */
-ADJ = @choice('dic/ADJ.txt')
 
-/* 形容動詞 (中身は語幹になる名詞) */
-ADJV = @choice('dic/ADJV.txt')
-
-/* 助動詞 (生成したもの) */
+/* 助動詞、gen_auxverb.pyで生成 */
+AuxVerbs = {
+    AUXVERB
+    #AuxVerbs
+}
 AUXVERB = @choice('dic/Auxverb/AUXVERB.txt')
 
-/* 接続助詞 (e.g. けれども、ところで、でも) */
-PARTICLE = @choice('dic/PARTICLE.txt')
 
-/* 連体詞 (e.g. おそるべき、あまりの、こんな、およそ) */
+/* 助詞、手入力 */
+Postp = {
+    POSTP
+    #Postp
+}
+POSTP = @choice('dic/POSTP.txt')
+
+
+/* 連体詞、辞書から生成 */
+Adnominal = {
+    ADNM
+    #Adnominal
+}
 ADNM = @choice('dic/ADNM.txt')
 
-/* 副詞 (e.g. きちんと、ほどほど、ついつい、やがて) */
+
+/* 副詞、辞書から生成 */
+Adverb = {
+    ADV
+    #Adverb
+}
 ADV = @choice('dic/ADV.txt')
+
+
+/* 名詞 */
+Noun = {
+    NOUN
+    #Noun
+}
+
+/*
+漢字カタカナアルファベット数字
+混合した場合も可（例：アップル社
+括弧で括ったものも名詞
+*/
+NOUN =
+    / (KANJI/KATA/ALPHA/NUM)+
+    / B_START (!B_END .)* B_END
+
+B_START = [\[\{\(\"\'<（「『”’［｛【〔“]
+B_END   = [\]\}\)\"\'>）」』”’］｝】〕“]
 
