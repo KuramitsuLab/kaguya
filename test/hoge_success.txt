@@ -1,0 +1,5 @@
+変数に数値を代入し、計算を実行し、結果をコンソールに出力する。
+[#Sentence [#Chunk [#Noun '変数'] [#Postp 'に']] [#Chunk [#Noun '数値'] [#Postp 'を']] [#Chunk [#VerbPhrase [#LookAHead [#MizenRenyo '代入し']]]] [#Chunk [#Noun '計算'] [#Postp 'を']] [#Chunk [#VerbPhrase [#LookAHead [#MizenRenyo '実行し']]]] [#Chunk [#Noun '結果'] [#Postp 'を']] [#Chunk [#Noun 'コンソール'] [#Postp 'に']] [#Chunk [#VerbPhrase [#LookAHead [#SyushiRentai '出力する']]]]]
+
+期限を過ぎなければ提出を認めるだろう。
+[#Sentence [#Chunk [#Noun '期限'] [#Postp 'を']] [#Chunk [#VerbPhrase [#LookAHead [#MizenRenyo '過ぎ'] [#AuxVerbs 'なけれ']] [#AuxVerbs 'なけれ']]] [#Chunk [#Postp 'ば']] [#Chunk [#Noun '提出'] [#Postp 'を']] [#Chunk [#VerbPhrase [#LookAHead [#SyushiRentai '認める'] [#AuxVerbs 'だろう']] [#AuxVerbs 'だろう']]]]

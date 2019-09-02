@@ -13,10 +13,10 @@ Sentence = {
 形容詞や形容動詞、動詞や連体詞などのひとかたまりごとにマッチする規則
 */
 Chunk = {
-      AdjectivePhrase
+      AdjectivePhrase  // 形容詞or形容動詞
     / VerbPhrase
-    / Adverb
-    / Adnominal
+    / Adverb  // 副詞
+    / Adnominal  // 連体詞
     / Noun Postp?
     / Postp
     #Chunk
@@ -47,7 +47,7 @@ KANJI = [㐀-䶵一-龠々〇〻ーご]
 KATA = [ァ-ヶー・]
 ALPHA = [a-zA-Zａ-ｚＡ-Ｚ]
 NUM = [0-9０-９]
-SYMBOL = [-~]
+SYMBOL = [-~〜ー.,]
 
 
 /*

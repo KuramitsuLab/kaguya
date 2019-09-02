@@ -2,9 +2,8 @@
 KAGUYA関連のレポジトリ
 
 # ファイル概要
-## `gen_verb.py`
-+ IPA辞書から動詞のチョイスを生成していたプログラム
-+ 休止中
+## `kaguya0.tpeg`
++ KAGUYA文法本体
 
 ## `gen_auxverb.py`
 + 助動詞フレーズの生成プログラム
@@ -12,5 +11,7 @@ KAGUYA関連のレポジトリ
 ## `ipadic_control.py`
 + IPA辞書全般を扱うプログラム
 
-## その他
-+ 無視してください
+## `tester.py`
++ パーステストを行うプログラム
++ `python tester.py test/<パース対象のファイル>`で実行
++ `<ファイル名>_fail.txt`と`<ファイル名>_success.txt`に入力文字列とASTを記述する
