@@ -16,7 +16,7 @@ def main(argv):
     GRAMMAR = 'grammar/kaguya0.tpeg'
     options = parse_options(['-g', GRAMMAR])
     peg = load_grammar(options)
-    parser = generator(options)(peg, **options)
+    parser = generator(options)(peg, name='Postp', **options)
     results = {
         'ok': [],
         'err': [],
@@ -33,8 +33,23 @@ def main(argv):
     err_rate = 'ERR_RATE: %d/%d' % len(results['err']), len(lines)
     print(err_rate)
 
+def test(argv):
+    NAME = argv[1]
+    GRAMMAR = 'grammar/kaguya0.tpeg'
+    options = parse_options(['-g', GRAMMAR])
+    options['start'] = NAME
+    peg = load_grammar(options)
+    parser = generator(options)(peg, **options)
+    try:
+        while True:
+            s = input('>>> ')
+            print(repr(parser(s)))
+    except Exception as e:
+        print(e)
+
 
 
 if __name__ == "__main__":
     # python src/tester.py test_text/hoge.txt
-    main(sys.argv)
+    # main(sys.argv)
+    test(sys.argv)

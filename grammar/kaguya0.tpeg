@@ -15,25 +15,42 @@ Sentence = {
     #Sentence
 } EOF
 
-/* 以下は本体に未統合の開発中の文法、exampleでテストしたのちに統合する */
+/*
+入力をPreInfoの繰り返しとみる規則
+*/
 TestSentence = {
     PreInfo*
     #TestSentence
 }
 
-TestSentence_old = {
-      (!(Noun Postp? EOL)     PreInfo)* Noun Postp? EOL
-    / (!(AdjectivePhrase EOL) PreInfo)* AdjectivePhrase EOL
-    / (!(VerbPhrase EOL)      PreInfo)* VerbPhrase EOL
-    #TestSentence
-}
+example TestSentence 要求は認められないので代案を用意せよ
+example TestSentence 僕は転びそうだったが持ちこたえた
+example TestSentence 紅茶を入れますわ
+example TestSentence 駐車場に車を止める
+example TestSentence 駐車場に車が止まる
+example TestSentence 駐車場に車が止まらない
+example TestSentence 雨が止む
+example TestSentence 酒は飲んでも飲まれるな
+example TestSentence スマホを充電してあげる
+example TestSentence 変数を定義して数値を代入する
+example TestSentence 会いたくて震える
+example TestSentence 期限を過ぎなければ提出を認めるだろう
+example TestSentence 階段を駆け上がったので息が切れた
+example TestSentence 雨が降ったらしいけれど家に居たので何も知らなかった
+example TestSentence 変数に数値を代入し計算を実行し結果をコンソールに出力する
+example TestSentence 変数に数値を代入し、計算を実行し、結果をコンソールに出力する。
 
+/*
+形容詞や形容動詞、動詞や連体詞などのひとかたまり（チャンク）ごとにマッチする規則
+*/
 PreInfo = {
       AdjectivePhrase
     / VerbPhrase
     / Adverb
     / Adnominal
     / Noun Postp
+    / Postp
+    / {TEN}
     #PreInfo
 }
 
@@ -41,6 +58,7 @@ Postp = {
       'より'
     / 'から'
     / [をにがとでのへや]
+    / PARTICLE
     #Postp
 }
 
@@ -219,7 +237,7 @@ B_END   = [\]\}\)\"\'>）」』”’］｝】〕“]
 Adjective =
     / {ADJ 'かろ' &'う' #ADJMizen}
     / {ADJ 'かっ' &'た' #ADJRenyo}
-    / {ADJ 'く' &([ては]/Verb/Adjective/AdjectiveVerb) #ADJRenyo}
+    / {ADJ 'く' #ADJRenyo} &([ては]/Verb/Adjective/AdjectiveVerb)
     / {ADJ 'けれ' &'ば' #ADJKatei}
     / {ADJ 'い' &('そう'/'らし'/'でしょ'/'だろ'/NOUN/EOL) #ADJSyushiRentai}
     / {ADJ  &'そう' #ADJGokan}
