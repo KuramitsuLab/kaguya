@@ -13,11 +13,14 @@ Sentence = {
 形容詞や形容動詞、動詞や連体詞などのひとかたまりごとにマッチする規則
 */
 Chunk = {
-      AdjectivePhrase  // 形容詞or形容動詞
-    / VerbPhrase
-    / Adverb  // 副詞
+      AdjectivePhrase  // 形容詞or形容動詞 助動詞?
+    / VerbPhrase  // 動詞 助動詞?
+    / NounPhrase  // 名詞 助動詞?
+    / {[こそあど] 'の' AFTERADNM #AdnominalPhrase}  // 助動詞がつきうる連体詞
     / Adnominal  // 連体詞
-    / Noun Postp?
+    / {[の] AFTERPOSTPNO #PostpPhrase}
+    / Adverb  // 副詞
+    / {Postp AFTERPOSTP #PostpPhrase}
     / Postp
     #Chunk
 }
@@ -46,7 +49,8 @@ TEN = [、，,\n]
 KANJI = [㐀-䶵一-龠々〇〻ーご]
 KATA = [ァ-ヶー・]
 ALPHA = [a-zA-Zａ-ｚＡ-Ｚ]
-NUM = [0-9０-９]
+NUM = [0-9０-９一二三四五六七八九十百千万億兆京垓秭穰溝澗正載極]
+    /'恒河沙'/'阿僧祇'/'那由他'/'不可思議'/'無量大数'
 SYMBOL = [-~〜ー.,]
 
 
@@ -59,9 +63,29 @@ SYMBOL = [-~〜ー.,]
 4. 動詞の活用した形+助動詞+動詞節の場合：話され始める
 */
 VerbPhrase = {
-      Verb AuxVerbs VerbPhrase?
+      Verb AuxVerbForVerb VerbPhrase?
     / Verb VerbPhrase?
     #VerbPhrase
+}
+
+AuxVerbForVerb = {
+      AFTERV1MIZEN
+    / AFTERV1RENYO
+    / AFTERV1SYUSHI
+    / AFTERV1RENTAI
+    / AFTERV5MIZEN
+    / AFTERV5RENYO
+    / AFTERV5SYUSHI
+    / AFTERV5RENTAI
+    / AFTERVKAMIZEN
+    / AFTERVKARENYO
+    / AFTERVKASYUSHI
+    / AFTERVKARENTAI
+    / AFTERVSAMIZEN
+    / AFTERVSARENYO
+    / AFTERVSASYUSHI
+    / AFTERVSARENTAI
+    #AuxVerbForVerb
 }
 
 example VerbPhrase 話したく思う
@@ -77,9 +101,22 @@ example VerbPhrase 止まらない
 組み方は動詞と一緒
 */
 AdjectivePhrase = {
-      (Adjective/AdjectiveVerb) AuxVerbs AdjectivePhrase?
+      (Adjective/AdjectiveVerb) AuxVerbForAdj AdjectivePhrase?
     / (Adjective/AdjectiveVerb) AdjectivePhrase?
     #AdjectivePhrase
+}
+AuxVerbForAdj = {
+      AFTERADJMIZEN
+    / AFTERADJRENYO
+    / AFTERADJSYUSHI
+    / AFTERADJRENTAI
+    / AFTERADJGOKAN
+    / AFTERADJVMIZEN
+    / AFTERADJVRENYO
+    / AFTERADJVSYUSHI
+    / AFTERADJVRENTAI
+    / AFTERADJVGOKAN
+    #AuxVerbForAdj
 }
 
 example AdjectivePhrase 赤いボール
@@ -104,46 +141,17 @@ example AdjectivePhrase なめらかだ
 example AdjectivePhrase なめらかなやわらかい布
 
 /*
-形容詞の語幹と活用語尾
-実験的に助動詞や助詞、動詞を先読みで入れている
-語幹は辞書の"Adjective.dic"と"Noun.nai.dic"から生成
+名詞（体言）
+体言にも助動詞が付属語としてつきうる
 */
-Adjective = {
-      {ADJ 'かろ' #ADJMizen} &'う'
-    / {ADJ 'かっ' #ADJRenyo} &'た'
-    / {ADJ 'く' #ADJRenyo} &([ては]/Verb/Adjective/AdjectiveVerb)
-    / {ADJ 'けれ' #ADJKatei} &'ば'
-    / {ADJ 'い' #ADJSyushiRentai} &('そう'/'らし'/'でしょ'/'だろ'/NOUN/EOL)
-    / {ADJ #ADJGokan} &'そう'
-    #LookAHead
+NounPhrase = {
+    Noun AuxVerbForNoun?
+    #NounPhrase
 }
-
-ADJ = @choice('dic/ADJ.txt')
-
-/*
-形容動詞の語幹と活用語尾
-形容詞とやっていることは同じ
-語幹は辞書の"Noun.adjv.dic"から生成
-*/
-AdjectiveVerb = {
-      {ADJV 'だろ' #ADJVMizen} &'う'
-    / {ADJV 'だっ' #ADJVRenyo} &'た'
-    / {ADJV 'で' #ADJVRenyo} &([はも]/SUBARU/SUBNAI)
-    / {ADJV 'に' #ADJVRenyo} &(Verb/Adjective/AdjectiveVerb)
-    / {ADJV 'なら' #ADJVKatei}
-    / {ADJV 'だ' #ADJVSyushi} &('そう'/EOL)
-    / {ADJV 'な' #ADJVRentai} &('ようだ'/NOUN/AdjectivePhrase)
-    / {ADJV #ADJVGokan} &('そう'/'らし'/'でしょ')
-    #LookAHead
+AuxVerbForNoun = {
+    AFTERNOUN
+    #AuxVerbForNoun
 }
-
-ADJV = @choice('dic/ADJV.txt')
-
-/*
-補助動詞の「ある」と「ない」
-*/
-SUBARU = 'あ' [らりるれろっ]
-SUBNAI = 'な' ('かろ' / 'かっ' / 'く' / 'い' / 'けれ')
 
 
 /*
@@ -158,6 +166,7 @@ Verb =
     / Meirei
     / KateiMeirei
     / Common
+    / HiraVerb
 
 example Verb 歩く
 example Verb 認める
@@ -173,53 +182,53 @@ example Verb 止める
 以下、他の活用も同様
 */
 Mizen = {
-      {VERB5KA [かこ] #Mizen} &AuxVerbs
-    / {VERB5SA [さそ] #Mizen} &AuxVerbs
-    / {VERB5TA [たと] #Mizen} &AuxVerbs
-    / {VERB5NA [なの] #Mizen} &AuxVerbs
-    / {VERB5MA [まも] #Mizen} &AuxVerbs
-    / {VERB5RA [らろ] #Mizen} &AuxVerbs
-    / {VERB5WA [わお] #Mizen} &AuxVerbs
-    / {VERB5GA [がご] #Mizen} &AuxVerbs
-    / {VERB5BA [ばぼ] #Mizen} &AuxVerbs
-    / {VERB5KASOKU [かこ] #Mizen} &AuxVerbs
-    / {SAHEN_SURU [さ] #Mizen} &AuxVerbs
-    / {SAHEN_ZURU [ざ] #Mizen} &AuxVerbs
-    / {(KANJI/KATA)* [さ] #Mizen} &AuxVerbs
+      {VERB5KA [かこ] #Mizen} &AFTERV5MIZEN
+    / {VERB5SA [さそ] #Mizen} &AFTERV5MIZEN
+    / {VERB5TA [たと] #Mizen} &AFTERV5MIZEN
+    / {VERB5NA [なの] #Mizen} &AFTERV5MIZEN
+    / {VERB5MA [まも] #Mizen} &AFTERV5MIZEN
+    / {VERB5RA [らろ] #Mizen} &AFTERV5MIZEN
+    / {VERB5WA [わお] #Mizen} &AFTERV5MIZEN
+    / {VERB5GA [がご] #Mizen} &AFTERV5MIZEN
+    / {VERB5BA [ばぼ] #Mizen} &AFTERV5MIZEN
+    / {VERB5KASOKU [かこ] #Mizen} &AFTERV5MIZEN
+    / {SAHEN_SURU [さ] #Mizen} &AFTERVSAMIZEN
+    / {SAHEN_ZURU [ざ] #Mizen} &AFTERVSAMIZEN
+    / {(KANJI/KATA)* [さ] #Mizen} &AFTERVSAMIZEN
     #LookAHead
 }
 
 Renyo = {
-      {VERB5KA [きい] #Renyo} &(AuxVerbs/[てで]/Verb/TEN/EOL)
-    / {VERB5SA [し] #Renyo} &(AuxVerbs/[てで]/Verb/TEN/EOL)
-    / {VERB5TA [ちっ] #Renyo} &(AuxVerbs/[てで]/Verb/TEN/EOL)
-    / {VERB5NA [にん] #Renyo} &(AuxVerbs/[てで]/Verb/TEN/EOL)
-    / {VERB5MA [みん] #Renyo} &(AuxVerbs/[てで]/Verb/TEN/EOL)
-    / {VERB5RA [りっ] #Renyo} &(AuxVerbs/[てで]/Verb/TEN/EOL)
-    / {VERB5WA [いっ] #Renyo} &(AuxVerbs/[てで]/Verb/TEN/EOL)
-    / {VERB5GA [ぎい] #Renyo} &(AuxVerbs/[てで]/Verb/TEN/EOL)
-    / {VERB5BA [びん] #Renyo} &(AuxVerbs/[てで]/Verb/TEN/EOL)
-    / {VERB5KASOKU [きっ] #Renyo} &(AuxVerbs/[てで]/Verb/TEN/EOL)
-    / {KAHEN? [き] #Renyo} &(AuxVerbs/[てで]/Verb/TEN/EOL)
+      {VERB5KA [きい] #Renyo} &(AFTERV5RENYO/[てで]/Verb/TEN)
+    / {VERB5SA [し] #Renyo} &(AFTERV5RENYO/[てで]/Verb/TEN)
+    / {VERB5TA [ちっ] #Renyo} &(AFTERV5RENYO/[てで]/Verb/TEN)
+    / {VERB5NA [にん] #Renyo} &(AFTERV5RENYO/[てで]/Verb/TEN)
+    / {VERB5MA [みん] #Renyo} &(AFTERV5RENYO/[てで]/Verb/TEN)
+    / {VERB5RA [りっ] #Renyo} &(AFTERV5RENYO/[てで]/Verb/TEN)
+    / {VERB5WA [いっ] #Renyo} &(AFTERV5RENYO/[てで]/Verb/TEN)
+    / {VERB5GA [ぎい] #Renyo} &(AFTERV5RENYO/[てで]/Verb/TEN)
+    / {VERB5BA [びん] #Renyo} &(AFTERV5RENYO/[てで]/Verb/TEN)
+    / {VERB5KASOKU [きっ] #Renyo} &(AFTERV5RENYO/[てで]/Verb/TEN)
+    / {KAHEN? [き] #Renyo} &(AFTERVKARENYO/[てで]/Verb/TEN)
     #LookAHead
 }
 
 SyushiRentai = {
-      {VERB5KA [く] #SyushiRentai} &(AuxVerbs/EOL/'')
-    / {VERB5SA [す] #SyushiRentai} &(AuxVerbs/EOL/'')
-    / {VERB5TA [つ] #SyushiRentai} &(AuxVerbs/EOL/'')
-    / {VERB5NA [ぬ] #SyushiRentai} &(AuxVerbs/EOL/'')
-    / {VERB5MA [む] #SyushiRentai} &(AuxVerbs/EOL/'')
-    / {VERB5RA [る] #SyushiRentai} &(AuxVerbs/EOL/'')
-    / {VERB5WA [う] #SyushiRentai} &(AuxVerbs/EOL/'')
-    / {VERB5GA [ぐ] #SyushiRentai} &(AuxVerbs/EOL/'')
-    / {VERB5BA [ぶ] #SyushiRentai} &(AuxVerbs/EOL/'')
-    / {VERB5KASOKU [く] #SyushiRentai} &(AuxVerbs/EOL/'')
-    / {VERB1 [る] #SyushiRentai} &(AuxVerbs/EOL/'')
-    / {KAHEN? ('くる' / '来る') #SyushiRentai} &(AuxVerbs/EOL/'')
-    / {SAHEN_SURU 'する' #SyushiRentai} &(AuxVerbs/EOL/'')
-    / {SAHEN_ZURU 'ずる' #SyushiRentai} &(AuxVerbs/EOL/'')
-    / {(KANJI/KATA)* 'する' #SyushiRentai} &(AuxVerbs/EOL/'')
+      {VERB5KA [く] #SyushiRentai} &(AFTERV5SYUSHI/AFTERV5RENTAI/Noun/POSTP/EOL)
+    / {VERB5SA [す] #SyushiRentai} &(AFTERV5SYUSHI/AFTERV5RENTAI/Noun/POSTP/EOL)
+    / {VERB5TA [つ] #SyushiRentai} &(AFTERV5SYUSHI/AFTERV5RENTAI/Noun/POSTP/EOL)
+    / {VERB5NA [ぬ] #SyushiRentai} &(AFTERV5SYUSHI/AFTERV5RENTAI/Noun/POSTP/EOL)
+    / {VERB5MA [む] #SyushiRentai} &(AFTERV5SYUSHI/AFTERV5RENTAI/Noun/POSTP/EOL)
+    / {VERB5RA [る] #SyushiRentai} &(AFTERV5SYUSHI/AFTERV5RENTAI/Noun/POSTP/EOL)
+    / {VERB5WA [う] #SyushiRentai} &(AFTERV5SYUSHI/AFTERV5RENTAI/Noun/POSTP/EOL)
+    / {VERB5GA [ぐ] #SyushiRentai} &(AFTERV5SYUSHI/AFTERV5RENTAI/Noun/POSTP/EOL)
+    / {VERB5BA [ぶ] #SyushiRentai} &(AFTERV5SYUSHI/AFTERV5RENTAI/Noun/POSTP/EOL)
+    / {VERB5KASOKU [く] #SyushiRentai} &(AFTERV5SYUSHI/AFTERV5RENTAI/Noun/POSTP/EOL)
+    / {VERB1 [る] #SyushiRentai} &(AFTERV1SYUSHI/AFTERV1RENTAI/Noun/POSTP/EOL)
+    / {KAHEN? ('くる' / '来る') #SyushiRentai} &(AFTERVKASYUSHI/AFTERVKARENTAI/Noun/POSTP/EOL)
+    / {SAHEN_SURU 'する' #SyushiRentai} &(AFTERVSASYUSHI/AFTERVSARENTAI/Noun/POSTP/EOL)
+    / {SAHEN_ZURU 'ずる' #SyushiRentai} &(AFTERVSASYUSHI/AFTERVSARENTAI/Noun/POSTP/EOL)
+    / {(KANJI/KATA)* 'する' #SyushiRentai} &(AFTERVSASYUSHI/AFTERVSARENTAI/Noun/POSTP/EOL)
     #LookAHead
 }
 
@@ -256,17 +265,26 @@ KateiMeirei = {
 }
 
 Common = {
-      {VERB1 #MizenRenyo} &(AuxVerbs/[てで]/Verb/TEN/EOL)
-    / {KAHEN? [来] #MizenRenyo} &(AuxVerbs/[てで]/Verb/TEN/EOL)
-    / {KAHEN? [こ] #Mizen} &AuxVerbs  // 命令形の活用語尾「こい」との競合避け
-    / {SAHEN_SURU [し] #MizenRenyo} &(AuxVerbs/[てで]/Verb/TEN/EOL)
-    / {SAHEN_ZURU [じ] #MizenRenyo} &(AuxVerbs/[てで]/Verb/TEN/EOL)
-    / {(KANJI/KATA)* [し] #MizenRenyo} &(AuxVerbs/[てで]/Verb/TEN/EOL)
-    / {SAHEN_SURU [せ] #Mizen} &AuxVerbs  // 命令形の活用語尾「せよ」との競合避け
-    / {SAHEN_ZURU [ぜ] #Mizen} &AuxVerbs  // 命令形の活用語尾「ぜよ」との競合避け
-    / {(KANJI/KATA)* [せ] #Mizen} &AuxVerbs  // 命令形の活用語尾「せよ」との競合避け
+      {VERB1 #MizenRenyo} &(AFTERV1MIZEN/AFTERV1RENYO/[てで]/Verb/TEN)
+    / {KAHEN? [来] #MizenRenyo} &(AFTERVKAMIZEN/AFTERVKARENYO/[てで]/Verb/TEN)
+    / {SAHEN_SURU [し] #MizenRenyo} &(AFTERVSAMIZEN/AFTERVSARENYO/[てで]/Verb/TEN)
+    / {SAHEN_ZURU [じ] #MizenRenyo} &(AFTERVSAMIZEN/AFTERVSARENYO/[てで]/Verb/TEN)
+    / {(KANJI/KATA)* [し] #MizenRenyo} &(AFTERVSAMIZEN/AFTERVSARENYO/[てで]/Verb/TEN)
+    / {KAHEN? [こ] #Mizen} &AFTERVKAMIZEN  // 命令形の活用語尾「こい」との競合避け
+    / {SAHEN_SURU [せ] #Mizen} &AFTERVSAMIZEN  // 命令形の活用語尾「せよ」との競合避け
+    / {SAHEN_ZURU [ぜ] #Mizen} &AFTERVSAMIZEN  // 命令形の活用語尾「ぜよ」との競合避け
+    / {(KANJI/KATA)* [せ] #Mizen} &AFTERVSAMIZEN  // 命令形の活用語尾「せよ」との競合避け
     #LookAHead
 }
+
+HiraVerb = {
+      {HV [らろ] #Mizen} &AFTERV5MIZEN
+    / {HV [りっ] #Renyo} &(AFTERV5RENYO/[てで]/Verb/TEN)
+    / {HV 'る' #SyushiRentai} &(AFTERV5SYUSHI/AFTERV5RENTAI/Noun/POSTP/EOL)
+    / {HV 'れ' #KateiMeirei} &('ば'/EOL)
+    #LookAHead
+}
+HV = [あい]
 
 /*
 活用型ごとの動詞の語幹を辞書から生成
@@ -288,12 +306,121 @@ SAHEN_ZURU = @choice('dic/Verb/SAHEN_ZURU.txt')
 VERB5KASOKU = '行'
 
 
+
+/*
+形容詞の語幹と活用語尾
+実験的に助動詞や助詞、動詞を先読みで入れている
+語幹は辞書の"Adjective.dic"と"Noun.nai.dic"から生成
+*/
+Adjective = {
+      {ADJ 'かろ' #ADJMizen} &AFTERADJMIZEN
+    / {ADJ 'かっ' #ADJRenyo} &AFTERADJRENYO
+    / {ADJ 'く' #ADJRenyo} &([ては]/Verb/Adjective/AdjectiveVerb)
+    / {ADJ 'けれ' #ADJKatei} &'ば'
+    / {ADJ 'い' #ADJSyushiRentai} &(AFTERADJSYUSHI/AFTERADJRENTAI/NOUN/EOL)
+    / {ADJ #ADJGokan} &AFTERADJGOKAN
+    #LookAHead
+}
+
+ADJ = @choice('dic/ADJ.txt') / 'な'
+
+/*
+形容動詞の語幹と活用語尾
+形容詞とやっていることは同じ
+語幹は辞書の"Noun.adjv.dic"から生成
+*/
+AdjectiveVerb = {
+      {ADJV 'だろ' #ADJVMizen} &AFTERADJVMIZEN
+    / {ADJV 'だっ' #ADJVRenyo} &AFTERADJVRENYO
+    / {ADJV 'で' #ADJVRenyo} &([はも]/SUBARU/SUBNAI)
+    / {ADJV 'に' #ADJVRenyo} &(Verb/Adjective/AdjectiveVerb)
+    / {ADJV 'なら' #ADJVKatei}
+    / {ADJV 'だ' #ADJVSyushi} &(AFTERADJVSYUSHI/'')
+    / {ADJV 'な' #ADJVRentai} &(AFTERADJVRENTAI/NOUN/Adjective/AdjectiveVerb)
+    / {ADJV #ADJVGokan} &AFTERADJVGOKAN
+    #LookAHead
+}
+
+ADJV = @choice('dic/ADJV.txt')
+
+/*
+補助動詞の「ある」
+補助形容詞の「ない」
+*/
+SUBARU = 'あ' [らりるれろっ]
+SUBNAI = 'な' ('かろ' / 'かっ' / 'く' / 'い' / 'けれ')
+
+
+
+/*
+名詞
+漢字カタカナアルファベット数字
+混合した場合も可（例：アップル社）
+括弧で括ったものも名詞
+*/
+Noun = {
+      NOUN
+    / 'ため'
+    / 'こと'
+    / ([こそど]/'あそ') 'こ'
+    / [こそあど] 'れ'
+    / NUM [つこ個] [め目]?
+    / ('ひと'/'ふた'/'みっ'/'よっ'/'いつ'/'むっ'/'なな'/'やっ'/'ここの') 'つ' [め目]?
+    #Noun
+}
+
+NOUN =
+    / (KANJI/KATA/ALPHA/NUM)+
+    / B_START (!B_END .)* B_END
+
+B_START = [\[\{\(\"\'<（「『”’［｛【〔“]
+B_END   = [\]\}\)\"\'>）」』”’］｝】〕“]
+
+
+
 /* 助動詞、gen_auxverb.pyで生成 */
-AuxVerbs = {
+AuxVerb = {
     AUXVERB
     #AuxVerbs
 }
-AUXVERB = @choice('dic/Auxverb/AUXVERB.txt')
+AUXVERB = @choice('dic/AUXVERB.txt')
+
+AFTERADJMIZEN = @choice('dic/Auxverb/ADJMIZEN.txt')
+AFTERADJRENYO = @choice('dic/Auxverb/ADJRENYO.txt')
+AFTERADJSYUSHI = @choice('dic/Auxverb/ADJSYUSHI.txt')
+AFTERADJRENTAI = @choice('dic/Auxverb/ADJRENTAI.txt')
+AFTERADJGOKAN = @choice('dic/Auxverb/ADJGOKAN.txt')
+
+AFTERADJVMIZEN = @choice('dic/Auxverb/ADJVMIZEN.txt')
+AFTERADJVRENYO = @choice('dic/Auxverb/ADJVRENYO.txt')
+AFTERADJVSYUSHI = @choice('dic/Auxverb/ADJVSYUSHI.txt')
+AFTERADJVRENTAI = @choice('dic/Auxverb/ADJVRENTAI.txt')
+AFTERADJVGOKAN = @choice('dic/Auxverb/ADJVGOKAN.txt')
+
+AFTERV1MIZEN = @choice('dic/Auxverb/V1MIZEN.txt')
+AFTERV1RENYO = @choice('dic/Auxverb/V1RENYO.txt')
+AFTERV1SYUSHI = @choice('dic/Auxverb/V1SYUSHI.txt')
+AFTERV1RENTAI = @choice('dic/Auxverb/V1RENTAI.txt')
+
+AFTERV5MIZEN = @choice('dic/Auxverb/V5MIZEN.txt')
+AFTERV5RENYO = @choice('dic/Auxverb/V5RENYO.txt')
+AFTERV5SYUSHI = @choice('dic/Auxverb/V5SYUSHI.txt')
+AFTERV5RENTAI = @choice('dic/Auxverb/V5RENTAI.txt')
+
+AFTERVKAMIZEN = @choice('dic/Auxverb/VKAMIZEN.txt')
+AFTERVKARENYO = @choice('dic/Auxverb/VKARENYO.txt')
+AFTERVKASYUSHI = @choice('dic/Auxverb/VKASYUSHI.txt')
+AFTERVKARENTAI = @choice('dic/Auxverb/VKARENTAI.txt')
+
+AFTERVSAMIZEN = @choice('dic/Auxverb/VSAMIZEN.txt')
+AFTERVSARENYO = @choice('dic/Auxverb/VSARENYO.txt')
+AFTERVSASYUSHI = @choice('dic/Auxverb/VSASYUSHI.txt')
+AFTERVSARENTAI = @choice('dic/Auxverb/VSARENTAI.txt')
+
+AFTERADNM = @choice('dic/Auxverb/ADNM.txt')
+AFTERNOUN = @choice('dic/Auxverb/NOUN.txt')
+AFTERPOSTPNO = @choice('dic/Auxverb/POSTPNO.txt')
+AFTERPOSTP = @choice('dic/Auxverb/POSTP.txt')
 
 
 /* 助詞、手入力 */
@@ -320,21 +447,4 @@ Adverb = {
 ADV = @choice('dic/ADV.txt')
 
 
-/* 名詞 */
-Noun = {
-    NOUN
-    #Noun
-}
-
-/*
-漢字カタカナアルファベット数字
-混合した場合も可（例：アップル社
-括弧で括ったものも名詞
-*/
-NOUN =
-    / (KANJI/KATA/ALPHA/NUM)+
-    / B_START (!B_END .)* B_END
-
-B_START = [\[\{\(\"\'<（「『”’［｛【〔“]
-B_END   = [\]\}\)\"\'>）」』”’］｝】〕“]
 

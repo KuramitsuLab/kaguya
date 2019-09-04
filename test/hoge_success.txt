@@ -1,5 +1,47 @@
+要求は認められないので代案を用意せよ
+[#Sentence [#Chunk [#Noun '要求'] [#Postp 'は']] [#Chunk [#VerbPhrase [#LookAHead [#MizenRenyo '認め'] [#AuxVerbs 'られない']] [#AuxVerbs 'られない']]] [#Chunk [#Postp 'ので']] [#Chunk [#Noun '代案'] [#Postp 'を']] [#Chunk [#VerbPhrase [#LookAHead [#Meirei '用意せよ']]]]]
+
+僕は転びそうだったが持ちこたえた
+[#Sentence [#Chunk [#Noun '僕'] [#Postp 'は']] [#Chunk [#VerbPhrase [#LookAHead [#Renyo '転び'] [#AuxVerbs 'そうだった']] [#AuxVerbs 'そうだった']]] [#Chunk [#Postp 'が']] [#Chunk [#VerbPhrase [#LookAHead [#Renyo '持ち'] [#LookAHead [#MizenRenyo 'こたえ'] [#AuxVerbs 'た']]] [#VerbPhrase [#LookAHead [#MizenRenyo 'こたえ'] [#AuxVerbs 'た']] [#AuxVerbs 'た']]]]]
+
+紅茶を入れますわ
+[#Sentence [#Chunk [#Noun '紅茶'] [#Postp 'を']] [#Chunk [#VerbPhrase [#LookAHead [#MizenRenyo '入れ'] [#AuxVerbs 'ます']] [#AuxVerbs 'ます']]] [#Chunk [#Postp 'わ']]]
+
+駐車場に車を止める
+[#Sentence [#Chunk [#Noun '駐車場'] [#Postp 'に']] [#Chunk [#Noun '車'] [#Postp 'を']] [#Chunk [#VerbPhrase [#LookAHead [#SyushiRentai '止める']]]]]
+
+駐車場に車が止まる
+[#Sentence [#Chunk [#Noun '駐車場'] [#Postp 'に']] [#Chunk [#Noun '車'] [#Postp 'が']] [#Chunk [#VerbPhrase [#LookAHead [#SyushiRentai '止まる']]]]]
+
+駐車場に車が止まらない
+[#Sentence [#Chunk [#Noun '駐車場'] [#Postp 'に']] [#Chunk [#Noun '車'] [#Postp 'が']] [#Chunk [#VerbPhrase [#LookAHead [#Mizen '止まら'] [#AuxVerbs 'ない']] [#AuxVerbs 'ない']]]]
+
+雨が止む
+[#Sentence [#Chunk [#Noun '雨'] [#Postp 'が']] [#Chunk [#VerbPhrase [#LookAHead [#SyushiRentai '止む']]]]]
+
+酒は飲んでも飲まれるな
+[#Sentence [#Chunk [#Noun '酒'] [#Postp 'は']] [#Chunk [#VerbPhrase [#LookAHead [#Renyo '飲ん'] [#AuxVerbs 'で']] [#AuxVerbs 'で']]] [#Chunk [#Postp 'も']] [#Chunk [#VerbPhrase [#LookAHead [#Mizen '飲ま'] [#AuxVerbs 'れる']] [#AuxVerbs 'れる']]] [#Chunk [#Postp 'な']]]
+
+スマホを充電してあげる
+[#Sentence [#Chunk [#Noun 'スマホ'] [#Postp 'を']] [#Chunk [#VerbPhrase [#LookAHead [#MizenRenyo '充電し']]]] [#Chunk [#Postp 'て']] [#Chunk [#VerbPhrase [#LookAHead [#SyushiRentai 'あげる']]]]]
+
+変数を定義して数値を代入する
+[#Sentence [#Chunk [#Noun '変数'] [#Postp 'を']] [#Chunk [#VerbPhrase [#LookAHead [#MizenRenyo '定義し']]]] [#Chunk [#Postp 'て']] [#Chunk [#Noun '数値'] [#Postp 'を']] [#Chunk [#VerbPhrase [#LookAHead [#SyushiRentai '代入する']]]]]
+
+会いたくて震える
+[#Sentence [#Chunk [#VerbPhrase [#LookAHead [#Renyo '会い'] [#AuxVerbs 'たく']] [#AuxVerbs 'たく']]] [#Chunk [#Postp 'て']] [#Chunk [#VerbPhrase [#LookAHead [#SyushiRentai '震える']]]]]
+
+期限を過ぎなければ提出を認めるだろう
+[#Sentence [#Chunk [#Noun '期限'] [#Postp 'を']] [#Chunk [#VerbPhrase [#LookAHead [#MizenRenyo '過ぎ'] [#AuxVerbs 'なけれ']] [#AuxVerbs 'なけれ']]] [#Chunk [#Postp 'ば']] [#Chunk [#Noun '提出'] [#Postp 'を']] [#Chunk [#VerbPhrase [#LookAHead [#SyushiRentai '認める'] [#AuxVerbs 'だろう']] [#AuxVerbs 'だろう']]]]
+
+階段を駆け上がったので息が切れた
+[#Sentence [#Chunk [#Noun '階段'] [#Postp 'を']] [#Chunk [#VerbPhrase [#LookAHead [#MizenRenyo '駆け'] [#LookAHead [#Renyo '上がっ'] [#AuxVerbs 'た']]] [#VerbPhrase [#LookAHead [#Renyo '上がっ'] [#AuxVerbs 'た']] [#AuxVerbs 'た']]]] [#Chunk [#Postp 'ので']] [#Chunk [#Noun '息'] [#Postp 'が']] [#Chunk [#VerbPhrase [#LookAHead [#MizenRenyo '切れ'] [#AuxVerbs 'た']] [#AuxVerbs 'た']]]]
+
+雨が降ったらしいけれど家に居たので何も知らなかった
+[#Sentence [#Chunk [#Noun '雨'] [#Postp 'が']] [#Chunk [#VerbPhrase [#LookAHead [#Renyo '降っ'] [#AuxVerbs 'たらしい']] [#AuxVerbs 'たらしい']]] [#Chunk [#Postp 'けれど']] [#Chunk [#Noun '家'] [#Postp 'に']] [#Chunk [#VerbPhrase [#LookAHead [#MizenRenyo '居'] [#AuxVerbs 'た']] [#AuxVerbs 'た']]] [#Chunk [#Postp 'ので']] [#Chunk [#Noun '何'] [#Postp 'も']] [#Chunk [#VerbPhrase [#LookAHead [#Mizen '知ら'] [#AuxVerbs 'なかった']] [#AuxVerbs 'なかった']]]]
+
+変数に数値を代入し計算を実行し結果をコンソールに出力する
+[#Sentence [#Chunk [#Noun '変数'] [#Postp 'に']] [#Chunk [#Noun '数値'] [#Postp 'を']] [#Chunk [#Noun '代入'] [#Postp 'し']] [#Chunk [#Noun '計算'] [#Postp 'を']] [#Chunk [#Noun '実行'] [#Postp 'し']] [#Chunk [#Noun '結果'] [#Postp 'を']] [#Chunk [#Noun 'コンソール'] [#Postp 'に']] [#Chunk [#VerbPhrase [#LookAHead [#SyushiRentai '出力する']]]]]
+
 変数に数値を代入し、計算を実行し、結果をコンソールに出力する。
 [#Sentence [#Chunk [#Noun '変数'] [#Postp 'に']] [#Chunk [#Noun '数値'] [#Postp 'を']] [#Chunk [#VerbPhrase [#LookAHead [#MizenRenyo '代入し']]]] [#Chunk [#Noun '計算'] [#Postp 'を']] [#Chunk [#VerbPhrase [#LookAHead [#MizenRenyo '実行し']]]] [#Chunk [#Noun '結果'] [#Postp 'を']] [#Chunk [#Noun 'コンソール'] [#Postp 'に']] [#Chunk [#VerbPhrase [#LookAHead [#SyushiRentai '出力する']]]]]
-
-期限を過ぎなければ提出を認めるだろう。
-[#Sentence [#Chunk [#Noun '期限'] [#Postp 'を']] [#Chunk [#VerbPhrase [#LookAHead [#MizenRenyo '過ぎ'] [#AuxVerbs 'なけれ']] [#AuxVerbs 'なけれ']]] [#Chunk [#Postp 'ば']] [#Chunk [#Noun '提出'] [#Postp 'を']] [#Chunk [#VerbPhrase [#LookAHead [#SyushiRentai '認める'] [#AuxVerbs 'だろう']] [#AuxVerbs 'だろう']]]]

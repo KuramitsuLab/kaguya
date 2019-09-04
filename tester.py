@@ -2,7 +2,7 @@ import sys
 import re
 from pegpy.main import *
 
-GRAMMAR = './kaguya0.tpeg'
+GRAMMAR = 'kaguya0.tpeg'
 
 def txt2array(path):
     s = ''
@@ -40,22 +40,5 @@ def test(argv):
     print(fail_rate)
 
 
-
-
-def rule_test(argv):
-    options = parse_options(['-g', GRAMMAR])
-    options['start'] = argv[1]
-    peg = load_grammar(options)
-    parser = generator(options)(peg, **options)
-    try:
-        while True:
-            s = input('>>> ')
-            print(repr(parser(s)))
-    except Exception as e:
-        print(e)
-
-
 if __name__ == "__main__":
-    # python tester.py test/hoge.txt
     test(sys.argv)
-    # rule_test(sys.argv)
