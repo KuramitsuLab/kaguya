@@ -5,7 +5,8 @@
 入力をChunkの繰り返しとみる
 */
 Sentence = {
-    (Chunk/TEN)* EOS
+    (Chunk/TEN)* EOS? {.* #Remain}  // デバッグモード
+    // (Chunk/TEN)* EOS? EOF
     #Sentence
 }
 
@@ -17,10 +18,11 @@ Chunk = {
     / VerbPhrase  // 動詞 助動詞?
     / NounPhrase  // 名詞 助動詞?
     / {[こそあど] 'の' AFTERADNM #AdnominalPhrase}  // 助動詞がつきうる連体詞
+    / Conjunction  // 接続詞
     / Adnominal  // 連体詞
     / {[の] AFTERPOSTPNO #PostpPhrase}
     / Adverb  // 副詞
-    / {Postp AFTERPOSTP #PostpPhrase}
+    / {POSTP AFTERPOSTP #PostpPhrase}
     / Postp
     #Chunk
 }
@@ -43,7 +45,7 @@ example Sentence 変数に数値を代入し計算を実行し結果をコンソ
 example Sentence 変数に数値を代入し、計算を実行し、結果をコンソールに出力する。
 
 EOF = !.
-EOS = [。．.\n] / EOF
+EOS = [。．.\n]
 EOL = [。．.\n] / TEN / [:：] / EOF
 TEN = [、，,\n]
 KANJI = [㐀-䶵一-龠々〇〻ーご]
@@ -51,7 +53,7 @@ KATA = [ァ-ヶー・]
 ALPHA = [a-zA-Zａ-ｚＡ-Ｚ]
 NUM = [0-9０-９一二三四五六七八九十百千万億兆京垓秭穰溝澗正載極]
     /'恒河沙'/'阿僧祇'/'那由他'/'不可思議'/'無量大数'
-SYMBOL = [-~〜ー.,]
+SYMBOL = [-~〜ー.,_＿]
 
 
 /*
@@ -64,7 +66,7 @@ SYMBOL = [-~〜ー.,]
 */
 VerbPhrase = {
       Verb AuxVerbForVerb VerbPhrase
-    / {Verb AuxVerbForVerb &Chunk #LookAHead}
+    / {Verb AuxVerbForVerb &(Chunk/TEN/EOS) #LookAHead}
     / Verb VerbPhrase
     / Verb
     #VerbPhrase
@@ -89,7 +91,7 @@ example VerbPhrase 止まらない
 */
 AdjectivePhrase = {
       (Adjective/AdjectiveVerb) AuxVerbForAdj AdjectivePhrase
-    / {(Adjective/AdjectiveVerb) AuxVerbForAdj &Chunk #LookAHead}
+    / {(Adjective/AdjectiveVerb) AuxVerbForAdj &(Chunk/TEN/EOS) #LookAHead}
     / (Adjective/AdjectiveVerb) AdjectivePhrase
     / (Adjective/AdjectiveVerb)
     #AdjectivePhrase
@@ -365,23 +367,33 @@ SUBNAI = 'な' ('かろ' / 'かっ' / 'く' / 'い' / 'けれ')
 括弧で括ったものも名詞
 */
 Noun = {
-      NOUN
-    / 'ため'
+      'ため'
     / 'こと'
     / ([こそど]/'あそ') 'こ'
     / [こそあど] 'れ'
     / NUM [つこ個] [め目]?
     / ('ひと'/'ふた'/'みっ'/'よっ'/'いつ'/'むっ'/'なな'/'やっ'/'ここの') 'つ' [め目]?
+    / NOUN
     #Noun
 }
 
 NOUN =
-    / (KANJI/KATA/ALPHA/NUM)+
-    / B_START (!B_END .)* B_END
-
-B_START = [\[\{\(\"\'<（「『”’［｛【〔“]
-B_END   = [\]\}\)\"\'>）」』”’］｝】〕“]
-
+    / (KANJI/KATA/ALPHA/NUM/SYMBOL)+
+    / '\[' (!'\]' .)* '\]'
+    / '\{' (!'\}' .)* '\}'
+    / '\(' (!'\)' .)* '\)'
+    / '\"' (!'\"' .)* '\"'
+    / '\'' (!'\'' .)* '\''
+    / '\<' (!'\>' .)* '\>'
+    / '\（' (!'\）' .)* '\）'
+    / '\「' (!'\」' .)* '\」'
+    / '\『' (!'\』' .)* '\』'
+    / '\“' (!'\”' .)* '\”'
+    / '\‘' (!'\’' .)* '\’'
+    / '\【' (!'\】' .)* '\】'
+    / '\［' (!'\］' .)* '\］'
+    / '\｛' (!'\｝' .)* '\｝'
+    / '\〔' (!'\〕' .)* '\〕'
 
 
 /* 助動詞、gen_auxverb.pyで生成 */
@@ -455,4 +467,9 @@ Adverb = {
 ADV = @choice('dic/ADV.txt')
 
 
-
+/* 接続詞、辞書から生成 */
+Conjunction = {
+    CONJ
+    #Conjunction
+}
+CONJ = @choice('dic/CONJ.txt')

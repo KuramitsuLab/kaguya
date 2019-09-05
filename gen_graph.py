@@ -39,13 +39,17 @@ def parse(tree_str):
                 d[str(n.nid)] = { 'label': n.name, 'parent': tree.nid }
                 make_dict(n, d)
 
-    ast = AST(tree_str, 0)
-    tree = getNode(ast, 0)
+    try:
+        ast = AST(tree_str, 0)
+        tree = getNode(ast, 0)
+        d = {}
+        d[str(tree.nid)] = {'label': tree.name, 'parent': ''}
+        make_dict(tree, d)
+        return d
+    except Exception as e:
+        print(e)
+        return {'ERROR': {'label': 'ERROR', 'parent': ''}}
 
-    d = {}
-    d[str(tree.nid)] = { 'label': tree.name, 'parent': '' }
-    make_dict(tree, d)
-    return d
 
 
 def getNode(ast, nid):
@@ -56,12 +60,13 @@ def getNode(ast, nid):
         node = getInner(ast, f'{nid}')
         skip_space(ast)
         require(ast, ']')
-        if tag == '#LookAHead' and len(node) >= 2:
-            return Tree(tag, nid, node[:-1])
-        else:
-            return Tree(tag, nid, node)
+        return Tree(tag, nid, node)
+        # if tag == '#LookAHead' and len(node) >= 2:
+        #     return Tree(tag, nid, node[:-1])
+        # else:
+        #     return Tree(tag, nid, node)
     except Exception as e:
-        print(e)
+        raise e
 
 
 def getInner(ast, nid):
@@ -80,17 +85,20 @@ def getInner(ast, nid):
         else:
             raise Exception(f'<PARSE ERROR> {ast.s[ast.pos]} don\'t start with "\'" or "["')
     except Exception as e:
-        print(e)
+        raise e
 
 
 def getLeaf(ast, nid):
-    require(ast, '\'')
-    lname = ''
-    while not ast.s[ast.pos] == '\'':
-        lname += escape(ast.s[ast.pos]);
-        ast.pos += 1;
-    require(ast, '\'')
-    return Leaf(lname, nid)
+    try:
+        require(ast, '\'')
+        lname = ''
+        while not ast.s[ast.pos:].startswith('\']'):
+            lname += escape(ast.s[ast.pos]);
+            ast.pos += 1;
+        require(ast, '\'')
+        return Leaf(lname, nid)
+    except Exception as e:
+        raise e
 
 
 def escape(s):
@@ -162,15 +170,16 @@ def gen_dot(base_str, d):
         def_edge += '' if parent == '' else f'    n_{parent} -> n_{k};\n'
     with open(GEN_DOT_PATH, mode='w', encoding='utf_8') as f:
         f.write(template(base_str, def_node, def_edge))
+    return False if 'ERROR' in d.keys() else True
 
 
 # (base text, AST) -> dict -> dot file -> png
 def gen_png(tpl, png_folder, png_name):
-    gen_dot(tpl[0], parse(tpl[1]))
-    Path(f'graph/{png_folder}').mkdir(parent=True, exist_ok=True)
+    err = gen_dot(tpl[0], parse(tpl[1]))
+    Path(f'graph/{png_folder}').mkdir(parents=True, exist_ok=True)
     cmd = ['dot', '-Tpng', GEN_DOT_PATH, '-o', f'graph/{png_folder}/{png_name}.png']
     res = subprocess.call(cmd)
-    if res != 0:
+    if res != 0 or not err:
         Path(GEN_DOT_PATH).rename(f'.err_{png_name}.dot')
 
 
