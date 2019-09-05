@@ -39,7 +39,7 @@ def write_result(fpath, results, count=0):
                 s += text + '\n'
                 s += tree + '\n'
                 s += '\n'
-            f.write(s)
+            f.write(s[:-1])
     except FileExistsError:
         fpath = fpath[:(fpath.rfind('.'))] + f'_{count}.txt'
         write_result(fpath, results, count+1)
@@ -57,8 +57,8 @@ def test(argv):
     str_list = txt2array(argv[1])
     FILE_NAME = argv[1][(argv[1].rfind('/'))+1 : (argv[1].rfind('.'))]
     MAX_COUNT = int(argv[2]) if len(argv) > 2 else len(str_list)
-    if not Path('test/result').exists():
-        Path('test/result').mkdir()
+    Path('test/result/success').mkdir(parents=True, exist_ok=True)
+    Path('test/result/fail').mkdir(parents=True, exist_ok=True)
 
     START = time.time()
     for count,s in enumerate(str_list):
@@ -74,10 +74,9 @@ def test(argv):
 
     print()
     FAIL_RATE = (len(results['fail']), MAX_COUNT)
-    write_result(f'test/result/{FILE_NAME}_success.txt', results['success'])
-    write_result(f'test/result/{FILE_NAME}_fail.txt', results['fail'])
+    write_result(f'test/result/success/{FILE_NAME}.txt', results['success'])
+    write_result(f'test/result/fail/{FILE_NAME}.txt', results['fail'])
     logging(argv[1], MAX_COUNT, STOP-START, FAIL_RATE)
-
 
 
 if __name__ == "__main__":
