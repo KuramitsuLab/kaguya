@@ -45,6 +45,12 @@ def write_result(fpath, results, count=0):
         write_result(fpath, results, count+1)
 
 
+def print_err(lst):
+    for fst, snd in lst:
+        print('入力: ' + fst)
+        print(snd + '\n')
+
+
 def test(argv):
     options = parse_options(['-g', GRAMMAR])
     peg = load_grammar(options)
@@ -66,7 +72,7 @@ def test(argv):
         sys.stdout.write(f'\rNow Processing: {count+1}/{MAX_COUNT}')
         tree = parser(s)
         if 'Syntax Error' in repr(tree):
-            results['fail'].append((s, f'Remain: [{str(tree)}]'))
+            results['fail'].append((s, f'残り: [{str(tree)}]'))
         else:
             results['success'].append((s, repr(tree)))
         sys.stdout.flush()
@@ -78,6 +84,7 @@ def test(argv):
     write_result(f'test/result/fail/{FILE_NAME}.txt', results['fail'])
     logging(argv[1], MAX_COUNT, STOP-START, FAIL_RATE)
     print(f'Fail Rate: {FAIL_RATE[0]}/{FAIL_RATE[1]}')
+    print_err(results['fail'])
 
 
 if __name__ == "__main__":
