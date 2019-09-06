@@ -33,7 +33,8 @@ def logging(fn, aopl, pt, fr):
 
 def write_result(fpath, results, count=0):
     try:
-        with open(fpath, mode='x', encoding='utf_8') as f:
+        new_fpath = fpath[:(fpath.rfind('.txt'))] + f'_{count}.txt'
+        with open(new_fpath, mode='x', encoding='utf_8') as f:
             s = ''
             for text, tree in results:
                 s += text + '\n'
@@ -41,7 +42,6 @@ def write_result(fpath, results, count=0):
                 s += '\n'
             f.write(s[:-1])
     except FileExistsError:
-        fpath = fpath[:(fpath.rfind('.'))] + f'_{count}.txt'
         write_result(fpath, results, count+1)
 
 
