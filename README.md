@@ -27,6 +27,6 @@ KAGUYA関連のレポジトリ
 ## `gen_graph.py`
 + ASTからツリー図を作成するプログラム
 + "Graphviz" の`dot`コマンドを使える必要がある
-  + macなら`brew install graphviz`でインストールできる
+  + Homebrewが入っていれば`brew install graphviz`でインストールできる
 + `python gen_graph.py test/result/success/<ファイル名>.txt`で実行する
 + `graph/<ファイル名>/<番号>.png`として図を保存する

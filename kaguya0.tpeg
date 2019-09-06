@@ -11,7 +11,7 @@ Sentence = {
 }
 
 /*
-形容詞や形容動詞、動詞や連体詞などのひとかたまりごとにマッチする規則
+形容詞や形容動詞や動詞や連体詞などのひとかたまりごとにマッチする規則
 */
 Chunk = {
       AdjectivePhrase  // 形容詞or形容動詞 助動詞?
@@ -22,8 +22,9 @@ Chunk = {
     / Adnominal  // 連体詞
     / {[の] AFTERPOSTPNO #PostpPhrase}
     / Adverb  // 副詞
-    / {POSTP AFTERPOSTP #PostpPhrase}
-    / Postp
+    / {POSTP AFTERPOSTP #PostpPhrase}  //助詞 助動詞
+    / Postp  // 助詞
+    / {TEN}
     #Chunk
 }
 
@@ -66,7 +67,7 @@ SYMBOL = [-~〜ー.,_＿]
 */
 VerbPhrase = {
       Verb AuxVerbForVerb VerbPhrase
-    / {Verb AuxVerbForVerb &(Chunk/{TEN}/{EOS}) #LookAHead}
+    / {Verb AuxVerbForVerb &(Chunk/TEN/EOS) #LookAHead}
     / Verb VerbPhrase
     / Verb
     #VerbPhrase
@@ -91,7 +92,7 @@ example VerbPhrase 止まらない
 */
 AdjectivePhrase = {
       (Adjective/AdjectiveVerb) AuxVerbForAdj AdjectivePhrase
-    / {(Adjective/AdjectiveVerb) AuxVerbForAdj &(Chunk/{TEN}/{EOS}) #LookAHead}
+    / {(Adjective/AdjectiveVerb) AuxVerbForAdj &(Chunk/TEN/EOS) #LookAHead}
     / (Adjective/AdjectiveVerb) AdjectivePhrase
     / (Adjective/AdjectiveVerb)
     #AdjectivePhrase

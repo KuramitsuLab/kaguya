@@ -77,6 +77,7 @@ def test(argv):
     write_result(f'test/result/success/{FILE_NAME}.txt', results['success'])
     write_result(f'test/result/fail/{FILE_NAME}.txt', results['fail'])
     logging(argv[1], MAX_COUNT, STOP-START, FAIL_RATE)
+    print(f'+ Fail Rate: {FAIL_RATE[0]}/{FAIL_RATE[1]}')
 
 
 if __name__ == "__main__":

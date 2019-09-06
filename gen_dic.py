@@ -104,19 +104,21 @@ def hiragana_check(dic_list, genre):
     for key in dic_list:
         for e in dic_list[key]:
             if re.compile('[あ-ん]+').fullmatch(str(e)) and genre in e.genre:
-                hira_only.append(e)
+                if not str(e) in hira_only:
+                    hira_only.append(e)
             elif re.search(r'[あ-ん]', str(e)) and genre in e.genre:
-                hira_mix.append(e)
+                if not str(e) in hira_mix:
+                    hira_mix.append(e)
     hira_only.sort(key=len_of_word)
     hira_mix.sort(key=len_of_word)
-    with open(f'hira_only_of_{genre}.txt', mode='w') as f:
+    with open(f'local/hira_only_of_{genre}.txt', mode='w') as f:
         for p in hira_only:
-            f.write(repr(p)+'\n')
-    with open(f'hira_mix_of_{genre}.txt', mode='w') as f:
+            f.write(str(p)+'\n')
+    with open(f'local/hira_mix_of_{genre}.txt', mode='w') as f:
         for p in hira_mix:
-            f.write(repr(p)+'\n')
-    print(f'ひらがなのみの{genre}の数：{len(hira_only)}')
-    print(f'ひらがな混在の{genre}の数：{len(hira_mix)}')
+            f.write(str(p)+'\n')
+    # print(f'ひらがなのみの{genre}の数：{len(hira_only)}')
+    # print(f'ひらがな混在の{genre}の数：{len(hira_mix)}')
 
 
 def gen_verb(dic_list):
@@ -142,48 +144,36 @@ def gen_verb(dic_list):
 
     for k in d:
         with open(f'./grammar/dic/verbs/{k}.txt', mode='w') as f:
-            s = ''
             for p in d[k]:
                 if not (str(p) in ['行く', '来る', 'くる', 'する'] or len(str(p)) < 2 or re.match('[あ-ん]{2}$', str(p))):
                     if k in ['SAHEN_SURU', 'SAHEN_ZURU', 'KAHEN']:
-                        s += str(p)[:-2]+'\n'
+                        f.write(str(p)[:-2]+'\n')
                     else:
-                        s += str(p)[:-1]+'\n'
-            f.write(s)
+                        f.write(str(p)[:-1]+'\n')
 
 
 def generate(dic_list):
     gen_verb(dic_list)
     with open(f'grammar/dic/ADJ.txt', mode='w') as f:
-        s = ''
         for p in dic_list['Adj.dic']:
-            s += str(p)[:-1] + '\n'
+            f.write(str(p)[:-1] + '\n')
         for p in dic_list['Noun.nai.dic']:
-            s += str(p)+'な\n'
-        f.write(s)
+            f.write(str(p)+'な\n')
     with open(f'grammar/dic/ADJV.txt', mode='w') as f:
-        s = ''
         for p in dic_list['Noun.adjv.dic']:
-            s += str(p) + '\n'
-        f.write(s)
+            f.write(str(p) + '\n')
     with open(f'grammar/dic/ADNM.txt', mode='w') as f:
-        s = ''
         for p in dic_list['Adnominal.dic']:
-            s += str(p) + '\n'
-        f.write(s)
+            f.write(str(p) + '\n')
     with open(f'grammar/dic/CONJ.txt', mode='w') as f:
-        s = ''
         for p in dic_list['Conjunction.dic']:
-            s += str(p) + '\n'
-        f.write(s)
+            f.write(str(p) + '\n')
     with open(f'grammar/dic/ADV.txt', mode='w') as f:
-        s = ''
         for p in dic_list['Adverb.dic']:
-            s += str(p) + '\n'
-        f.write(s)
+            f.write(str(p) + '\n')
 
 
 load_dic(dic_list)
-generate(dic_list)
-
+# generate(dic_list)
+hiragana_check(dic_list, '名詞')
 
