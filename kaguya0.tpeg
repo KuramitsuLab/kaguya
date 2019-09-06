@@ -66,7 +66,7 @@ SYMBOL = [-~〜ー.,_＿]
 */
 VerbPhrase = {
       Verb AuxVerbForVerb VerbPhrase
-    / {Verb AuxVerbForVerb &(Chunk/TEN/EOS) #LookAHead}
+    / {Verb AuxVerbForVerb &(Chunk/{TEN}/{EOS}) #LookAHead}
     / Verb VerbPhrase
     / Verb
     #VerbPhrase
@@ -91,7 +91,7 @@ example VerbPhrase 止まらない
 */
 AdjectivePhrase = {
       (Adjective/AdjectiveVerb) AuxVerbForAdj AdjectivePhrase
-    / {(Adjective/AdjectiveVerb) AuxVerbForAdj &(Chunk/TEN/EOS) #LookAHead}
+    / {(Adjective/AdjectiveVerb) AuxVerbForAdj &(Chunk/{TEN}/{EOS}) #LookAHead}
     / (Adjective/AdjectiveVerb) AdjectivePhrase
     / (Adjective/AdjectiveVerb)
     #AdjectivePhrase
