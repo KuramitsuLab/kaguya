@@ -5,28 +5,26 @@
 入力をChunkの繰り返しとみる
 */
 Sentence = {
-    (Chunk/TEN)* EOS? {.* #Remain}  // デバッグモード
-    // (Chunk/TEN)* EOS? EOF
+    // Chunk* EOS? {.* #Remain}  // デバッグモード
+    Chunk* EOS? EOF
     #Sentence
 }
 
 /*
 形容詞や形容動詞や動詞や連体詞などのひとかたまりごとにマッチする規則
 */
-Chunk = {
-      AdjectivePhrase  // 形容詞or形容動詞 助動詞?
-    / VerbPhrase  // 動詞 助動詞?
-    / NounPhrase  // 名詞 助動詞?
-    / {[こそあど] 'の' AFTERADNM #AdnominalPhrase}  // 助動詞がつきうる連体詞
+Chunk =
+    / AdjectivePhrase  // 形容詞っぽいものor形容動詞っぽいもの
+    / VerbPhrase  // 動詞っぽいもの
+    / NounPhrase  // 名詞っぽいもの
+    / {[こそあど] 'の' AFTERADNM #AdnominalPhrase}  // 連体詞っぽいもの
     / Conjunction  // 接続詞
     / Adnominal  // 連体詞
-    / {[の] AFTERPOSTPNO #PostpPhrase}
+    / {[の] AFTERPOSTPNO #PostpPhrase}  // 助詞の「の」っぽいもの
     / Adverb  // 副詞
-    / {POSTP AFTERPOSTP #PostpPhrase}  //助詞 助動詞
+    / {POSTP AFTERPOSTP #PostpPhrase}  //助詞っぽいもの
     / Postp  // 助詞
-    / {TEN}
-    #Chunk
-}
+    / {TEN #Ten}
 
 example Sentence 要求は認められないので代案を用意せよ
 example Sentence 僕は転びそうだったが持ちこたえた
