@@ -174,13 +174,25 @@ def gen_dot(base_str, d):
 
 
 # (base text, AST) -> dict -> dot file -> png
-def gen_png(tpl, png_folder, png_name):
+def gen_png(tpl, dir_name, png_name):
     err = gen_dot(tpl[0], parse(tpl[1]))
-    Path(f'graph/{png_folder}').mkdir(parents=True, exist_ok=True)
-    cmd = ['dot', '-Tpng', GEN_DOT_PATH, '-o', f'graph/{png_folder}/{png_name}.png']
+    cmd = ['dot', '-Tpng', GEN_DOT_PATH, '-o', f'{dir_name}/{png_name}.png']
     res = subprocess.call(cmd)
     if res != 0 or not err:
         Path(GEN_DOT_PATH).rename(f'.err_{png_name}.dot')
+
+
+def make_dir(dn):
+    try:
+        Path(dn).mkdir(parents=True, exist_ok=False)
+    except FileExistsError:
+        print(f'"{dn}": This directory already exist, can I overwrite it?')
+        choice = input('(y/n) ')
+        if choice in 'yY':
+            shutil.rmtree(dn)
+            make_dir(dn)
+        else:
+            sys.exit()
 
 
 # success file -> (base text, AST) list -> all png
@@ -193,10 +205,11 @@ def main(path):
     with open(path, mode='r', encoding='utf_8') as f:
         blocks = f.read().split('\n\n')
         MAX_COUNT = len(blocks)
+        make_dir(f'graph/{fname}')
         for count, pair in enumerate(blocks):
             sys.stdout.write(f'\rNow Processing: {count+1}/{MAX_COUNT}')
             (bt, ast, *_) = pair.split('\n')
-            gen_png((escape(bt), ast), fname, str(count))
+            gen_png((escape(bt), ast), f'graph/{fname}', str(count))
             sys.stdout.flush()
     print()
     Path(GEN_DOT_PATH).unlink()

@@ -14,8 +14,8 @@ def txt2array(path):
     with open(path, mode='r', encoding='utf_8') as f:
         s = f.read()
     s = re.sub(r'[ ]', '', s)
-    s = re.sub(r'[。]', '。\n', s)
-    return list(filter(lambda x: not x == '', s.split('\n')))
+    # s = re.sub(r'[。]', '。\n', s)
+    return list(filter(lambda x: not x == '', s.split('\n')))[1:]
 
 
 def logging(fn, aopl, pt, fr):
@@ -32,17 +32,13 @@ def logging(fn, aopl, pt, fr):
 
 
 def write_result(fpath, results, count=0):
-    try:
-        new_fpath = fpath[:(fpath.rfind('.txt'))] + f'_{count}.txt'
-        with open(new_fpath, mode='x', encoding='utf_8') as f:
-            s = ''
-            for text, tree in results:
-                s += text + '\n'
-                s += tree + '\n'
-                s += '\n'
-            f.write(s[:-1])
-    except FileExistsError:
-        write_result(fpath, results, count+1)
+    with open(fpath, mode='w', encoding='utf_8') as f:
+        s = ''
+        for text, tree in results:
+            s += text + '\n'
+            s += tree + '\n'
+            s += '\n'
+        f.write(s[:-1])
 
 
 def print_err(lst):
@@ -66,7 +62,7 @@ def test(argv):
     Path('test/result/success').mkdir(parents=True, exist_ok=True)
     Path('test/result/fail').mkdir(parents=True, exist_ok=True)
 
-    START = time.time()
+    # START = time.time()
     for count,s in enumerate(str_list):
         if count >= MAX_COUNT:break
         sys.stdout.write(f'\rNow Processing: {count+1}/{MAX_COUNT}')
@@ -76,15 +72,16 @@ def test(argv):
         else:
             results['success'].append((s, repr(tree)))
         sys.stdout.flush()
-    STOP = time.time()
+    # STOP = time.time()
 
     print()
     FAIL_RATE = (len(results['fail']), MAX_COUNT)
+    # PARSE_TIME = STOP-START
     write_result(f'test/result/success/{FILE_NAME}.txt', results['success'])
     write_result(f'test/result/fail/{FILE_NAME}.txt', results['fail'])
-    logging(argv[1], MAX_COUNT, STOP-START, FAIL_RATE)
-    print(f'Fail Rate: {FAIL_RATE[0]}/{FAIL_RATE[1]}')
+    # logging(argv[1], MAX_COUNT, STOP-START, FAIL_RATE)
     print_err(results['fail'])
+    print(f'Fail Rate: {FAIL_RATE[0]}/{FAIL_RATE[1]}')
 
 
 if __name__ == "__main__":
