@@ -143,9 +143,10 @@ def gen_verb(dic_list):
         d[path_name].append(p)
 
     for k in d:
-        with open(f'./grammar/dic/verbs/{k}.txt', mode='w') as f:
+        with open(f'dic/Verb/{k}.txt', mode='w') as f:
             for p in d[k]:
-                if not (str(p) in ['行く', '来る', 'くる', 'する'] or len(str(p)) < 2 or re.match('[あ-ん]{2}$', str(p))):
+                # if not (str(p) in ['行く', '来る', 'くる', 'する'] or len(str(p)) < 2 or re.match('[あ-ん]{2}$', str(p))):
+                if not (str(p) in ['行く', '来る', 'くる', 'する'] or len(str(p)) < 2):
                     if k in ['SAHEN_SURU', 'SAHEN_ZURU', 'KAHEN']:
                         f.write(str(p)[:-2]+'\n')
                     else:
@@ -154,26 +155,56 @@ def gen_verb(dic_list):
 
 def generate(dic_list):
     gen_verb(dic_list)
-    with open(f'grammar/dic/ADJ.txt', mode='w') as f:
+    with open(f'dic/ADJ.txt', mode='w') as f:
         for p in dic_list['Adj.dic']:
             f.write(str(p)[:-1] + '\n')
         for p in dic_list['Noun.nai.dic']:
             f.write(str(p)+'な\n')
-    with open(f'grammar/dic/ADJV.txt', mode='w') as f:
+    with open(f'dic/ADJV.txt', mode='w') as f:
         for p in dic_list['Noun.adjv.dic']:
             f.write(str(p) + '\n')
-    with open(f'grammar/dic/ADNM.txt', mode='w') as f:
+    with open(f'dic/ADNM.txt', mode='w') as f:
         for p in dic_list['Adnominal.dic']:
             f.write(str(p) + '\n')
-    with open(f'grammar/dic/CONJ.txt', mode='w') as f:
+    with open(f'dic/POSTP.txt', mode='w') as f:
+        for p in dic_list['Postp.dic']:
+            f.write(str(p) + '\n')
+        for p in dic_list['Postp-col.dic']:
+            f.write(str(p) + '\n')
+    with open(f'dic/CONJ.txt', mode='w') as f:
         for p in dic_list['Conjunction.dic']:
             f.write(str(p) + '\n')
-    with open(f'grammar/dic/ADV.txt', mode='w') as f:
+    with open(f'dic/ADV.txt', mode='w') as f:
         for p in dic_list['Adverb.dic']:
+            f.write(str(p) + '\n')
+    with open(f'dic/NOUN.txt', mode='w') as f:
+        for p in dic_list['Noun.adjv.dic']:
+            f.write(str(p) + '\n')
+        for p in dic_list['Noun.adverbal.dic']:
+            f.write(str(p) + '\n')
+        for p in dic_list['Noun.demonst.dic']:
+            f.write(str(p) + '\n')
+        for p in dic_list['Noun.dic']:
+            f.write(str(p) + '\n')
+        for p in dic_list['Noun.nai.dic']:
+            f.write(str(p) + '\n')
+        for p in dic_list['Noun.name.dic']:
+            f.write(str(p) + '\n')
+        for p in dic_list['Noun.number.dic']:
+            f.write(str(p) + '\n')
+        for p in dic_list['Noun.org.dic']:
+            f.write(str(p) + '\n')
+        for p in dic_list['Noun.others.dic']:
+            f.write(str(p) + '\n')
+        for p in dic_list['Noun.place.dic']:
+            f.write(str(p) + '\n')
+        for p in dic_list['Noun.proper.dic']:
+            f.write(str(p) + '\n')
+        for p in dic_list['Noun.verbal.dic']:
             f.write(str(p) + '\n')
 
 
 load_dic(dic_list)
-# generate(dic_list)
-hiragana_check(dic_list, '名詞')
+generate(dic_list)
+# hiragana_check(dic_list, '動詞')
 
