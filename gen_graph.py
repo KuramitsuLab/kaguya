@@ -57,30 +57,29 @@ def getNode(ast, nid):
         require(ast, '[')
         tag = getTag(ast)
         skip_space(ast)
-        node = getInner(ast, f'{nid}')
+        if '#LookAHead' in tag:
+            node = getInner(ast, f'{nid}', int(tag.split('_')[1]))
+        else:
+            node = getInner(ast, f'{nid}')
         skip_space(ast)
         require(ast, ']')
         return Tree(tag, nid, node)
-        # if tag == '#LookAHead' and len(node) >= 2:
-        #     return Tree(tag, nid, node[:-1])
-        # else:
-        #     return Tree(tag, nid, node)
     except Exception as e:
         raise e
 
 
-def getInner(ast, nid):
+def getInner(ast, nid, max_len=100):
     try:
         if ast.s[ast.pos:].startswith('\''):
             return [getLeaf(ast, f'{nid}_0')]
         elif ast.s[ast.pos:].startswith('['):
-            count = 0;
-            node = [];
-            while ast.s[ast.pos] != ']':
-                inner = getNode(ast, f'{nid}_{count}')
+            node = []
+            while ast.s[ast.pos] != ']' and len(node) < max_len:
+                inner = getNode(ast, f'{nid}_{len(node)}')
                 node.append(inner)
-                count += 1
                 skip_space(ast)
+            if not max_len == 100:
+                skip_node(ast)
             return node
         else:
             raise Exception(f'<PARSE ERROR> {ast.s[ast.pos]} don\'t start with "\'" or "["')
@@ -99,6 +98,20 @@ def getLeaf(ast, nid):
         return Leaf(lname, nid)
     except Exception as e:
         raise e
+
+
+def skip_node(ast):
+    count = 1
+    require(ast, '[')
+    while count > 0:
+        if ast.s[ast.pos] == ']':
+            count -= 1
+        elif ast.s[ast.pos] == '[':
+            count += 1
+        # elif ast.s[ast.pos] == '\'':
+        #     getLeaf(ast, 'temp')
+        ast.pos += 1
+    ast.pos
 
 
 def escape(s):
