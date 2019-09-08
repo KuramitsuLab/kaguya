@@ -5,8 +5,8 @@
 入力をChunkの繰り返しとみる
 */
 Sentence = {
-    // Chunk* [。．.\n]? {.* #Remain}  // デバッグモード
-    (Chunk/TEN)* EOS
+    // (TEN/[:：_＿]/Chunk)* [。．.\n]? {.* #Remain}  // デバッグモード
+    (TEN/Chunk)* EOS
     #Sentence
 }
 
@@ -15,14 +15,14 @@ Sentence = {
 チョイスの順番はテストして最適な順番を見つけるしかない
 */
 Chunk =
-    / AdjectivePhrase  // 形容詞節or形容動詞節
-    / VerbPhrase  // 動詞節
-    / NounPhrase  // 名詞節
-    / {[こそあど] 'の' AFTERADNM #AdnominalPhrase}  // 連体詞節
-    / {Conjunction &(Chunk/TEN) #LookAHead}  // 接続詞
-    / Adnominal  // 連体詞
-    / PostpPhrase  // 助詞節
-    / Adverb  // 副詞
+    / AdjectivePhrase  // 形容詞句or形容動詞句
+    / VerbPhrase  // 動詞句
+    / NounPhrase  // 名詞句
+    / {[こそあど] 'の' AFTERADNM #AdnominalPhrase} PostpPhrase?  // 連体詞句
+    / {Conjunction &(Chunk/PostpPhrase/TEN) #LookAHead_1} PostpPhrase?  // 接続詞
+    / Adnominal PostpPhrase?  // 連体詞
+    // / PostpPhrase  // 助詞句
+    / Adverb PostpPhrase?  // 副詞
 
 
 example Sentence 要求は認められないので代案を用意せよ
@@ -44,28 +44,33 @@ example Sentence 変数に数値を代入し、計算を実行し、結果をコ
 
 EOF = !.
 EOS = [。．.\n]? EOF
-TEN = [、，,\n]
+TEN = [、，,:：\n]
+Eol = { (TEN/EOS) #Eol }
 KANJI = [㐀-䶵一-龠々〇〻ーご]
-KATA = [ァ-ヶー・]
-ALPHA = [a-zA-Zａ-ｚＡ-Ｚ]
-NUM = [\.,0-9０-９一二三四五六七八九十百千万億兆京垓秭穰溝澗正載極]
-    /'恒河沙'/'阿僧祇'/'那由他'/'不可思議'/'無量大数'
-SYMBOL = [^＾~〜\-ー_＿!！?？#＃$＄&＆=＝@＠*＊+＋/・]
+KATA = [ァ-ヶー・]+
+ALPHA = [a-zA-Zａ-ｚＡ-Ｚ]+
+NUM = [\-ー\.,．，0-9０-９一二三四五六七八九十百千万億兆]
+SYMBOL =
+    / [^＾~〜\-ー_＿!！?？#＃$＄&＆=＝@＠*＊+＋/・]
+    / [\[\]\(\)\<\>\{\}\'\"\`「」（）＜＞『』［］【】”“｀”“’‘｛｝〔〕]
 
 
 /*
-動詞節
+動詞句
 スモールケースから順に
 1. 動詞の活用した形のみの場合：話す、話し
 2. 動詞の活用した形+助動詞の場合：話した、話される
-3. 動詞の活用した形+動詞節の場合：話し始める
-4. 動詞の活用した形+助動詞+動詞節の場合：話され始める
+3. 動詞の活用した形+動詞句の場合：話し始める
+4. 動詞の活用した形+助動詞+動詞句の場合：話され始める
 */
 VerbPhrase = {
-      Verb AuxVerbForVerb VerbPhrase
-    / {Verb AuxVerbForVerb &(Chunk/TEN/EOS) #LookAHead}
-    / Verb VerbPhrase
-    / {Verb &(Chunk/TEN/EOS) #LookAHead}
+    (
+          Verb AuxVerbForVerb VerbPhrase
+        / {Verb AuxVerbForVerb &(Chunk/PostpPhrase/Eol) #LookAHead_2}
+        / Verb VerbPhrase
+        / {Verb &(Chunk/PostpPhrase/Eol) #LookAHead_1}
+    )
+    PostpPhrase?
     #VerbPhrase
 }
 
@@ -87,10 +92,13 @@ example VerbPhrase 止まらない
 組み方は動詞と一緒
 */
 AdjectivePhrase = {
-      (Adjective/AdjectiveVerb) AuxVerbForAdj AdjectivePhrase
-    / {(Adjective/AdjectiveVerb) AuxVerbForAdj &(Chunk/TEN/EOS) #LookAHead}
-    / (Adjective/AdjectiveVerb) AdjectivePhrase
-    / {(Adjective/AdjectiveVerb) &(Chunk/TEN/EOS) #LookAHead}
+    (
+          (Adjective/AdjectiveVerb) AuxVerbForAdj AdjectivePhrase
+        / {(Adjective/AdjectiveVerb) AuxVerbForAdj &(Chunk/PostpPhrase/Eol) #LookAHead_2}
+        / (Adjective/AdjectiveVerb) AdjectivePhrase
+        / {(Adjective/AdjectiveVerb) &(Chunk/PostpPhrase/Eol) #LookAHead_1}
+    )
+    PostpPhrase?
     #AdjectivePhrase
 }
 AuxVerbForAdj = {
@@ -124,8 +132,13 @@ example AdjectivePhrase なめらかなやわらかい布
 体言にも助動詞が付属語としてつきうる
 */
 NounPhrase = {
-      {Noun AuxVerbForNoun &(Chunk/TEN/EOS) #LookAHead}
-    / {Noun &(Chunk/TEN/EOS) #LookAHead}
+    (
+          Noun AuxVerbForNoun NounPhrase
+        / {Noun AuxVerbForNoun &(Chunk/PostpPhrase/Eol) #LookAHead_2}
+        / Noun NounPhrase
+        / {Noun &(Chunk/PostpPhrase/Eol) #LookAHead_1}
+    )
+    PostpPhrase?
     #NounPhrase
 }
 AuxVerbForNoun = {
@@ -133,14 +146,26 @@ AuxVerbForNoun = {
     #AuxVerbForNoun
 }
 
-
+/*
+助詞句
+助詞の「の」だけに続く助動詞があるため別扱いしている
+助詞に続く助動詞「な」はその後が限定的なので別扱いしている
+*/
 PostpPhrase = {
-      {{'の' #PostpNo} {AFTERPOSTPNO #AuxVerbForPostpNo} &(Chunk/TEN/EOS) #LookAHead}  // 助詞の「の」節
-    / {Postp {AFTERPOSTP #AuxVerbForPostp} &(Chunk/TEN/EOS) #LookAHead}  //助詞節
-    / Postp {'な' #AuxVerbForPostp} &('ので'/'のに'/'の')
-    / {Postp &(Chunk/TEN/EOS) #LookAHead}  // 助詞
+      PostpNo AfterPostpNo PostpPhrase
+    / Postp AfterPostp PostpPhrase
+    / Postp AuxVerbNa {'の' #PostpPhrase} PostpPhrase
+    / {PostpNo AfterPostpNo &(Chunk/PostpPhrase/Eol) #LookAHead_2}
+    / {Postp AfterPostp &(Chunk/PostpPhrase/Eol) #LookAHead_2}
+    / Postp PostpPhrase
+    / {Postp &(Chunk/PostpPhrase/Eol) #LookAHead_1}
     #PostpPhrase
 }
+
+PostpNo = { 'の' #PostpNo }
+AfterPostpNo = { AFTERPOSTPNO #AuxVerbForPostpNo }
+AfterPostp = { AFTERPOSTP #AuxVerbForPostp }
+AuxVerbNa = { 'な' #AuxVerbForPostp }
 
 
 /*
@@ -171,92 +196,109 @@ example Verb 止める
 以下、他の活用も同様
 */
 Mizen = {
-      {VERB5KA [かこ] #Mizen} &AFTERV5MIZEN
-    / {VERB5SA [さそ] #Mizen} &AFTERV5MIZEN
-    / {VERB5TA [たと] #Mizen} &AFTERV5MIZEN
-    / {VERB5NA [なの] #Mizen} &AFTERV5MIZEN
-    / {VERB5MA [まも] #Mizen} &AFTERV5MIZEN
-    / {VERB5RA [らろ] #Mizen} &AFTERV5MIZEN
-    / {VERB5WA [わお] #Mizen} &AFTERV5MIZEN
-    / {VERB5GA [がご] #Mizen} &AFTERV5MIZEN
-    / {VERB5BA [ばぼ] #Mizen} &AFTERV5MIZEN
-    / {VERB5KASOKU [かこ] #Mizen} &AFTERV5MIZEN
-    / {VERB1 #Mizen} &AFTERV1MIZEN
-    / {SAHEN_SURU [さ] #Mizen} &AFTERVSAMIZEN
-    / {SAHEN_ZURU [ざ] #Mizen} &AFTERVSAMIZEN
-    / {(KANJI/KATA)* [さ] #Mizen} &AFTERVSAMIZEN
-    / {KAHEN? [来] #Mizen} &AFTERVKAMIZEN
-    / {SAHEN_SURU [し] #Mizen} &AFTERVSAMIZEN
-    / {SAHEN_ZURU [じ] #Mizen} &AFTERVSAMIZEN
-    / {(KANJI/KATA)* [し] #Mizen} &AFTERVSAMIZEN
-    / {KAHEN? [こ] #Mizen} &AFTERVKAMIZEN  // 命令形の活用語尾「こい」と競合するかも
-    / {SAHEN_SURU [せ] #Mizen} &AFTERVSAMIZEN  // 命令形の活用語尾「せよ」と競合するかも
-    / {SAHEN_ZURU [ぜ] #Mizen} &AFTERVSAMIZEN  // 命令形の活用語尾「ぜよ」と競合するかも
-    / {(KANJI/KATA)* [せ] #Mizen} &AFTERVSAMIZEN  // 命令形の活用語尾「せよ」と競合するかも
-    #LookAHead
+      {VERB5KA [かこ] #Mizen} &{AFTERV5MIZEN}
+    / {VERB5SA [さそ] #Mizen} &{AFTERV5MIZEN}
+    / {VERB5TA [たと] #Mizen} &{AFTERV5MIZEN}
+    / {VERB5NA [なの] #Mizen} &{AFTERV5MIZEN}
+    / {VERB5MA [まも] #Mizen} &{AFTERV5MIZEN}
+    / {VERB5RA [らろ] #Mizen} &{AFTERV5MIZEN}
+    / {VERB5WA [わお] #Mizen} &{AFTERV5MIZEN}
+    / {VERB5GA [がご] #Mizen} &{AFTERV5MIZEN}
+    / {VERB5BA [ばぼ] #Mizen} &{AFTERV5MIZEN}
+    / {VERB5KASOKU [かこ] #Mizen} &{AFTERV5MIZEN}
+    / {VERB1 #Mizen} &{AFTERV1MIZEN}
+    / {SAHEN_SURU [さ] #Mizen} &{AFTERVSAMIZEN}
+    / {SAHEN_ZURU [ざ] #Mizen} &{AFTERVSAMIZEN}
+    / {(KANJI/KATA)* [さ] #Mizen} &{AFTERVSAMIZEN}
+    / {KAHEN? [来] #Mizen} &{AFTERVKAMIZEN}
+    / {SAHEN_SURU [し] #Mizen} &{AFTERVSAMIZEN}
+    / {SAHEN_ZURU [じ] #Mizen} &{AFTERVSAMIZEN}
+    / {(KANJI/KATA)* [し] #Mizen} &{AFTERVSAMIZEN}
+    / {KAHEN? [こ] #Mizen} &{AFTERVKAMIZEN}  // 命令形の活用語尾「こい」と競合するかも
+    / {SAHEN_SURU [せ] #Mizen} &{AFTERVSAMIZEN}  // 命令形の活用語尾「せよ」と競合するかも
+    / {SAHEN_ZURU [ぜ] #Mizen} &{AFTERVSAMIZEN}  // 命令形の活用語尾「ぜよ」と競合するかも
+    / {(KANJI/KATA)* [せ] #Mizen} &{AFTERVSAMIZEN}  // 命令形の活用語尾「せよ」と競合するかも
+    #LookAHead_1
 }
 
 Renyo = {
-      {VERB5KA [きい] #Renyo} &(AFTERV5RENYO/[てで]/Verb/TEN/Postp)
-    / {VERB5SA [し] #Renyo} &(AFTERV5RENYO/[てで]/Verb/TEN/Postp)
-    / {VERB5TA [ちっ] #Renyo} &(AFTERV5RENYO/[てで]/Verb/TEN/Postp)
-    / {VERB5NA [にん] #Renyo} &(AFTERV5RENYO/[てで]/Verb/TEN/Postp)
-    / {VERB5MA [みん] #Renyo} &(AFTERV5RENYO/[てで]/Verb/TEN/Postp)
-    / {VERB5RA [りっ] #Renyo} &(AFTERV5RENYO/[てで]/Verb/TEN/Postp)
-    / {VERB5WA [いっ] #Renyo} &(AFTERV5RENYO/[てで]/Verb/TEN/Postp)
-    / {VERB5GA [ぎい] #Renyo} &(AFTERV5RENYO/[てで]/Verb/TEN/Postp)
-    / {VERB5BA [びん] #Renyo} &(AFTERV5RENYO/[てで]/Verb/TEN/Postp)
-    / {VERB5KASOKU [きっ] #Renyo} &(AFTERV5RENYO/[てで]/Verb/TEN/Postp)
-    / {VERB1 #Renyo} &(AFTERV1RENYO/[てで]/Verb/TEN/Postp)
-    / {KAHEN? [き] #Renyo} &(AFTERVKARENYO/[てで]/Verb/TEN/Postp)
-    / {KAHEN? [来] #Renyo} &(AFTERVKARENYO/[てで]/Verb/TEN/Postp)
-    / {SAHEN_SURU [し] #Renyo} &(AFTERVSARENYO/[てで]/Verb/TEN/Postp)
-    / {SAHEN_ZURU [じ] #Renyo} &(AFTERVSARENYO/[てで]/Verb/TEN/Postp)
-    / {(KANJI/KATA)* [し] #Renyo} &(AFTERVSARENYO/[てで]/Verb/TEN/Postp)
-    #LookAHead
+      {VERB5KA [きい] #Renyo} &({AFTERV5RENYO}/AfterRenyo)
+    / {VERB5SA [し] #Renyo} &({AFTERV5RENYO}/AfterRenyo)
+    / {VERB5TA [ちっ] #Renyo} &({AFTERV5RENYO}/AfterRenyo)
+    / {VERB5NA [にん] #Renyo} &({AFTERV5RENYO}/AfterRenyo)
+    / {VERB5MA [みん] #Renyo} &({AFTERV5RENYO}/AfterRenyo)
+    / {VERB5RA [りっ] #Renyo} &({AFTERV5RENYO}/AfterRenyo)
+    / {VERB5WA [いっ] #Renyo} &({AFTERV5RENYO}/AfterRenyo)
+    / {VERB5GA [ぎい] #Renyo} &({AFTERV5RENYO}/AfterRenyo)
+    / {VERB5BA [びん] #Renyo} &({AFTERV5RENYO}/AfterRenyo)
+    / {VERB5KASOKU [きっ] #Renyo} &({AFTERV5RENYO}/AfterRenyo)
+    / {VERB1 #Renyo} &({AFTERV1RENYO}/AfterRenyo)
+    / {KAHEN? [き] #Renyo} &({AFTERVKARENYO}/AfterRenyo)
+    / {KAHEN? [来] #Renyo} &({AFTERVKARENYO}/AfterRenyo)
+    / {SAHEN_SURU [し] #Renyo} &({AFTERVSARENYO}/AfterRenyo)
+    / {SAHEN_ZURU [じ] #Renyo} &({AFTERVSARENYO}/AfterRenyo)
+    / {(KANJI/KATA)* [し] #Renyo} &({AFTERVSARENYO}/AfterRenyo)
+    #LookAHead_1
+}
+AfterRenyo = {
+      [てで]
+    / VerbPhrase
+    / TEN
+    / PostpPhrase
+    #AfterRenyo
 }
 
 Syushi = {
-      {VERB5KA [く] #Syushi} &(AFTERV5SYUSHI/POSTP/TEN/EOS)
-    / {VERB5SA [す] #Syushi} &(AFTERV5SYUSHI/POSTP/TEN/EOS)
-    / {VERB5TA [つ] #Syushi} &(AFTERV5SYUSHI/POSTP/TEN/EOS)
-    / {VERB5NA [ぬ] #Syushi} &(AFTERV5SYUSHI/POSTP/TEN/EOS)
-    / {VERB5MA [む] #Syushi} &(AFTERV5SYUSHI/POSTP/TEN/EOS)
-    / {VERB5RA [る] #Syushi} &(AFTERV5SYUSHI/POSTP/TEN/EOS)
-    / {VERB5WA [う] #Syushi} &(AFTERV5SYUSHI/POSTP/TEN/EOS)
-    / {VERB5GA [ぐ] #Syushi} &(AFTERV5SYUSHI/POSTP/TEN/EOS)
-    / {VERB5BA [ぶ] #Syushi} &(AFTERV5SYUSHI/POSTP/TEN/EOS)
-    / {VERB5KASOKU [く] #Syushi} &(AFTERV5SYUSHI/POSTP/TEN/EOS)
-    / {VERB1 [る] #Syushi} &(AFTERV1SYUSHI/POSTP/TEN/EOS)
-    / {KAHEN? ('くる' / '来る') #Syushi} &(AFTERVKASYUSHI/POSTP/TEN/EOS)
-    / {SAHEN_SURU 'する' #Syushi} &(AFTERVSASYUSHI/POSTP/TEN/EOS)
-    / {SAHEN_ZURU 'ずる' #Syushi} &(AFTERVSASYUSHI/POSTP/TEN/EOS)
-    / {(KANJI/KATA)* 'する' #Syushi} &(AFTERVSASYUSHI/POSTP/TEN/EOS)
-    #LookAHead
+      {VERB5KA [く] #Syushi} &({AFTERV5SYUSHI}/AfterSyushi)
+    / {VERB5SA [す] #Syushi} &({AFTERV5SYUSHI}/AfterSyushi)
+    / {VERB5TA [つ] #Syushi} &({AFTERV5SYUSHI}/AfterSyushi)
+    / {VERB5NA [ぬ] #Syushi} &({AFTERV5SYUSHI}/AfterSyushi)
+    / {VERB5MA [む] #Syushi} &({AFTERV5SYUSHI}/AfterSyushi)
+    / {VERB5RA [る] #Syushi} &({AFTERV5SYUSHI}/AfterSyushi)
+    / {VERB5WA [う] #Syushi} &({AFTERV5SYUSHI}/AfterSyushi)
+    / {VERB5GA [ぐ] #Syushi} &({AFTERV5SYUSHI}/AfterSyushi)
+    / {VERB5BA [ぶ] #Syushi} &({AFTERV5SYUSHI}/AfterSyushi)
+    / {VERB5KASOKU [く] #Syushi} &({AFTERV5SYUSHI}/AfterSyushi)
+    / {VERB1 [る] #Syushi} &({AFTERV1SYUSHI}/AfterSyushi)
+    / {KAHEN? ('くる' / '来る') #Syushi} &({AFTERVKASYUSHI}/AfterSyushi)
+    / {SAHEN_SURU 'する' #Syushi} &({AFTERVSASYUSHI}/AfterSyushi)
+    / {SAHEN_ZURU 'ずる' #Syushi} &({AFTERVSASYUSHI}/AfterSyushi)
+    / {(KANJI/KATA)* 'する' #Syushi} &({AFTERVSASYUSHI}/AfterSyushi)
+    #LookAHead_1
+}
+AfterSyushi = {
+      PostpPhrase
+    / Eol
+    #AfterSyushi
 }
 
 Rentai = {
-      {VERB5KA [く] #Rentai} &(AFTERV5RENTAI/Noun/POSTP)
-    / {VERB5SA [す] #Rentai} &(AFTERV5RENTAI/Noun/POSTP)
-    / {VERB5TA [つ] #Rentai} &(AFTERV5RENTAI/Noun/POSTP)
-    / {VERB5NA [ぬ] #Rentai} &(AFTERV5RENTAI/Noun/POSTP)
-    / {VERB5MA [む] #Rentai} &(AFTERV5RENTAI/Noun/POSTP)
-    / {VERB5RA [る] #Rentai} &(AFTERV5RENTAI/Noun/POSTP)
-    / {VERB5WA [う] #Rentai} &(AFTERV5RENTAI/Noun/POSTP)
-    / {VERB5GA [ぐ] #Rentai} &(AFTERV5RENTAI/Noun/POSTP)
-    / {VERB5BA [ぶ] #Rentai} &(AFTERV5RENTAI/Noun/POSTP)
-    / {VERB5KASOKU [く] #Rentai} &(AFTERV5RENTAI/Noun/POSTP)
-    / {VERB1 [る] #Rentai} &(AFTERV1RENTAI/Noun/POSTP)
-    / {KAHEN? ('くる' / '来る') #Rentai} &(AFTERVKARENTAI/Noun/POSTP)
-    / {SAHEN_SURU 'する' #Rentai} &(AFTERVSARENTAI/Noun/POSTP)
-    / {SAHEN_ZURU 'ずる' #Rentai} &(AFTERVSARENTAI/Noun/POSTP)
-    / {(KANJI/KATA)* 'する' #Rentai} &(AFTERVSARENTAI/Noun/POSTP)
-    #LookAHead
+      {VERB5KA [く] #Rentai} &({AFTERV5RENTAI}/AfterRentai)
+    / {VERB5SA [す] #Rentai} &({AFTERV5RENTAI}/AfterRentai)
+    / {VERB5TA [つ] #Rentai} &({AFTERV5RENTAI}/AfterRentai)
+    / {VERB5NA [ぬ] #Rentai} &({AFTERV5RENTAI}/AfterRentai)
+    / {VERB5MA [む] #Rentai} &({AFTERV5RENTAI}/AfterRentai)
+    / {VERB5RA [る] #Rentai} &({AFTERV5RENTAI}/AfterRentai)
+    / {VERB5WA [う] #Rentai} &({AFTERV5RENTAI}/AfterRentai)
+    / {VERB5GA [ぐ] #Rentai} &({AFTERV5RENTAI}/AfterRentai)
+    / {VERB5BA [ぶ] #Rentai} &({AFTERV5RENTAI}/AfterRentai)
+    / {VERB5KASOKU [く] #Rentai} &({AFTERV5RENTAI}/AfterRentai)
+    / {VERB1 [る] #Rentai} &({AFTERV1RENTAI}/AfterRentai)
+    / {KAHEN? ('くる' / '来る') #Rentai} &({AFTERVKARENTAI}/AfterRentai)
+    / {SAHEN_SURU 'する' #Rentai} &({AFTERVSARENTAI}/AfterRentai)
+    / {SAHEN_ZURU 'ずる' #Rentai} &({AFTERVSARENTAI}/AfterRentai)
+    / {(KANJI/KATA)* 'する' #Rentai} &({AFTERVSARENTAI}/AfterRentai)
+    #LookAHead_1
+}
+AfterRentai = {
+      NounPhrase
+    / PostpPhrase
+    #AfterRentai
 }
 
 
-Katei = {
-      {VERB5KA [け] #Katei} &'ば'
+Katei =
+    / {VERB5KA [け] #Katei} &'ば'
     / {VERB5SA [せ] #Katei} &'ば'
     / {VERB5TA [て] #Katei} &'ば'
     / {VERB5NA [ね] #Katei} &'ば'
@@ -271,46 +313,45 @@ Katei = {
     / {SAHEN_SURU 'すれ' #Katei} &'ば'
     / {SAHEN_ZURU 'ずれ' #Katei} &'ば'
     / {(KANJI/KATA)+ 'すれ' #Katei} &'ば'
-    #LookAHead
-}
+
 
 Meirei = {
-      {VERB5KA [け] #Meirei} &(TEN/EOS)
-    / {VERB5SA [せ] #Meirei} &(TEN/EOS)
-    / {VERB5TA [て] #Meirei} &(TEN/EOS)
-    / {VERB5NA [ね] #Meirei} &(TEN/EOS)
-    / {VERB5MA [め] #Meirei} &(TEN/EOS)
-    / {VERB5RA [れ] #Meirei} &(TEN/EOS)
-    / {VERB5WA [え] #Meirei} &(TEN/EOS)
-    / {VERB5GA [げ] #Meirei} &(TEN/EOS)
-    / {VERB5BA [べ] #Meirei} &(TEN/EOS)
-    / {VERB5KASOKU [け] #Meirei} &(TEN/EOS)
-    / {VERB1 [ろよ] #Meirei} &(TEN/EOS)
-    / {KAHEN? ('こい' / '来い') #Meirei} &(TEN/EOS)
-    / {SAHEN_SURU ('しろ' / 'せよ') #Meirei} &(TEN/EOS)
-    / {SAHEN_ZURU ('じろ' / 'ぜよ') #Meirei} &(TEN/EOS)
-    / {(KANJI/KATA)+ ('しろ' / 'せよ') #Meirei} &(TEN/EOS)
-    #LookAHead
+      {VERB5KA [け] #Meirei} &(Eol)
+    / {VERB5SA [せ] #Meirei} &(Eol)
+    / {VERB5TA [て] #Meirei} &(Eol)
+    / {VERB5NA [ね] #Meirei} &(Eol)
+    / {VERB5MA [め] #Meirei} &(Eol)
+    / {VERB5RA [れ] #Meirei} &(Eol)
+    / {VERB5WA [え] #Meirei} &(Eol)
+    / {VERB5GA [げ] #Meirei} &(Eol)
+    / {VERB5BA [べ] #Meirei} &(Eol)
+    / {VERB5KASOKU [け] #Meirei} &(Eol)
+    / {VERB1 [ろよ] #Meirei} &(Eol)
+    / {KAHEN? ('こい' / '来い') #Meirei} &(Eol)
+    / {SAHEN_SURU ('しろ' / 'せよ') #Meirei} &(Eol)
+    / {SAHEN_ZURU ('じろ' / 'ぜよ') #Meirei} &(Eol)
+    / {(KANJI/KATA)+ ('しろ' / 'せよ') #Meirei} &(Eol)
+    #LookAHead_1
 }
 
 Kudasai = {
-      {KUDASAI [らろ] #Mizen} &AFTERV5MIZEN
-    / {KUDASAI [りっ] #Renyo} &(AFTERV5RENYO/[てで]/Verb/TEN)
-    / {KUDASAI 'る' #Syushi} &(AFTERV5SYUSHI/TEN/EOS/POSTP)
-    / {KUDASAI 'る' #Rentai} &(AFTERV5RENTAI/Noun/POSTP)
-    / {KUDASAI 'れ' #Katei} &('ば')
-    / {KUDASAI 'い' #Meirei} &(TEN/EOS)
-    #LookAHead
+      {KUDASAI [らろ] #Mizen} &({AFTERV5MIZEN})
+    / {KUDASAI [りっ] #Renyo} &({AFTERV5RENYO}/{[てで]}/VerbPhrase/{TEN})
+    / {KUDASAI 'る' #Syushi} &({AFTERV5SYUSHI}/Eol/PostpPhrase)
+    / {KUDASAI 'る' #Rentai} &({AFTERV5RENTAI}/NounPhrase/PostpPhrase)
+    / {KUDASAI 'れ' #Katei} &({'ば'})
+    / {KUDASAI 'い' #Meirei} &(Eol)
+    #LookAHead_1
 }
 KUDASAI = 'くださ' / '下さ'
 
 HiraVerb = {
-      {HV [らろ] #Mizen} &AFTERV5MIZEN
-    / {HV [りっ] #Renyo} &(AFTERV5RENYO/[てで]/Verb/TEN)
-    / {HV 'る' #Syushi} &(AFTERV5SYUSHI/POSTP/TEN/EOS)
-    / {HV 'る' #Rentai} &(AFTERV5RENTAI/Noun/POSTP)
-    / {HV 'れ' #KateiMeirei} &('ば'/TEN/EOS)
-    #LookAHead
+      {HV [らろ] #Mizen} &({AFTERV5MIZEN})
+    / {HV [りっ] #Renyo} &({AFTERV5RENYO}/{[てで]}/VerbPhrase/{TEN})
+    / {HV 'る' #Syushi} &({AFTERV5SYUSHI}/PostpPhrase/Eol)
+    / {HV 'る' #Rentai} &({AFTERV5RENTAI}/NounPhrase/PostpPhrase)
+    / {HV 'れ' #KateiMeirei} &({'ば'}/Eol)
+    #LookAHead_1
 }
 HV = [あい]
 
@@ -341,14 +382,14 @@ VERB5KASOKU = '行'
 語幹は辞書の"Adjective.dic"と"Noun.nai.dic"から生成
 */
 Adjective = {
-      {ADJ 'かろ' #ADJMizen} &AFTERADJMIZEN
-    / {ADJ 'かっ' #ADJRenyo} &AFTERADJRENYO
-    / {ADJ 'く' #ADJRenyo} &([ては]/Verb/Adjective/AdjectiveVerb)
-    / {ADJ 'けれ' #ADJKatei} &'ば'
-    / {ADJ 'い' #ADJSyushi} &(AFTERADJSYUSHI/POSTP/TEN/EOS)
-    / {ADJ 'い' #ADJRentai} &(AFTERADJRENTAI/Noun/POSTP)
-    / {ADJ #ADJGokan} &AFTERADJGOKAN
-    #LookAHead
+      {ADJ 'かろ' #ADJMizen} &({AFTERADJMIZEN})
+    / {ADJ 'かっ' #ADJRenyo} &({AFTERADJRENYO})
+    / {ADJ 'く' #ADJRenyo} &({[ては]}/VerbPhrase/AdjectivePhrase)
+    / {ADJ 'けれ' #ADJKatei} &({'ば'})
+    / {ADJ 'い' #ADJSyushi} &({AFTERADJSYUSHI}/PostpPhrase/Eol)
+    / {ADJ 'い' #ADJRentai} &({AFTERADJRENTAI}/NounPhrase/PostpPhrase)
+    / {ADJ #ADJGokan} &({AFTERADJGOKAN})
+    #LookAHead_1
 }
 ADJ = @choice('dic/ADJ.txt') / 'な'
 
@@ -358,15 +399,15 @@ ADJ = @choice('dic/ADJ.txt') / 'な'
 語幹は辞書の"Noun.adjv.dic"から生成
 */
 AdjectiveVerb = {
-      {ADJV 'だろ' #ADJVMizen} &AFTERADJVMIZEN
-    / {ADJV 'だっ' #ADJVRenyo} &AFTERADJVRENYO
-    / {ADJV 'で' #ADJVRenyo} &([はも]/SUBARU/SUBNAI/TEN)
+      {ADJV 'だろ' #ADJVMizen} &({AFTERADJVMIZEN})
+    / {ADJV 'だっ' #ADJVRenyo} &({AFTERADJVRENYO})
+    / {ADJV 'で' #ADJVRenyo} &({[はも]/SUBARU/SUBNAI/TEN})
     / {ADJV 'に' #ADJVRenyo} &(VerbPhrase/AdjectivePhrase)
-    / {ADJV 'だ' #ADJVSyushi} &(AFTERADJVSYUSHI/POSTP/TEN/EOS)
-    / {ADJV 'な' #ADJVRentai} &(AFTERADJVRENTAI/Noun/AdjectivePhrase)
+    / {ADJV 'だ' #ADJVSyushi} &({AFTERADJVSYUSHI}/PostpPhrase/Eol)
+    / {ADJV 'な' #ADJVRentai} &({AFTERADJVRENTAI}/NounPhrase/AdjectivePhrase)
     / {ADJV 'なら' #ADJVKatei} &('ば'?)
-    / {ADJV #ADJVGokan} &AFTERADJVGOKAN
-    #LookAHead
+    / {ADJV #ADJVGokan} &({AFTERADJVGOKAN})
+    #LookAHead_1
 }
 ADJV = @choice('dic/ADJV.txt')
 
@@ -386,6 +427,17 @@ SUBNAI = 'な' ('かろ' / 'かっ' / 'く' / 'い' / 'けれ')
 括弧で括ったものも名詞
 */
 Noun = {
+      BLOCK
+    / {NOUN #NounInDict}
+    / KATA
+    / ALPHA
+    / NUM
+    / SYMBOL
+    / KANJI
+    #Noun
+}
+
+Noun_Old = {
       'ところ'
     / 'ため'
     / 'こと'
@@ -397,12 +449,10 @@ Noun = {
     / NUM [つこ個] [め目]?
     / ('ひと'/'ふた'/'みっ'/'よっ'/'いつ'/'むっ'/'なな'/'やっ'/'ここの') 'つ' [め目]?
     / BLOCK
-    / SELFNOUN
+    / (KANJI/KATA/ALPHA/NUM/SYMBOL)+
     #Noun
 }
 
-SELFNOUN =
-    / (KANJI/KATA/ALPHA/NUM/SYMBOL)+
 
 NOUN = @choice('dic/NOUN.txt')
 
