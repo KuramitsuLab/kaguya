@@ -2,45 +2,29 @@
 
 /*
 トップの規則
-入力をChunkの繰り返しとみる
+句点で終わる一文に対応している
+文をChunkの繰り返しとみる
 */
 Sentence = {
-    // (TEN/[:：_＿]/Chunk)* [。．.\n]? {.* #Remain}  // デバッグモード
+    // (TEN/Chunk)* [。．.\n]? {.* #Remain}  // デバッグモード
     (TEN/Chunk)* EOS
     #Sentence
 }
 
+
 /*
-形容詞や形容動詞や動詞や連体詞などのひとかたまりごとにマッチする規則
+形容詞句や動詞句などのひとかたまりごとにマッチする規則
 チョイスの順番はテストして最適な順番を見つけるしかない
 */
 Chunk =
-    / AdjectivePhrase  // 形容詞句or形容動詞句
+    / ConjunctionPhrase  // 接続詞
+    / AdverbPhrase  // 副詞
+    / AdnominalPhrase  // 連体詞
+    / AdjectivePhrase  // 形容詞句
+    / AdjectiveVerbPhrase  // 形容動詞句
     / VerbPhrase  // 動詞句
     / NounPhrase  // 名詞句
-    / {[こそあど] 'の' AFTERADNM #AdnominalPhrase} PostpPhrase?  // 連体詞句
-    / {Conjunction &(Chunk/PostpPhrase/TEN) #LookAHead_1} PostpPhrase?  // 接続詞
-    / Adnominal PostpPhrase?  // 連体詞
-    // / PostpPhrase  // 助詞句
-    / Adverb PostpPhrase?  // 副詞
 
-
-example Sentence 要求は認められないので代案を用意せよ
-example Sentence 僕は転びそうだったが持ちこたえた
-example Sentence 紅茶を入れますわ
-example Sentence 駐車場に車を止める
-example Sentence 駐車場に車が止まる
-example Sentence 駐車場に車が止まらない
-example Sentence 雨が止む
-example Sentence 酒は飲んでも飲まれるな
-example Sentence スマホを充電してあげる
-example Sentence 変数を定義して数値を代入する
-example Sentence 会いたくて震える
-example Sentence 期限を過ぎなければ提出を認めるだろう
-example Sentence 階段を駆け上がったので息が切れた
-example Sentence 雨が降ったらしいけれど家に居たので何も知らなかった
-example Sentence 変数に数値を代入し計算を実行し結果をコンソールに出力する
-example Sentence 変数に数値を代入し、計算を実行し、結果をコンソールに出力する。
 
 EOF = !.
 EOS = [。．.\n]? EOF
@@ -64,41 +48,27 @@ SYMBOL =
 4. 動詞の活用した形+助動詞+動詞句の場合：話され始める
 */
 VerbPhrase = {
-    (
-          Verb AuxVerbForVerb VerbPhrase
-        / {Verb AuxVerbForVerb &(Chunk/PostpPhrase/Eol) #LookAHead_2}
-        / Verb VerbPhrase
-        / {Verb &(Chunk/PostpPhrase/Eol) #LookAHead_1}
-    )
-    PostpPhrase?
+      Verb AuxVerbForVerb PostpPhrase
+    / {Verb AuxVerbForVerb &(Chunk/Eol) #LookAHead_2}
+    / Verb PostpPhrase
+    / {Verb &(Chunk/Eol) #LookAHead_1}
     #VerbPhrase
 }
-
 AuxVerbForVerb = {
     AFTERVERB
     #AuxVerbForVerb
 }
 
-example VerbPhrase 話したく思う
-example VerbPhrase 攻撃され始めた
-example VerbPhrase 話し終わる
-example VerbPhrase 駆け上がる
-example VerbPhrase 立ち止まる
-example VerbPhrase 止まる
-example VerbPhrase 止まらない
 
 /*
-形容詞または形容動詞
+形容詞
 組み方は動詞と一緒
 */
 AdjectivePhrase = {
-    (
-          (Adjective/AdjectiveVerb) AuxVerbForAdj AdjectivePhrase
-        / {(Adjective/AdjectiveVerb) AuxVerbForAdj &(Chunk/PostpPhrase/Eol) #LookAHead_2}
-        / (Adjective/AdjectiveVerb) AdjectivePhrase
-        / {(Adjective/AdjectiveVerb) &(Chunk/PostpPhrase/Eol) #LookAHead_1}
-    )
-    PostpPhrase?
+      Adjective AuxVerbForAdj PostpPhrase
+    / {Adjective AuxVerbForAdj &(Chunk/Eol) #LookAHead_2}
+    / Adjective PostpPhrase
+    / {Adjective &(Chunk/Eol) #LookAHead_1}
     #AdjectivePhrase
 }
 AuxVerbForAdj = {
@@ -106,39 +76,33 @@ AuxVerbForAdj = {
     #AuxVerbForAdj
 }
 
-example AdjectivePhrase 赤いボール
-example AdjectivePhrase 赤かったボール
-example AdjectivePhrase うるさい人
-example AdjectivePhrase うるさかった人
-example AdjectivePhrase うるさくない人
-example AdjectivePhrase うるさかろう人
-example AdjectivePhrase うるさそうだった人
-example AdjectivePhrase うるさいらしい人
-example AdjectivePhrase うるさいでしょう
-example AdjectivePhrase 赤くないボール
-example AdjectivePhrase 赤くなく青いボール
-example AdjectivePhrase 赤くかっこいい人
-example AdjectivePhrase 健康な人
-example AdjectivePhrase 健康だった人
-example AdjectivePhrase 健康でしょう
-example AdjectivePhrase ぞっこんだ
-example AdjectivePhrase なめいもの
-example AdjectivePhrase なめかったもの
-example AdjectivePhrase なめらかだ
-example AdjectivePhrase なめらかなやわらかい布
 
 /*
-名詞（体言）
-体言にも助動詞が付属語としてつきうる
+形容動詞
+組み方は動詞と一緒
+*/
+AdjectiveVerbPhrase = {
+      AdjectiveVerb AuxVerbForAdjv PostpPhrase
+    / {AdjectiveVerb AuxVerbForAdjv &(Chunk/Eol) #LookAHead_2}
+    / AdjectiveVerb PostpPhrase
+    / {AdjectiveVerb &(Chunk/Eol) #LookAHead_1}
+    #AdjectiveVerbPhrase
+}
+AuxVerbForAdjv = {
+    AFTERADJV
+    #AuxVerbForAdj
+}
+
+
+/*
+名詞句
+名詞にも助動詞が付属語としてつきうる
 */
 NounPhrase = {
-    (
-          Noun AuxVerbForNoun NounPhrase
-        / {Noun AuxVerbForNoun &(Chunk/PostpPhrase/Eol) #LookAHead_2}
-        / Noun NounPhrase
-        / {Noun &(Chunk/PostpPhrase/Eol) #LookAHead_1}
-    )
-    PostpPhrase?
+      Noun AuxVerbForNoun PostpPhrase
+    / {Noun AuxVerbForNoun &(Chunk/Eol) #LookAHead_2}
+    / Noun PostpPhrase
+    / {Noun &(Chunk/Eol) #LookAHead_1} NounPhrase?
     #NounPhrase
 }
 AuxVerbForNoun = {
@@ -146,22 +110,71 @@ AuxVerbForNoun = {
     #AuxVerbForNoun
 }
 
+
+/*
+接続詞句
+接続詞に助詞が続くことがあるか分からないが、とりあえず含めている
+*/
+ConjunctionPhrase = {
+      Conjunction PostpPhrase
+    / {Conjunction &(Chunk/Eol) #LookAHead_1}
+    #ConjunctionPhrase
+}
+
+
+/*
+連体詞句
+「この・その・あの・どの」には助動詞「ようだ」がつきうる
+連体詞には助詞は続かない（はず）
+*/
+AdnominalPhrase = {
+      KoSoADo AuxVerbForAdnm PostpPhrase
+    / {KoSoADo AuxVerbForAdnm &(Chunk/Eol) #LookAHead_2}
+    / {Adnominal &(Chunk/Eol) #LookAHead_1}
+    #AdnominalPhrase
+}
+AuxVerbForAdnm = {
+    AFTERADNM
+    #AuxVerbForAdnm
+}
+KoSoADo = { [こそあど] 'の' #Adnominal }
+
+
+/*
+副詞句
+*/
+AdverbPhrase = {
+      Adverb AuxVerbForAdv PostpPhrase  // すぐ です ので
+    / Adverb AdverbPhrase  // もっと たくさん です
+    / {Adverb PostpNo &(Chunk/Eol) #LookAHead_2}  // しばらく の 間
+    / {Adverb AuxVerbForAdv &(Chunk/Eol) #LookAHead_2}  // すぐ です
+    / {Adverb &(Chunk/Eol) #LookAHead_1} // もっと
+    #AdverbPhrase
+}
+AuxVerbForAdv = {
+    AFTERNOUN
+    #AuxVerbForAdv
+}
+
+
 /*
 助詞句
 助詞の「の」だけに続く助動詞があるため別扱いしている
 助詞に続く助動詞「な」はその後が限定的なので別扱いしている
+チョイスの順番決めが難しい
 */
 PostpPhrase = {
-      PostpNo AfterPostpNo PostpPhrase
+      {Postp AuxVerbNa &({'の'}) #LookAHead_2} PostpPhrase
+    / PostpNo AfterPostpNo PostpPhrase
+    / {PostpNo AfterPostpNo &(Chunk/Eol) #LookAHead_2}
+    / PostpNo PostpPhrase
+    / {PostpNo &(Chunk/Eol) #LookAHead_1}
     / Postp AfterPostp PostpPhrase
-    / Postp AuxVerbNa {'の' #PostpPhrase} PostpPhrase
-    / {PostpNo AfterPostpNo &(Chunk/PostpPhrase/Eol) #LookAHead_2}
-    / {Postp AfterPostp &(Chunk/PostpPhrase/Eol) #LookAHead_2}
+    / {Postp AfterPostp &(Chunk/Eol) #LookAHead_2}
     / Postp PostpPhrase
-    / {Postp &(Chunk/PostpPhrase/Eol) #LookAHead_1}
+    / {Postp &(Chunk/Eol) #LookAHead_1}
     #PostpPhrase
 }
-
 PostpNo = { 'の' #PostpNo }
 AfterPostpNo = { AFTERPOSTPNO #AuxVerbForPostpNo }
 AfterPostp = { AFTERPOSTP #AuxVerbForPostp }
@@ -437,7 +450,9 @@ Noun = {
     #Noun
 }
 
-Noun_Old = {
+/*
+// 辞書を使わない名詞規則
+Noun = {
       'ところ'
     / 'ため'
     / 'こと'
@@ -452,7 +467,7 @@ Noun_Old = {
     / (KANJI/KATA/ALPHA/NUM/SYMBOL)+
     #Noun
 }
-
+*/
 
 NOUN = @choice('dic/NOUN.txt')
 
@@ -513,8 +528,9 @@ AFTERVSARENYO = @choice('dic/Auxverb/VSARENYO.txt')
 AFTERVSASYUSHI = @choice('dic/Auxverb/VSASYUSHI.txt')
 AFTERVSARENTAI = @choice('dic/Auxverb/VSARENTAI.txt')
 
-AFTERVERB = @choice('dic/AUXVERB.txt')
-AFTERADJ = @choice('dic/AUXVERB.txt')
+AFTERVERB = @choice('dic/Auxverb/VERB.txt')
+AFTERADJ = @choice('dic/Auxverb/ADJ.txt')
+AFTERADJV = @choice('dic/Auxverb/ADJV.txt')
 AFTERADNM = @choice('dic/Auxverb/ADNM.txt')
 AFTERNOUN = @choice('dic/Auxverb/NOUN.txt')
 AFTERPOSTPNO = @choice('dic/Auxverb/POSTPNO.txt')
