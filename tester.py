@@ -42,9 +42,13 @@ def write_result(fpath, results, count=0):
 
 
 def print_err(lst):
-    for fst, snd in lst:
-        print('入力: ' + fst)
-        print(snd + '\n')
+    if len(lst) > 0:
+        with open('err_cases.txt', mode='w', encoding='utf_8') as f:
+            for fst, snd in lst:
+                print('入力: ' + fst)
+                print(snd + '\n')
+                f.write(fst + '\n')
+
 
 
 def test(argv):
