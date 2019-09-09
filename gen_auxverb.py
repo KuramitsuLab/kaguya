@@ -412,14 +412,26 @@ for k,v in begins.items():
 # pp.pprint(results)
 
 def generate(all_dic):
+    summury = {
+        'ADJV': [],
+        'ADJ': [],
+        'VERB': []
+    }
     for name in all_dic:
         path = f'dic/Auxverb/{name}.txt'
-        s = ''
-        for l in all_dic[name]:
-            s += l + '\n'
-        print(f'len of [{name}] is {len(s)}')
-        if len(s) > 0:
-            with open(path, mode='w', encoding='utf_8') as f:
-                f.write(s)
+        if len(all_dic[name]) < 1:continue
+        with open(path, mode='w', encoding='utf_8') as f:
+            for l in all_dic[name]:
+                f.write(l + '\n')
+                if name.startswith('ADJV') and not l in summury['ADJV']:
+                    summury['ADJV'].append(l)
+                elif name.startswith('ADJ') and not l in summury['ADJ']:
+                    summury['ADJ'].append(l)
+                elif name.startswith('V') and not l in summury['VERB']:
+                    summury['VERB'].append(l)
+    for k,v in summury.items():
+        with open(f'dic/Auxverb/{k}.txt', mode='w', encoding='utf_8') as f:
+            for p in v:
+                f.write(p + '\n')
 
 generate(results)
