@@ -66,6 +66,10 @@ def test(argv):
     for count,s in enumerate(str_list):
         if count >= MAX_COUNT:break
         sys.stdout.write(f'\rNow Processing: {count+1}/{MAX_COUNT}')
+        if s.startswith('//'):
+            sys.stdout.flush()
+            print(f'Skiped: {s}')
+            continue
         tree = parser(s)
         if 'Syntax Error' in repr(tree):
             results['fail'].append((s, f'残り: [{str(tree)}]'))

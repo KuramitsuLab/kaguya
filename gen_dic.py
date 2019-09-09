@@ -95,7 +95,7 @@ def load_dic(dic_list):
                 dic_list[path].append(w)
 
 
-def hiragana_check(dic_list, genre):
+def gen_hira(dic_list, genre):
     def len_of_word(w):
         return len(str(w))
 
@@ -103,18 +103,18 @@ def hiragana_check(dic_list, genre):
     hira_mix = []
     for key in dic_list:
         for e in dic_list[key]:
-            if re.compile('[あ-ん]+').fullmatch(str(e)) and genre in e.genre:
+            if re.compile('[ぁ-ん]+').fullmatch(str(e)) and genre in e.genre:
                 if not str(e) in hira_only:
                     hira_only.append(e)
-            elif re.search(r'[あ-ん]', str(e)) and genre in e.genre:
+            elif re.search(r'[ぁ-ん]', str(e)) and genre in e.genre:
                 if not str(e) in hira_mix:
                     hira_mix.append(e)
     hira_only.sort(key=len_of_word)
     hira_mix.sort(key=len_of_word)
-    with open(f'local/hira_only_of_{genre}.txt', mode='w') as f:
+    with open(f'dic/NOUN.txt', mode='w') as f:
         for p in hira_only:
-            f.write(str(p)+'\n')
-    with open(f'local/hira_mix_of_{genre}.txt', mode='w') as f:
+            if len(str(p)) >= 2:
+                f.write(str(p)+'\n')
         for p in hira_mix:
             f.write(str(p)+'\n')
     # print(f'ひらがなのみの{genre}の数：{len(hira_only)}')
@@ -155,6 +155,7 @@ def gen_verb(dic_list):
 
 def generate(dic_list):
     gen_verb(dic_list)
+    gen_hira(dic_list, '名詞')
     with open(f'dic/ADJ.txt', mode='w') as f:
         for p in dic_list['Adj.dic']:
             f.write(str(p)[:-1] + '\n')
@@ -177,34 +178,8 @@ def generate(dic_list):
     with open(f'dic/ADV.txt', mode='w') as f:
         for p in dic_list['Adverb.dic']:
             f.write(str(p) + '\n')
-    with open(f'dic/NOUN.txt', mode='w') as f:
-        for p in dic_list['Noun.adjv.dic']:
-            f.write(str(p) + '\n')
-        for p in dic_list['Noun.adverbal.dic']:
-            f.write(str(p) + '\n')
-        for p in dic_list['Noun.demonst.dic']:
-            f.write(str(p) + '\n')
-        for p in dic_list['Noun.dic']:
-            f.write(str(p) + '\n')
-        for p in dic_list['Noun.nai.dic']:
-            f.write(str(p) + '\n')
-        for p in dic_list['Noun.name.dic']:
-            f.write(str(p) + '\n')
-        for p in dic_list['Noun.number.dic']:
-            f.write(str(p) + '\n')
-        for p in dic_list['Noun.org.dic']:
-            f.write(str(p) + '\n')
-        for p in dic_list['Noun.others.dic']:
-            f.write(str(p) + '\n')
-        for p in dic_list['Noun.place.dic']:
-            f.write(str(p) + '\n')
-        for p in dic_list['Noun.proper.dic']:
-            f.write(str(p) + '\n')
-        for p in dic_list['Noun.verbal.dic']:
-            f.write(str(p) + '\n')
 
 
 load_dic(dic_list)
 generate(dic_list)
-# hiragana_check(dic_list, '動詞')
 
