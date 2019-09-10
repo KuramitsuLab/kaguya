@@ -360,7 +360,7 @@ KUDASAI = 'くださ' / '下さ'
 
 HiraVerb = {
       {HV [らろ] #Mizen} &({AFTERV5MIZEN})
-    / {HV [りっ] #Renyo} &({AFTERV5RENYO}/{[てで]}/VerbPhrase/{TEN})
+    / {HV [りっ] #Renyo} &({AFTERV5RENYO}/{[てで]}/Chunk/{TEN})
     / {HV 'る' #Syushi} &({AFTERV5SYUSHI}/PostpPhrase/Eol)
     / {HV 'る' #Rentai} &({AFTERV5RENTAI}/NounPhrase/PostpPhrase)
     / {HV 'れ' #KateiMeirei} &({'ば'}/Eol)
@@ -396,8 +396,8 @@ VERB5KASOKU = '行'
 */
 Adjective = {
       {ADJ 'かろ' #ADJMizen} &({AFTERADJMIZEN})
-    / {ADJ 'かっ' #ADJRenyo} &({AFTERADJRENYO})
-    / {ADJ 'く' #ADJRenyo} &({[ては]}/VerbPhrase/AdjectivePhrase)
+    / {ADJ 'かっ' #ADJRenyo} &({AFTERADJRENYO}/{'たり'})
+    / {ADJ 'く' #ADJRenyo} &({[ては]}/Chunk)
     / {ADJ 'けれ' #ADJKatei} &({'ば'})
     / {ADJ 'い' #ADJSyushi} &({AFTERADJSYUSHI}/PostpPhrase/Eol)
     / {ADJ 'い' #ADJRentai} &({AFTERADJRENTAI}/NounPhrase/PostpPhrase)
@@ -415,9 +415,9 @@ AdjectiveVerb = {
       {ADJV 'だろ' #ADJVMizen} &({AFTERADJVMIZEN})
     / {ADJV 'だっ' #ADJVRenyo} &({AFTERADJVRENYO})
     / {ADJV 'で' #ADJVRenyo} &({[はも]/SUBARU/SUBNAI/TEN})
-    / {ADJV 'に' #ADJVRenyo} &(VerbPhrase/AdjectivePhrase)
+    / {ADJV 'に' #ADJVRenyo} &(Chunk)
     / {ADJV 'だ' #ADJVSyushi} &({AFTERADJVSYUSHI}/PostpPhrase/Eol)
-    / {ADJV 'な' #ADJVRentai} &({AFTERADJVRENTAI}/NounPhrase/AdjectivePhrase)
+    / {ADJV 'な' #ADJVRentai} &({AFTERADJVRENTAI}/NounPhrase)
     / {ADJV 'なら' #ADJVKatei} &('ば'?)
     / {ADJV #ADJVGokan} &({AFTERADJVGOKAN})
     #LookAHead_1
@@ -444,6 +444,8 @@ Noun = {
     / {NOUN #NounInDict}
     / KATA
     / ALPHA
+    / NUM [つこ個] [め目]?
+    / ('ひと'/'ふた'/'みっ'/'よっ'/'いつ'/'むっ'/'なな'/'やっ'/'ここの') 'つ' [め目]?
     / NUM
     / SYMBOL
     / KANJI
