@@ -6,11 +6,6 @@ KAGUYA関連のレポジトリ
 + KAGUYA文法本体
 
 
-## `gen_auxverb.py`
-+ 助動詞フレーズの生成プログラム
-+ `dic/Auxverb`下に生成する
-
-
 ## `gen_dic.py`
 + IPA辞書全般を扱うプログラム
 + `dic/`下に各品詞を、`dic/Verb`下に動詞のチョイス用辞書を生成する

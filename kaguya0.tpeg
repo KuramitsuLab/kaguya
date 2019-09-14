@@ -27,13 +27,13 @@ Chunk =
 
 
 EOF = !.
-EOS = [。．.\n]? EOF
+EOS = [!！?？。．.\n]? EOF
 TEN = [、，,:：\n]
 Eol = { (TEN/EOS) #Eol }
-KANJI = [㐀-䶵一-龠々〇〻ーご]
+// KANJI = [㐀-䶵一-龠々〇〻ーご]
 KATA = [ァ-ヶー・]+
 ALPHA = [a-zA-Zａ-ｚＡ-Ｚ]+
-NUM = [\-ー\.,．，0-9０-９一二三四五六七八九十百千万億兆]
+NUM = [\-ー\.,．，0-9０-９一二三四五六七八九十百千万億兆]+
 SYMBOL =
     / [^＾~〜\-ー_＿!！?？#＃$＄&＆=＝@＠*＊+＋/・]
     / [\[\]\(\)\<\>\{\}\'\"\`「」（）＜＞『』［］【】”“｀”“’‘｛｝〔〕]
@@ -54,8 +54,28 @@ VerbPhrase = {
     / Verb !!(Chunk/Eol)
     #VerbPhrase
 }
+// Verbの各活用形に対して接続しないものも試しているので失敗するかも
 AuxVerbForVerb = {
-    AFTERVERB
+      Aux_Seru
+    / Aux_Saseru
+    / Aux_Reru
+    / Aux_Rareru
+    / Aux_Nai
+    / Aux_Nu
+    / Aux_U
+    / Aux_You
+    / Aux_Mai
+    / Aux_Tai
+    / Aux_Tagaru
+    / Aux_Ta
+    / Aux_Da1
+    / Aux_Souda1
+    / Aux_Souda2
+    / Aux_Youda
+    / Aux_Rashii
+    / Aux_Masu
+    / Aux_Daro
+    / Aux_Desyo
     #AuxVerbForVerb
 }
 
@@ -72,7 +92,14 @@ AdjectivePhrase = {
     #AdjectivePhrase
 }
 AuxVerbForAdj = {
-    AFTERADJ
+      Aux_U
+    / Aux_Ta
+    / Aux_Souda1
+    / Aux_Souda2
+    / Aux_Youda
+    / Aux_Rashii
+    / Aux_Daro
+    / Aux_Desyo
     #AuxVerbForAdj
 }
 
@@ -89,7 +116,13 @@ AdjectiveVerbPhrase = {
     #AdjectiveVerbPhrase
 }
 AuxVerbForAdjv = {
-    AFTERADJV
+      Aux_U
+    / Aux_Ta
+    / Aux_Souda1
+    / Aux_Souda2
+    / Aux_Youda
+    / Aux_Rashii
+    / Aux_Desu
     #AuxVerbForAdj
 }
 
@@ -106,7 +139,9 @@ NounPhrase = {
     #NounPhrase
 }
 AuxVerbForNoun = {
-    AFTERNOUN
+      Aux_Rashii
+    / Aux_Da2
+    / Aux_Desu
     #AuxVerbForNoun
 }
 
@@ -135,7 +170,7 @@ AdnominalPhrase = {
     #AdnominalPhrase
 }
 AuxVerbForAdnm = {
-    AFTERADNM
+    Aux_Youda
     #AuxVerbForAdnm
 }
 KoSoADo = { [こそあど] 'の' #Adnominal }
@@ -152,7 +187,9 @@ AdverbPhrase = {
     #AdverbPhrase
 }
 AuxVerbForAdv = {
-    AFTERNOUN
+      Aux_Rashii
+    / Aux_Da2
+    / Aux_Desu
     #AuxVerbForAdv
 }
 
@@ -176,8 +213,8 @@ PostpPhrase = {
     #PostpPhrase
 }
 PostpNo = { 'の' #PostpNo }
-AfterPostpNo = { AFTERPOSTPNO #AuxVerbForPostpNo }
-AfterPostp = { AFTERPOSTP #AuxVerbForPostp }
+AfterPostpNo = { Aux_Youda #AuxVerbForPostpNo }
+AfterPostp = { (Aux_Rashii/Aux_Da2/Aux_Desu) #AuxVerbForPostp }
 AuxVerbNa = { 'な' #AuxVerbForPostp }
 
 
@@ -192,7 +229,6 @@ Verb =
     / Rentai
     / Katei
     / Meirei
-    // / HiraVerb
 
 
 /*
@@ -202,100 +238,114 @@ Verb =
 以下、他の活用も同様
 */
 Mizen = {
-      VERB5KA [かこ] !!(AFTERV5MIZEN)
-    / VERB5SA [さそ] !!(AFTERV5MIZEN)
-    / VERB5TA [たと] !!(AFTERV5MIZEN)
-    / VERB5NA [なの] !!(AFTERV5MIZEN)
-    / VERB5MA [まも] !!(AFTERV5MIZEN)
-    / VERB5RA [らろ] !!(AFTERV5MIZEN)
-    / VERB5WA [わお] !!(AFTERV5MIZEN)
-    / VERB5GA [がご] !!(AFTERV5MIZEN)
-    / VERB5BA [ばぼ] !!(AFTERV5MIZEN)
-    / VERB5KASOKU [かこ] !!(AFTERV5MIZEN)
-    / VERB1 !!(AFTERV1MIZEN)
-    / SAHEN_SURU [さ] !!(AFTERVSAMIZEN)
-    / SAHEN_ZURU [ざ] !!(AFTERVSAMIZEN)
-    / (KANJI/KATA)* [さ] !!(AFTERVSAMIZEN)
-    / KAHEN? [来] !!(AFTERVKAMIZEN)
-    / SAHEN_SURU [し] !!(AFTERVSAMIZEN)
-    / SAHEN_ZURU [じ] !!(AFTERVSAMIZEN)
-    / (KANJI/KATA)* [し] !!(AFTERVSAMIZEN)
-    / KAHEN? [こ] !!(AFTERVKAMIZEN)  // 命令形の活用語尾「こい」と競合するかも
-    / SAHEN_SURU [せ] !!(AFTERVSAMIZEN)  // 命令形の活用語尾「せよ」と競合するかも
-    / SAHEN_ZURU [ぜ] !!(AFTERVSAMIZEN)  // 命令形の活用語尾「ぜよ」と競合するかも
-    / (KANJI/KATA)* [せ] !!(AFTERVSAMIZEN)  // 命令形の活用語尾「せよ」と競合するかも
+      VERB5KA ( [か] !!(AuxV5Mizen) / [こ] !!(Aux_U) )
+    / VERB5SA ( [さ] !!(AuxV5Mizen) / [そ] !!(Aux_U) )
+    / VERB5TA ( [た] !!(AuxV5Mizen) / [と] !!(Aux_U) )
+    / VERB5NA ( [な] !!(AuxV5Mizen) / [の] !!(Aux_U) )
+    / VERB5MA ( [ま] !!(AuxV5Mizen) / [も] !!(Aux_U) )
+    / VERB5RA ( [ら] !!(AuxV5Mizen) / [ろ] !!(Aux_U) )
+    / VERB5WA ( [わ] !!(AuxV5Mizen) / [お] !!(Aux_U) )
+    / VERB5GA ( [が] !!(AuxV5Mizen) / [ご] !!(Aux_U) )
+    / VERB5BA ( [ば] !!(AuxV5Mizen) / [ぼ] !!(Aux_U) )
+    / VERB5IK ( [か] !!(AuxV5Mizen) / [こ] !!(Aux_U) )
+    / VERB1 !!(AuxV1Mizen)
+    / NOUN? ( [さ] !!(AuxVSaMizen) / [し] !!(AuxVSiMizen) / [せ] !!(Aux_Nu) )
+    / SAHEN_SURU ( [さ] !!(AuxVSaMizen) / [し] !!(AuxVSiMizen) / [せ] !!(Aux_Nu) )
+    / SAHEN_ZURU ( [ざ] !!(AuxVSaMizen) / [じ] !!(AuxVSiMizen) / [ぜ] !!(Aux_Nu) )
+    / KAHEN? [来こ] !!(AuxVKaMizen)
+    // / KAHEN? [こ] !!(AuxVKaMizen)  // 命令形の活用語尾「こい」と競合するかも
     #Mizen
 }
+AuxV5Mizen = Aux_Seru/Aux_Reru/Aux_Nai/Aux_Nu
+AuxV1Mizen = Aux_Saseru/Aux_Rareru/Aux_Nai/Aux_You/Aux_Mai/Aux_Nu
+AuxVSaMizen = Aux_Seru/Aux_Reru
+AuxVSiMizen = Aux_Nai/Aux_You/Aux_Mai
+AuxVKaMizen = Aux_Saseru/Aux_Rareru/Aux_Nai/Aux_Nu/Aux_You/Aux_Mai
+
 
 Renyo = {
-      VERB5KA [きい] !!(AFTERV5RENYO/AfterRenyo)
-    / VERB5SA [し] !!(AFTERV5RENYO/AfterRenyo)
-    / VERB5TA [ちっ] !!(AFTERV5RENYO/AfterRenyo)
-    / VERB5NA [にん] !!(AFTERV5RENYO/AfterRenyo)
-    / VERB5MA [みん] !!(AFTERV5RENYO/AfterRenyo)
-    / VERB5RA [りっ] !!(AFTERV5RENYO/AfterRenyo)
-    / VERB5WA [いっ] !!(AFTERV5RENYO/AfterRenyo)
-    / VERB5GA [ぎい] !!(AFTERV5RENYO/AfterRenyo)
-    / VERB5BA [びん] !!(AFTERV5RENYO/AfterRenyo)
-    / VERB5KASOKU [きっ] !!(AFTERV5RENYO/AfterRenyo)
-    / VERB1 !!(AFTERV1RENYO/AfterRenyo)
-    / KAHEN? [き] !!(AFTERVKARENYO/AfterRenyo)
-    / KAHEN? [来] !!(AFTERVKARENYO/AfterRenyo)
-    / SAHEN_SURU [し] !!(AFTERVSARENYO/AfterRenyo)
-    / SAHEN_ZURU [じ] !!(AFTERVSARENYO/AfterRenyo)
-    / (KANJI/KATA)* [し] !!(AFTERVSARENYO/AfterRenyo)
+      VERB5KA ( [き] !!(AuxV5Renyo/AfterRenyo) / [い] !!(Aux_Ta/[て]) )
+    / VERB5SA ( [し] !!(AuxV5Renyo/AfterRenyo/[て]) )
+    / VERB5TA ( [ち] !!(AuxV5Renyo/AfterRenyo) / [っ] !!(Aux_Ta/[て]) )
+    / VERB5NA ( [に] !!(AuxV5Renyo/AfterRenyo) / [ん] !!(Aux_Da1/[で]) )
+    / VERB5MA ( [み] !!(AuxV5Renyo/AfterRenyo) / [ん] !!(Aux_Da1/[で]) )
+    / VERB5RA ( [り] !!(AuxV5Renyo/AfterRenyo) / [っ] !!(Aux_Ta/[て]) )
+    / VERB5WA ( [い] !!(AuxV5Renyo/AfterRenyo) / [っ] !!(Aux_Ta/[て]) )
+    / VERB5GA ( [ぎ] !!(AuxV5Renyo/AfterRenyo) / [い] !!(Aux_Da1/[で]) )
+    / VERB5BA ( [び] !!(AuxV5Renyo/AfterRenyo) / [ん] !!(Aux_Da1/[で]) )
+    / VERB5IK ( [き] !!(AuxV5Renyo/AfterRenyo) / [っ] !!(Aux_Ta/[て]) )
+    / VERB1 !!(AuxV1Renyo/AfterRenyo/[て])
+    / KAHEN? [来き] !!(AuxVKaRenyo/AfterRenyo/[て])
+    / NOUN? [し] !!(AuxVSaRenyo/AfterRenyo/[て])
+    / SAHEN_SURU [し] !!(AuxVSaRenyo/AfterRenyo/[て])
+    / SAHEN_ZURU [じ] !!(AuxVSaRenyo/AfterRenyo/[て])
     #Renyo
 }
+AuxV5Renyo = Aux_Tai/Aux_Tagaru/Aux_Souda1/Aux_Masu
+AuxV1Renyo = Aux_Tai/Aux_Tagaru/Aux_Ta/Aux_Souda1/Aux_Masu
+AuxVSaRenyo = Aux_Tai/Aux_Tagaru/Aux_Ta/Aux_Souda1/Aux_Masu
+AuxVKaRenyo = Aux_Tai/Aux_Tagaru/Aux_Ta/Aux_Souda1/Aux_Masu
+
 AfterRenyo = {
-      [てで]
-    / VerbPhrase
+      VerbPhrase
     / TEN
     / PostpPhrase
     #AfterRenyo
 }
 
 Syushi = {
-      VERB5KA [く] !!(AFTERV5SYUSHI/AfterSyushi)
-    / VERB5SA [す] !!(AFTERV5SYUSHI/AfterSyushi)
-    / VERB5TA [つ] !!(AFTERV5SYUSHI/AfterSyushi)
-    / VERB5NA [ぬ] !!(AFTERV5SYUSHI/AfterSyushi)
-    / VERB5MA [む] !!(AFTERV5SYUSHI/AfterSyushi)
-    / VERB5RA [る] !!(AFTERV5SYUSHI/AfterSyushi)
-    / VERB5WA [う] !!(AFTERV5SYUSHI/AfterSyushi)
-    / VERB5GA [ぐ] !!(AFTERV5SYUSHI/AfterSyushi)
-    / VERB5BA [ぶ] !!(AFTERV5SYUSHI/AfterSyushi)
-    / VERB5KASOKU [く] !!(AFTERV5SYUSHI/AfterSyushi)
-    / VERB1 [る] !!(AFTERV1SYUSHI/AfterSyushi)
-    / KAHEN? ('くる' / '来る') !!(AFTERVKASYUSHI/AfterSyushi)
-    / SAHEN_SURU 'する' !!(AFTERVSASYUSHI/AfterSyushi)
-    / SAHEN_ZURU 'ずる' !!(AFTERVSASYUSHI/AfterSyushi)
-    / (KANJI/KATA)* 'する' !!(AFTERVSASYUSHI/AfterSyushi)
+      VERB5KA [く] !!(AuxV5Syushi/AfterSyushi)
+    / VERB5SA [す] !!(AuxV5Syushi/AfterSyushi)
+    / VERB5TA [つ] !!(AuxV5Syushi/AfterSyushi)
+    / VERB5NA [ぬ] !!(AuxV5Syushi/AfterSyushi)
+    / VERB5MA [む] !!(AuxV5Syushi/AfterSyushi)
+    / VERB5RA [る] !!(AuxV5Syushi/AfterSyushi)
+    / VERB5WA [う] !!(AuxV5Syushi/AfterSyushi)
+    / VERB5GA [ぐ] !!(AuxV5Syushi/AfterSyushi)
+    / VERB5BA [ぶ] !!(AuxV5Syushi/AfterSyushi)
+    / VERB5IK [く] !!(AuxV5Syushi/AfterSyushi)
+    / VERB1 [る] !!(AuxV1Syushi/AfterSyushi)
+    / KAHEN? ('くる' / '来る') !!(AuxVKaSyushi/AfterSyushi)
+    / NOUN? 'する' !!(AuxVSaSyushi/AfterSyushi)
+    / SAHEN_SURU 'する' !!(AuxVSaSyushi/AfterSyushi)
+    / SAHEN_ZURU 'ずる' !!(AuxVSaSyushi/AfterSyushi)
     #Syushi
 }
+AuxV5Syushi = Aux_Mai/Aux_Souda2/Aux_Rashii/Aux_Daro/Aux_Desyo
+AuxV1Syushi = Aux_Souda2/Aux_Rashii/Aux_Daro/Aux_Desyo
+AuxVSaSyushi = Aux_Souda2/Aux_Rashii/Aux_Daro/Aux_Desyo
+AuxVKaSyushi = Aux_Souda2/Aux_Rashii/Aux_Daro/Aux_Desyo
+
 AfterSyushi = {
       PostpPhrase
     / Eol
     #AfterSyushi
 }
 
+
 Rentai = {
-      VERB5KA [く] !!(AFTERV5RENTAI/AfterRentai)
-    / VERB5SA [す] !!(AFTERV5RENTAI/AfterRentai)
-    / VERB5TA [つ] !!(AFTERV5RENTAI/AfterRentai)
-    / VERB5NA [ぬ] !!(AFTERV5RENTAI/AfterRentai)
-    / VERB5MA [む] !!(AFTERV5RENTAI/AfterRentai)
-    / VERB5RA [る] !!(AFTERV5RENTAI/AfterRentai)
-    / VERB5WA [う] !!(AFTERV5RENTAI/AfterRentai)
-    / VERB5GA [ぐ] !!(AFTERV5RENTAI/AfterRentai)
-    / VERB5BA [ぶ] !!(AFTERV5RENTAI/AfterRentai)
-    / VERB5KASOKU [く] !!(AFTERV5RENTAI/AfterRentai)
-    / VERB1 [る] !!(AFTERV1RENTAI/AfterRentai)
-    / KAHEN? ('くる' / '来る') !!(AFTERVKARENTAI/AfterRentai)
-    / SAHEN_SURU 'する' !!(AFTERVSARENTAI/AfterRentai)
-    / SAHEN_ZURU 'ずる' !!(AFTERVSARENTAI/AfterRentai)
-    / (KANJI/KATA)* 'する' !!(AFTERVSARENTAI/AfterRentai)
+      VERB5KA [く] !!(AuxV5Rentai/AfterRentai)
+    / VERB5SA [す] !!(AuxV5Rentai/AfterRentai)
+    / VERB5TA [つ] !!(AuxV5Rentai/AfterRentai)
+    / VERB5NA [ぬ] !!(AuxV5Rentai/AfterRentai)
+    / VERB5MA [む] !!(AuxV5Rentai/AfterRentai)
+    / VERB5RA [る] !!(AuxV5Rentai/AfterRentai)
+    / VERB5WA [う] !!(AuxV5Rentai/AfterRentai)
+    / VERB5GA [ぐ] !!(AuxV5Rentai/AfterRentai)
+    / VERB5BA [ぶ] !!(AuxV5Rentai/AfterRentai)
+    / VERB5IK [く] !!(AuxV5Rentai/AfterRentai)
+    / VERB1 [る] !!(AuxV1Rentai/AfterRentai)
+    / KAHEN? ('くる' / '来る') !!(AuxVKaRentai/AfterRentai)
+    / NOUN? 'する' !!(AuxVSaRentai/AfterRentai)
+    / SAHEN_SURU 'する' !!(AuxVSaRentai/AfterRentai)
+    / SAHEN_ZURU 'ずる' !!(AuxVSaRentai/AfterRentai)
     #Rentai
 }
+AuxV5Rentai = Aux_Youda
+AuxV1Rentai = Aux_Youda
+AuxVSaRentai = Aux_Youda
+AuxVKaRentai = Aux_Youda
+
 AfterRentai = {
       NounPhrase
     / PostpPhrase
@@ -313,14 +363,15 @@ Katei = {
     / VERB5WA [え] !!'ば'
     / VERB5GA [げ] !!'ば'
     / VERB5BA [べ] !!'ば'
-    / VERB5KASOKU [け] !!'ば'
+    / VERB5IK [け] !!'ば'
     / VERB1 [れ] !!'ば'
     / KAHEN? ('くれ' / '来れ') !!'ば'
+    / NOUN? 'すれ' !!'ば'
     / SAHEN_SURU 'すれ' !!'ば'
     / SAHEN_ZURU 'ずれ' !!'ば'
-    / (KANJI/KATA)+ 'すれ' !!'ば'
     #Katei
 }
+
 
 Meirei = {
       VERB5KA [け] !!(Eol)
@@ -332,30 +383,19 @@ Meirei = {
     / VERB5WA [え] !!(Eol)
     / VERB5GA [げ] !!(Eol)
     / VERB5BA [べ] !!(Eol)
-    / VERB5KASOKU [け] !!(Eol)
+    / VERB5IK [け] !!(Eol)
     / VERB1 [ろよ] !!(Eol)
     / KAHEN? ('こい' / '来い') !!(Eol)
+    / NOUN? ('しろ' / 'せよ') !!(Eol)
     / SAHEN_SURU ('しろ' / 'せよ') !!(Eol)
     / SAHEN_ZURU ('じろ' / 'ぜよ') !!(Eol)
-    / (KANJI/KATA)+ ('しろ' / 'せよ') !!(Eol)
     / ('ください'/'下さい') !!(Eol)  // 敬語動詞「下さる」の命令形は特殊
     #Meirei
 }
 
-/*
-ひらがな動詞も辞書に含めたので不要
-HiraVerb =
-    / {HV [らろ] #Mizen} &({AFTERV5MIZEN})
-    / {HV [りっ] #Renyo} &({AFTERV5RENYO}/{[てで]}/Chunk/{TEN})
-    / {HV 'る' #Syushi} &({AFTERV5SYUSHI}/PostpPhrase/Eol)
-    / {HV 'る' #Rentai} &({AFTERV5RENTAI}/NounPhrase/PostpPhrase)
-    / {HV 'れ' #KateiMeirei} &({'ば'}/Eol)
-
-HV = [あい]
-*/
 
 /*
-活用型ごとの動詞の語幹を辞書から生成
+活用の種類ごとの動詞の語幹を辞書から生成
 「行く」はカ行五段活用だが、イ音便ではなく促音便で活用が異なるため別枠
 */
 VERB5KA = @choice('dic/Verb/VERB5KA.txt')
@@ -371,7 +411,7 @@ VERB1 = @choice('dic/Verb/VERB1.txt')
 KAHEN = @choice('dic/Verb/KAHEN.txt')
 SAHEN_SURU = @choice('dic/Verb/SAHEN_SURU.txt')
 SAHEN_ZURU = @choice('dic/Verb/SAHEN_ZURU.txt')
-VERB5KASOKU = '行'
+VERB5IK = '行'
 
 
 
@@ -381,13 +421,13 @@ VERB5KASOKU = '行'
 語幹は辞書の"Adjective.dic"と"Noun.nai.dic"から生成
 */
 Adjective =
-    / {ADJ 'かろ' !!(AFTERADJMIZEN) #ADJMizen}
-    / {ADJ 'かっ' !!(AFTERADJRENYO/'たり') #ADJRenyo}
+    / {ADJ 'かろ' !!(Aux_U) #ADJMizen}
+    / {ADJ 'かっ' !!(Aux_Ta/'たり') #ADJRenyo}
     / {ADJ 'く' !!([ては]/Chunk) #ADJRenyo}
     / {ADJ 'けれ' !!('ば') #ADJKatei}
-    / {ADJ 'い' !!(AFTERADJSYUSHI/PostpPhrase/Eol) #ADJSyushi}
-    / {ADJ 'い' !!(AFTERADJRENTAI/NounPhrase/PostpPhrase) #ADJRentai}
-    / {ADJ !!(AFTERADJGOKAN) #ADJGokan}
+    / {ADJ 'い' !!(Aux_Souda2/Aux_Rashii/Aux_Daro/Aux_Desyo/PostpPhrase/Eol) #ADJSyushi}
+    / {ADJ 'い' !!(Aux_Youda/NounPhrase/PostpPhrase) #ADJRentai}
+    / {ADJ !!(Aux_Souda1) #ADJGokan}
 
 ADJ = @choice('dic/ADJ.txt')
 
@@ -397,14 +437,14 @@ ADJ = @choice('dic/ADJ.txt')
 語幹は辞書の"Noun.adjv.dic"から生成
 */
 AdjectiveVerb =
-    / {ADJV 'だろ' !!(AFTERADJVMIZEN) #ADJVMizen}
-    / {ADJV 'だっ' !!(AFTERADJVRENYO) #ADJVRenyo}
+    / {ADJV 'だろ' !!(Aux_U) #ADJVMizen}
+    / {ADJV 'だっ' !!(Aux_Ta) #ADJVRenyo}
     / {ADJV 'で' !!([はも]/SUBARU/SUBNAI/TEN) #ADJVRenyo}
     / {ADJV 'に' !!(Chunk) #ADJVRenyo}
-    / {ADJV 'だ' !!(AFTERADJVSYUSHI/PostpPhrase/Eol) #ADJVSyushi}
-    / {ADJV 'な' !!(AFTERADJVRENTAI/NounPhrase) #ADJVRentai}
+    / {ADJV 'だ' !!(Aux_Souda2/PostpPhrase/Eol) #ADJVSyushi}
+    / {ADJV 'な' !!(Aux_Youda/NounPhrase) #ADJVRentai}
     / {ADJV 'なら' !!('ば'?) #ADJVKatei}
-    / {ADJV !!(AFTERADJVGOKAN) #ADJVGokan}
+    / {ADJV !!(Aux_Souda1/Aux_Rashii/Aux_Desu) #ADJVGokan}
 
 ADJV = @choice('dic/ADJV.txt')
 
@@ -418,24 +458,26 @@ SUBNAI = 'な' ('かろ' / 'かっ' / 'く' / 'い' / 'けれ')
 
 /*
 名詞
-漢字カタカナアルファベット数字
-混合した場合も可（例：アップル社）
 括弧で括ったものも名詞
+数字と数え上げは事前にある程度定義している（名詞にない、とれない）
+カタカナや英語は名詞に入っている
 */
 Noun = {
-      BLOCK
-    / {NOUN* #NounInDict}
-    / KATA
-    / ALPHA
-    / NUM [つこ個] [め目]?
-    / ('ひと'/'ふた'/'みっ'/'よっ'/'いつ'/'むっ'/'なな'/'やっ'/'ここの') 'つ' [め目]?
-    / NUM
-    / SYMBOL
+      {BLOCK #BLOCK}
+    // / {KATA #KATA}
+    // / {ALPHA #ALPHA}
+    / {NUM [つこ個]? [め目]? #NUM}
+    / {('ひと'/'ふた'/'みっ'/'よっ'/'いつ'/'むっ'/'なな'/'やっ'/'ここの') 'つ' [め目]? #COUNT}
+    // / {SYMBOL #SYMBOL}
+    / {NOUN #NOUN}
     #Noun
 }
 
-
-NOUN = @choice('dic/NOUN.txt') / @choice('dic/Noun/rust.txt')
+// 名詞依存のエラーはここの充実で下がる
+NOUN =
+    / @choice('dic/NOUN.txt')
+    / @choice('dic/Noun/rust.txt')
+    // / @choice('dic/Noun/ethereum.txt')
 
 BLOCK =
     / '\[' (!'\]' .)* '\]'
@@ -453,54 +495,6 @@ BLOCK =
     / '\［' (!'\］' .)* '\］'
     / '\｛' (!'\｝' .)* '\｝'
     / '\〔' (!'\〕' .)* '\〕'
-
-
-/* 助動詞、gen_auxverb.pyで生成 */
-AuxVerb = {
-    AUXVERB
-    #AuxVerbs
-}
-AUXVERB = @choice('dic/AUXVERB.txt')
-
-AFTERADJMIZEN = @choice('dic/Auxverb/ADJMIZEN.txt')
-AFTERADJRENYO = @choice('dic/Auxverb/ADJRENYO.txt')
-AFTERADJSYUSHI = @choice('dic/Auxverb/ADJSYUSHI.txt')
-AFTERADJRENTAI = @choice('dic/Auxverb/ADJRENTAI.txt')
-AFTERADJGOKAN = @choice('dic/Auxverb/ADJGOKAN.txt')
-
-AFTERADJVMIZEN = @choice('dic/Auxverb/ADJVMIZEN.txt')
-AFTERADJVRENYO = @choice('dic/Auxverb/ADJVRENYO.txt')
-AFTERADJVSYUSHI = @choice('dic/Auxverb/ADJVSYUSHI.txt')
-AFTERADJVRENTAI = @choice('dic/Auxverb/ADJVRENTAI.txt')
-AFTERADJVGOKAN = @choice('dic/Auxverb/ADJVGOKAN.txt')
-
-AFTERV1MIZEN = @choice('dic/Auxverb/V1MIZEN.txt')
-AFTERV1RENYO = @choice('dic/Auxverb/V1RENYO.txt')
-AFTERV1SYUSHI = @choice('dic/Auxverb/V1SYUSHI.txt')
-AFTERV1RENTAI = @choice('dic/Auxverb/V1RENTAI.txt')
-
-AFTERV5MIZEN = @choice('dic/Auxverb/V5MIZEN.txt')
-AFTERV5RENYO = @choice('dic/Auxverb/V5RENYO.txt')
-AFTERV5SYUSHI = @choice('dic/Auxverb/V5SYUSHI.txt')
-AFTERV5RENTAI = @choice('dic/Auxverb/V5RENTAI.txt')
-
-AFTERVKAMIZEN = @choice('dic/Auxverb/VKAMIZEN.txt')
-AFTERVKARENYO = @choice('dic/Auxverb/VKARENYO.txt')
-AFTERVKASYUSHI = @choice('dic/Auxverb/VKASYUSHI.txt')
-AFTERVKARENTAI = @choice('dic/Auxverb/VKARENTAI.txt')
-
-AFTERVSAMIZEN = @choice('dic/Auxverb/VSAMIZEN.txt')
-AFTERVSARENYO = @choice('dic/Auxverb/VSARENYO.txt')
-AFTERVSASYUSHI = @choice('dic/Auxverb/VSASYUSHI.txt')
-AFTERVSARENTAI = @choice('dic/Auxverb/VSARENTAI.txt')
-
-AFTERVERB = @choice('dic/Auxverb/VERB.txt')
-AFTERADJ = @choice('dic/Auxverb/ADJ.txt')
-AFTERADJV = @choice('dic/Auxverb/ADJV.txt')
-AFTERADNM = @choice('dic/Auxverb/ADNM.txt')
-AFTERNOUN = @choice('dic/Auxverb/NOUN.txt')
-AFTERPOSTPNO = @choice('dic/Auxverb/POSTPNO.txt')
-AFTERPOSTP = @choice('dic/Auxverb/POSTP.txt')
 
 
 /* 助詞、手入力 */
@@ -533,3 +527,186 @@ Conjunction = {
     #Conjunction
 }
 CONJ = @choice('dic/CONJ.txt')
+
+
+
+
+/* 助動詞 */
+// 買わせる
+Aux_Seru =
+    / {'せ' #Mizen} (Aux_Rareru/Aux_Nai/Aux_You/Aux_Mai)
+    / {'せ' #Renyo} (Aux_Tai/Aux_Tagaru/Aux_Ta/Aux_Souda1/Aux_Masu/!!(Eol/[はて]/SUBNAI))
+    / {'せる' #Syushi} (Aux_Souda2/Aux_Rashii/Aux_Daro/Aux_Desyo/!!(Eol))
+    / {'せる' #Rentai} (Aux_Youda)
+    / {'せれ' #Katei} (!!('ば'))
+    / {'せろ' #Meirei} (!!(Eol))
+    / {'せよ' #Meirei} (!!(Eol))
+
+// 起きさせる
+Aux_Saseru =
+    / {'させ' #Mizen} (Aux_Rareru/Aux_Nai/Aux_You/Aux_Mai)
+    / {'させ' #Renyo} (Aux_Tai/Aux_Tagaru/Aux_Ta/Aux_Souda1/Aux_Masu/!!(Eol/[はて]/SUBNAI))
+    / {'させる' #Syushi} (Aux_Souda2/Aux_Rashii/Aux_Daro/Aux_Desyo/!!(Eol))
+    / {'させる' #Rentai} (Aux_Youda)
+    / {'させれ' #Katei} (!!('ば'))
+    / {'させろ' #Meirei} (!!(Eol))
+    / {'させよ' #Meirei} (!!(Eol))
+
+// 話される
+Aux_Reru =
+    / {'れ' #Mizen} (Aux_Nai/Aux_You/Aux_Mai)
+    / {'れ' #Renyo} (Aux_Tai/Aux_Tagaru/Aux_Ta/Aux_Souda1/Aux_Masu/!!(Eol/[はて]/SUBNAI))
+    / {'れる' #Syushi} (Aux_Souda2/Aux_Rashii/Aux_Daro/Aux_Desyo/!!(Eol))
+    / {'れる' #Rentai} (Aux_Youda)
+    / {'れれ' #Katei} (!!('ば'))
+    / {'れろ' #Meirei} (!!(Eol))
+    / {'れよ' #Meirei} (!!(Eol))
+
+// 起きられる
+Aux_Rareru =
+    / {'られ' #Mizen} (Aux_Nai/Aux_You/Aux_Mai)
+    / {'られ' #Renyo} (Aux_Tai/Aux_Tagaru/Aux_Ta/Aux_Souda1/Aux_Masu/!!(Eol/[はて]/SUBNAI))
+    / {'られる' #Syushi} (Aux_Souda2/Aux_Rashii/Aux_Daro/Aux_Desyo/!!(Eol))
+    / {'られる' #Rentai} (Aux_Youda)
+    / {'られれ' #Katei} (!!('ば'))
+    / {'られろ' #Meirei} (!!(Eol))
+    / {'られよ' #Meirei} (!!(Eol))
+
+// 話さない
+Aux_Nai =
+    / {'なかろ' #Mizen} (Aux_U)
+    / {'なかっ' #Renyo} (Aux_Ta)
+    / {'なく' #Renyo} (!!(Eol/[はて]/SUBNAI))
+    / {'ない' #Syushi} (Aux_Souda2/Aux_Rashii/Aux_Daro/Aux_Desyo/!!(Eol))
+    / {'ない' #Rentai} (Aux_Youda)
+    / {'なけれ' #Katei} (!!('ば'))
+
+// 話さず
+Aux_Nu =
+    / {'ず' #Renyo} (!!(Eol/[に]))
+    / {'ぬ' #Syushi} (!!(Eol))
+    / {'ぬ' #Rentai} (Aux_Youda)
+    / {'ね' #Katei} (!!('ば'))
+
+// しません
+Aux_Nn =
+    / {'ん' #Syushi} (!!(Eol))
+    / {'ん' #Rentai} (!!(Eol))  // FIX
+
+// 話しましょう
+Aux_U =
+    / {'う' #Syushi} (!!(Eol))
+    / {'う' #Rentai} (!!(Eol))  // FIX
+
+// 起きよう
+Aux_You =
+    / {'よう' #Syushi} (!!(Eol))
+    / {'よう' #Rentai} (!!(Eol))  // FIX
+
+// 話すまい
+Aux_Mai =
+    / {'まい' #Syushi} (!!(Eol))
+    / {'まい' #Rentai} (!!(Eol))  // FIX
+
+// 話したい
+Aux_Tai =
+    / {'たかろ' #Mizen} (Aux_U)
+    / {'たかっ' #Renyo} (Aux_Ta)
+    / {'たく' #Renyo} (!!(Eol/[はて]))
+    / {'たい' #Syushi} (Aux_Souda2/Aux_Rashii/Aux_Daro/Aux_Desyo/!!(Eol))
+    / {'たい' #Rentai} (Aux_Youda)
+    / {'たけれ' #Katei} (!!('ば'))
+
+// 話したがる
+Aux_Tagaru =
+    / {'たがら' #Mizen} (Aux_Nai/Aux_Nu)
+    / {'たがり' #Renyo} (Aux_Souda1/Aux_Masu/!!(Eol))
+    / {'たがっ' #Renyo} (Aux_Ta/!!([て]))
+    / {'たがる' #Syushi} (Aux_Souda2/Aux_Rashii/Aux_Daro/Aux_Desyo/!!(Eol))
+    / {'たがる' #Rentai} (Aux_Youda)
+    / {'たがれ' #Katei} (!!('ば'))
+
+// 話した
+Aux_Ta =
+    / {'たろ' #Mizen} (Aux_U)
+    / {'た' #Syushi} (Aux_Souda2/Aux_Rashii/Aux_Daro/Aux_Desyo/!!(Eol))
+    / {'た' #Rentai} (Aux_Youda)
+    / {'たら' #Katei} (!!('ば')/!!(Eol))
+
+// 呼んだ
+Aux_Da1 =
+    / {'だろ' #Mizen} (Aux_U)
+    / {'だ' #Syushi} (Aux_Souda2/Aux_Rashii/Aux_Daro/Aux_Desyo/!!(Eol))
+    / {'だ' #Rentai} (Aux_Youda)
+    / {'だら' #Katei} (!!('ば')/!!(Eol))
+
+// 起きそうだ
+Aux_Souda1 =
+    / {'そうだろ' #Mizen} (Aux_U)
+    / {'そうだっ' #Renyo} (Aux_Ta)
+    / {'そうで' #Renyo} (!!(Eol))
+    / {'そうに' #Renyo} (!!(SUBNAI))  // 補助形容詞の「ない」
+    / {'そうだ' #Syushi} (Aux_Souda2/Aux_Rashii/!!(Eol))
+    / {'そうな' #Rentai} (Aux_Youda)
+    / {'そうなら' #Katei} (!!('ば')/!!(Eol))
+
+// 起きるそうだ
+Aux_Souda2 =
+    / {'そうで' #Renyo} (!!(Eol))
+    / {'そうだ' #Syushi} (!!(Eol))
+
+// 話すようだ
+Aux_Youda =
+    / {'ようだろ' #Mizen} (Aux_U)
+    / {'ようだっ' #Renyo} (Aux_Ta)
+    / {'ようで' #Renyo} (!!(Eol))
+    / {'ように' #Renyo} (!!(Eol))
+    / {'ようだ' #Syushi} (Aux_Souda2/Aux_Rashii/!!(Eol))
+    / {'ような' #Rentai} (!!(Eol))
+    / {'ようなら' #Katei} (!!('ば')/!!(Eol))
+
+
+// 話すらしい
+Aux_Rashii =
+    / {'らしかっ' #Renyo} (Aux_Ta)
+    / {'らしく' #Renyo} (!!(Eol/[はて]))
+    / {'らしい' #Syushi} (Aux_Souda2/Aux_Daro/Aux_Desyo/!!(Eol))
+    / {'らしい' #Rentai} (Aux_Youda)
+    / {'らしけれ' #Katei} (!!('ば')/!!(Eol))
+
+// 話しましょう
+Aux_Masu =
+    / {'ませ' #Mizen} (Aux_Nn)
+    / {'ましょ' #Mizen} (Aux_U)
+    / {'まし' #Renyo} (Aux_Ta)
+    / {'ます' #Syushi} (Aux_Mai/Aux_Desyo/!!(Eol))
+    / {'ます' #Rentai} (!!(Eol))  // FIX
+    / {'ますれ' #Katei} (!!('ば'))
+    / {'ませ' #Meirei} (!!(Eol))
+    / {'まし' #Meirei} (!!(Eol))
+
+// 夢だ
+Aux_Da2 =
+    / {'だろ' #Mizen} (Aux_U)
+    / {'だっ' #Renyo} (Aux_Ta)
+    / {'で' #Renyo} (!!(SUBNAI))
+    / {'だ' #Syushi} (Aux_Souda2/Aux_Rashii/!!(Eol))
+    / {'な' #Rentai} (Aux_Youda)
+    / {'なら' #Katei} (!!('ば')/!!(Eol))
+
+// 話すだろう
+Aux_Daro =
+    / {'だろ' #Mizen} (Aux_U)
+    / {'で' #Renyo} (!!(Eol))  // 用法不明
+    / {'なら' #Katei} (!!('ば')/!!(Eol))
+
+// 夢です
+Aux_Desu =
+    / {'でしょ' #Mizen} (Aux_U)
+    / {'でし' #Renyo} (Aux_Ta)
+    / {'です' #Syushi} (!!(Eol))
+    / {'です' #Rentai} (!!(Eol))  // FIX
+
+// 話すでしょう
+Aux_Desyo =
+    / {'でしょ' #Mizen} (Aux_U)
