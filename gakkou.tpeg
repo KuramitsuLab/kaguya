@@ -1,0 +1,486 @@
+/* 先読みのない学校文法 */
+
+/*
+トップの規則
+句点で終わる一文に対応している
+文をChunkの繰り返しとみる
+*/
+Sentence = {
+    // (TEN/Chunk)* [。．.\n]? {.* #Remain}  // デバッグモード
+    (TEN/Chunk)* EOS
+    #Sentence
+}
+
+
+/*
+形容詞句や動詞句などのひとかたまりごとにマッチする規則
+チョイスの順番はテストして最適な順番を見つけるしかない
+*/
+Chunk =
+    / ConjunctionPhrase  // 接続詞
+    / AdverbPhrase  // 副詞
+    / AdnominalPhrase  // 連体詞
+    / AdjectivePhrase  // 形容詞句
+    / AdjectiveVerbPhrase  // 形容動詞句
+    / VerbPhrase  // 動詞句
+    / NounPhrase  // 名詞句
+
+
+EOF = !.
+EOS = [。．.\n]? EOF
+TEN = [、，,:：\n]
+Eol = { (TEN/EOS) #Eol }
+KANJI = [㐀-䶵一-龠々〇〻ーご]
+KATA = [ァ-ヶー・]+
+ALPHA = [a-zA-Zａ-ｚＡ-Ｚ]+
+NUM = [\-ー\.,．，0-9０-９一二三四五六七八九十百千万億兆]
+SYMBOL =
+    / [^＾~〜\-ー_＿!！?？#＃$＄&＆=＝@＠*＊+＋/・]
+    / [\[\]\(\)\<\>\{\}\'\"\`「」（）＜＞『』［］【】”“｀”“’‘｛｝〔〕]
+
+
+/*
+動詞句
+スモールケースから順に
+1. 動詞の活用した形のみの場合：話す、話し
+2. 動詞の活用した形+助動詞の場合：話した、話される
+3. 動詞の活用した形+動詞句の場合：話し始める
+4. 動詞の活用した形+助動詞+動詞句の場合：話され始める
+*/
+VerbPhrase = {
+    Verb AuxVerbForVerb? PostpPhrase?
+    #VerbPhrase
+}
+AuxVerbForVerb = {
+    AFTERVERB
+    #AuxVerbForVerb
+}
+
+
+/*
+形容詞
+組み方は動詞と一緒
+*/
+AdjectivePhrase = {
+    Adjective AuxVerbForAdj? PostpPhrase?
+    #AdjectivePhrase
+}
+AuxVerbForAdj = {
+    AFTERADJ
+    #AuxVerbForAdj
+}
+
+
+/*
+形容動詞
+組み方は動詞と一緒
+*/
+AdjectiveVerbPhrase = {
+    AdjectiveVerb AuxVerbForAdjv? PostpPhrase?
+    #AdjectiveVerbPhrase
+}
+AuxVerbForAdjv = {
+    AFTERADJV
+    #AuxVerbForAdj
+}
+
+
+/*
+名詞句
+名詞にも助動詞が付属語としてつきうる
+*/
+NounPhrase = {
+    Noun AuxVerbForNoun? PostpPhrase?
+    #NounPhrase
+}
+AuxVerbForNoun = {
+    AFTERNOUN
+    #AuxVerbForNoun
+}
+
+
+/*
+接続詞句
+接続詞に助詞が続くことはないものとしている
+*/
+ConjunctionPhrase = {
+    Conjunction
+    #ConjunctionPhrase
+}
+
+
+/*
+連体詞句
+「この・その・あの・どの」には助動詞「ようだ」がつきうる
+連体詞には助詞は続かない（はず）
+*/
+AdnominalPhrase = {
+      KoSoADo AuxVerbForAdnm PostpPhrase?
+    / Adnominal
+    #AdnominalPhrase
+}
+AuxVerbForAdnm = {
+    AFTERADNM
+    #AuxVerbForAdnm
+}
+KoSoADo = { [こそあど] 'の' #Adnominal }
+
+
+/*
+副詞句
+*/
+AdverbPhrase = {
+      Adverb AuxVerbForAdv? PostpPhrase?
+    / Adverb PostpNo
+    #AdverbPhrase
+}
+AuxVerbForAdv = {
+    AFTERNOUN
+    #AuxVerbForAdv
+}
+
+
+/*
+助詞句
+助詞の「の」だけに続く助動詞があるため別扱いしている
+助詞に続く助動詞「な」はその後が限定的なので別扱いしている
+チョイスの順番決めが難しい
+*/
+PostpPhrase = {
+      Postp AuxVerbNa {'の'} AfterPostpNo? PostpPhrase?
+    / 'の' AfterPostpNo? PostpPhrase?
+    / Postp AfterPostp? PostpPhrase?
+    #PostpPhrase
+}
+PostpNo = { 'の' #PostpNo }
+AfterPostpNo = { AFTERPOSTPNO #AuxVerbForPostpNo }
+AfterPostp = { AFTERPOSTP #AuxVerbForPostp }
+AuxVerbNa = { 'な' #AuxVerbForPostp }
+
+
+/*
+動詞の語幹と活用語尾
+活用順にしており、活用語尾が同じものまとめている
+*/
+Verb =
+    / Mizen
+    / Renyo
+    / Syushi
+    / Rentai
+    / Katei
+    / Meirei
+    // / HiraVerb
+
+
+/*
+動詞の未然形活用
+未然形はほぼ確実に助動詞が繋がるため先読みで誤マッチを抑制している
+これで「止まる」の先頭文字列「止ま」が「止む」の未然形「止ま」にマッチしない
+以下、他の活用も同様
+*/
+Mizen = {
+      VERB5KA [かこ]
+    / VERB5SA [さそ]
+    / VERB5TA [たと]
+    / VERB5NA [なの]
+    / VERB5MA [まも]
+    / VERB5RA [らろ]
+    / VERB5WA [わお]
+    / VERB5GA [がご]
+    / VERB5BA [ばぼ]
+    / VERB5KASOKU [かこ]
+    / VERB1
+    / SAHEN_SURU [さ]
+    / SAHEN_ZURU [ざ]
+    / (KANJI/KATA)* [さ]
+    / KAHEN? [来]
+    / SAHEN_SURU [し]
+    / SAHEN_ZURU [じ]
+    / (KANJI/KATA)* [し]
+    / KAHEN? [こ]  // 命令形の活用語尾「こい」と競合するかも
+    / SAHEN_SURU [せ]  // 命令形の活用語尾「せよ」と競合するかも
+    / SAHEN_ZURU [ぜ]  // 命令形の活用語尾「ぜよ」と競合するかも
+    / (KANJI/KATA)* [せ]  // 命令形の活用語尾「せよ」と競合するかも
+    #Mizen
+}
+
+Renyo = {
+      VERB5KA [きい]
+    / VERB5SA [し]
+    / VERB5TA [ちっ]
+    / VERB5NA [にん]
+    / VERB5MA [みん]
+    / VERB5RA [りっ]
+    / VERB5WA [いっ]
+    / VERB5GA [ぎい]
+    / VERB5BA [びん]
+    / VERB5KASOKU [きっ]
+    / VERB1
+    / KAHEN? [き]
+    / KAHEN? [来]
+    / SAHEN_SURU [し]
+    / SAHEN_ZURU [じ]
+    / (KANJI/KATA)* [し]
+    #Renyo
+}
+AfterRenyo = {
+      [てで]
+    / VerbPhrase
+    / TEN
+    / PostpPhrase
+    #AfterRenyo
+}
+
+Syushi = {
+      VERB5KA [く]
+    / VERB5SA [す]
+    / VERB5TA [つ]
+    / VERB5NA [ぬ]
+    / VERB5MA [む]
+    / VERB5RA [る]
+    / VERB5WA [う]
+    / VERB5GA [ぐ]
+    / VERB5BA [ぶ]
+    / VERB5KASOKU [く]
+    / VERB1 [る]
+    / KAHEN? ('くる' / '来る')
+    / SAHEN_SURU 'する'
+    / SAHEN_ZURU 'ずる'
+    / (KANJI/KATA)* 'する'
+    #Syushi
+}
+AfterSyushi = {
+      PostpPhrase
+    / Eol
+    #AfterSyushi
+}
+
+Rentai = {
+      VERB5KA [く]
+    / VERB5SA [す]
+    / VERB5TA [つ]
+    / VERB5NA [ぬ]
+    / VERB5MA [む]
+    / VERB5RA [る]
+    / VERB5WA [う]
+    / VERB5GA [ぐ]
+    / VERB5BA [ぶ]
+    / VERB5KASOKU [く]
+    / VERB1 [る]
+    / KAHEN? ('くる' / '来る')
+    / SAHEN_SURU 'する'
+    / SAHEN_ZURU 'ずる'
+    / (KANJI/KATA)* 'する'
+    #Rentai
+}
+AfterRentai = {
+      NounPhrase
+    / PostpPhrase
+    #AfterRentai
+}
+
+
+Katei = {
+      VERB5KA [け]
+    / VERB5SA [せ]
+    / VERB5TA [て]
+    / VERB5NA [ね]
+    / VERB5MA [め]
+    / VERB5RA [れ]
+    / VERB5WA [え]
+    / VERB5GA [げ]
+    / VERB5BA [べ]
+    / VERB5KASOKU [け]
+    / VERB1 [れ]
+    / KAHEN? ('くれ' / '来れ')
+    / SAHEN_SURU 'すれ'
+    / SAHEN_ZURU 'ずれ'
+    / (KANJI/KATA)+ 'すれ'
+    #Katei
+}
+
+Meirei = {
+      VERB5KA [け]
+    / VERB5SA [せ]
+    / VERB5TA [て]
+    / VERB5NA [ね]
+    / VERB5MA [め]
+    / VERB5RA [れ]
+    / VERB5WA [え]
+    / VERB5GA [げ]
+    / VERB5BA [べ]
+    / VERB5KASOKU [け]
+    / VERB1 [ろよ]
+    / KAHEN? ('こい' / '来い')
+    / SAHEN_SURU ('しろ' / 'せよ')
+    / SAHEN_ZURU ('じろ' / 'ぜよ')
+    / (KANJI/KATA)+ ('しろ' / 'せよ')
+    / ('ください'/'下さい')  // 敬語動詞「下さる」の命令形は特殊
+    #Meirei
+}
+
+
+/*
+活用型ごとの動詞の語幹を辞書から生成
+「行く」はカ行五段活用だが、イ音便ではなく促音便で活用が異なるため別枠
+*/
+VERB5KA = @choice('dic/Verb/VERB5KA.txt')
+VERB5SA = @choice('dic/Verb/VERB5SA.txt')
+VERB5TA = @choice('dic/Verb/VERB5TA.txt')
+VERB5NA = @choice('dic/Verb/VERB5NA.txt')
+VERB5MA = @choice('dic/Verb/VERB5MA.txt')
+VERB5RA = @choice('dic/Verb/VERB5RA.txt')
+VERB5WA = @choice('dic/Verb/VERB5WA.txt')
+VERB5GA = @choice('dic/Verb/VERB5GA.txt')
+VERB5BA = @choice('dic/Verb/VERB5BA.txt')
+VERB1 = @choice('dic/Verb/VERB1.txt')
+KAHEN = @choice('dic/Verb/KAHEN.txt')
+SAHEN_SURU = @choice('dic/Verb/SAHEN_SURU.txt')
+SAHEN_ZURU = @choice('dic/Verb/SAHEN_ZURU.txt')
+VERB5KASOKU = '行'
+
+
+
+/*
+形容詞の語幹と活用語尾
+実験的に助動詞や助詞、動詞を先読みで入れている
+語幹は辞書の"Adjective.dic"と"Noun.nai.dic"から生成
+*/
+Adjective =
+    / {ADJ 'かろ' #ADJMizen}
+    / {ADJ 'かっ' #ADJRenyo}
+    / {ADJ 'く' #ADJRenyo}
+    / {ADJ 'けれ' #ADJKatei}
+    / {ADJ 'い' #ADJSyushi}
+    / {ADJ 'い' #ADJRentai}
+    / {ADJ #ADJGokan}
+
+ADJ = @choice('dic/ADJ.txt')
+
+/*
+形容動詞の語幹と活用語尾
+形容詞とやっていることは同じ
+語幹は辞書の"Noun.adjv.dic"から生成
+*/
+AdjectiveVerb =
+    / {ADJV 'だろ' #ADJVMizen}
+    / {ADJV 'だっ' #ADJVRenyo}
+    / {ADJV 'で' #ADJVRenyo}
+    / {ADJV 'に' #ADJVRenyo}
+    / {ADJV 'だ' #ADJVSyushi}
+    / {ADJV 'な' #ADJVRentai}
+    / {ADJV 'なら' #ADJVKatei}
+    / {ADJV #ADJVGokan}
+
+ADJV = @choice('dic/ADJV.txt')
+
+/*
+補助動詞の「ある」
+補助形容詞の「ない」
+*/
+SUBARU = 'あ' [らりるれろっ]
+SUBNAI = 'な' ('かろ' / 'かっ' / 'く' / 'い' / 'けれ')
+
+
+/*
+名詞
+漢字カタカナアルファベット数字
+混合した場合も可（例：アップル社）
+括弧で括ったものも名詞
+*/
+Noun = {
+      BLOCK
+    / { NOUN #NounInDict }
+    / KATA
+    / ALPHA
+    / NUM [つこ個] [め目]?
+    / ('ひと'/'ふた'/'みっ'/'よっ'/'いつ'/'むっ'/'なな'/'やっ'/'ここの') 'つ' [め目]?
+    / NUM
+    / SYMBOL
+    #Noun
+}
+
+
+NOUN = @choice('dic/NOUN.txt')
+
+BLOCK =
+    / '\[' (!'\]' .)* '\]'
+    / '\{' (!'\}' .)* '\}'
+    / '\(' (!'\)' .)* '\)'
+    / '\"' (!'\"' .)* '\"'
+    / '\'' (!'\'' .)* '\''
+    / '\<' (!'\>' .)* '\>'
+    / '\（' (!'\）' .)* '\）'
+    / '\「' (!'\」' .)* '\」'
+    / '\『' (!'\』' .)* '\』'
+    / '\“' (!'\”' .)* '\”'
+    / '\‘' (!'\’' .)* '\’'
+    / '\【' (!'\】' .)* '\】'
+    / '\［' (!'\］' .)* '\］'
+    / '\｛' (!'\｝' .)* '\｝'
+    / '\〔' (!'\〕' .)* '\〕'
+
+
+/* 助動詞、gen_auxverb.pyで生成 */
+AuxVerb = { AUXVERB #AuxVerbs }
+AUXVERB = @choice('dic/AUXVERB.txt')
+
+AFTERADJMIZEN = @choice('dic/Auxverb/ADJMIZEN.txt')
+AFTERADJRENYO = @choice('dic/Auxverb/ADJRENYO.txt')
+AFTERADJSYUSHI = @choice('dic/Auxverb/ADJSYUSHI.txt')
+AFTERADJRENTAI = @choice('dic/Auxverb/ADJRENTAI.txt')
+AFTERADJGOKAN = @choice('dic/Auxverb/ADJGOKAN.txt')
+
+AFTERADJVMIZEN = @choice('dic/Auxverb/ADJVMIZEN.txt')
+AFTERADJVRENYO = @choice('dic/Auxverb/ADJVRENYO.txt')
+AFTERADJVSYUSHI = @choice('dic/Auxverb/ADJVSYUSHI.txt')
+AFTERADJVRENTAI = @choice('dic/Auxverb/ADJVRENTAI.txt')
+AFTERADJVGOKAN = @choice('dic/Auxverb/ADJVGOKAN.txt')
+
+AFTERV1MIZEN = @choice('dic/Auxverb/V1MIZEN.txt')
+AFTERV1RENYO = @choice('dic/Auxverb/V1RENYO.txt')
+AFTERV1SYUSHI = @choice('dic/Auxverb/V1SYUSHI.txt')
+AFTERV1RENTAI = @choice('dic/Auxverb/V1RENTAI.txt')
+
+AFTERV5MIZEN = @choice('dic/Auxverb/V5MIZEN.txt')
+AFTERV5RENYO = @choice('dic/Auxverb/V5RENYO.txt')
+AFTERV5SYUSHI = @choice('dic/Auxverb/V5SYUSHI.txt')
+AFTERV5RENTAI = @choice('dic/Auxverb/V5RENTAI.txt')
+
+AFTERVKAMIZEN = @choice('dic/Auxverb/VKAMIZEN.txt')
+AFTERVKARENYO = @choice('dic/Auxverb/VKARENYO.txt')
+AFTERVKASYUSHI = @choice('dic/Auxverb/VKASYUSHI.txt')
+AFTERVKARENTAI = @choice('dic/Auxverb/VKARENTAI.txt')
+
+AFTERVSAMIZEN = @choice('dic/Auxverb/VSAMIZEN.txt')
+AFTERVSARENYO = @choice('dic/Auxverb/VSARENYO.txt')
+AFTERVSASYUSHI = @choice('dic/Auxverb/VSASYUSHI.txt')
+AFTERVSARENTAI = @choice('dic/Auxverb/VSARENTAI.txt')
+
+AFTERVERB = @choice('dic/Auxverb/VERB.txt')
+AFTERADJ = @choice('dic/Auxverb/ADJ.txt')
+AFTERADJV = @choice('dic/Auxverb/ADJV.txt')
+AFTERADNM = @choice('dic/Auxverb/ADNM.txt')
+AFTERNOUN = @choice('dic/Auxverb/NOUN.txt')
+AFTERPOSTPNO = @choice('dic/Auxverb/POSTPNO.txt')
+AFTERPOSTP = @choice('dic/Auxverb/POSTP.txt')
+
+
+/* 助詞、手入力 */
+Postp = { POSTP #Postp }
+POSTP = @choice('dic/POSTP.txt')
+
+
+/* 連体詞、辞書から生成 */
+Adnominal = { ADNM #Adnominal }
+ADNM = @choice('dic/ADNM.txt')
+
+
+/* 副詞、辞書から生成 */
+Adverb = { ADV #Adverb }
+ADV = @choice('dic/ADV.txt')
+
+
+/* 接続詞、辞書から生成 */
+Conjunction = { CONJ #Conjunction }
+CONJ = @choice('dic/CONJ.txt')
