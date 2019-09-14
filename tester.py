@@ -7,6 +7,7 @@ from pegpy.main import *
 
 
 GRAMMAR = 'kaguya0.tpeg'
+# GRAMMAR = 'gakkou.tpeg'
 
 
 def txt2array(path):
