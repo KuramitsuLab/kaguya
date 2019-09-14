@@ -3,4 +3,4 @@ local/
 test/result/
 graph/
 err_cases.txt
-
+temp.png

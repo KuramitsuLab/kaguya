@@ -30,3 +30,9 @@ KAGUYA関連のレポジトリ
   + Homebrewが入っていれば`brew install graphviz`でインストールできる
 + `python gen_graph.py test/result/success/<ファイル名>.txt`で実行する
 + `graph/<ファイル名>/<番号>.png`として図を保存する
+
+
+## `checker.py`
++ インタプリタでパースしつつ木をグラフ化するプログラム
++ `python checker.py <文法ファイル>`で実行
++ `./temp.png`が木の図
