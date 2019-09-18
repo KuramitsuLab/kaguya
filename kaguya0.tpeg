@@ -20,15 +20,16 @@ Chunk =
     / ConjunctionPhrase  // 接続詞
     / AdverbPhrase  // 副詞
     / AdnominalPhrase  // 連体詞
-    / AdjectivePhrase  // 形容詞句
-    / AdjectiveVerbPhrase  // 形容動詞句
     / VerbPhrase  // 動詞句
     / NounPhrase  // 名詞句
+    / AdjectivePhrase  // 形容詞句
+    / AdjectiveVerbPhrase  // 形容動詞句
+    / InterjectionPhrase  // 感動詞
 
 
 EOF = !.
 EOS = [!！?？。．.\n]? EOF
-TEN = [、，,:：\n]
+TEN = [・、，,:：\n]
 Eol = { (TEN/EOS) #Eol }
 // KANJI = [㐀-䶵一-龠々〇〻ーご]
 KATA = [ァ-ヶー・]+
@@ -154,6 +155,15 @@ ConjunctionPhrase = {
     //   Conjunction PostpPhrase
     Conjunction !!(Chunk/Eol)
     #ConjunctionPhrase
+}
+
+/*
+感動詞句
+感動詞に助詞が続くことはないものとしている
+*/
+InterjectionPhrase = {
+    Interjection
+    #InterjectionPhrase
 }
 
 
@@ -395,27 +405,6 @@ Meirei = {
 
 
 /*
-活用の種類ごとの動詞の語幹を辞書から生成
-「行く」はカ行五段活用だが、イ音便ではなく促音便で活用が異なるため別枠
-*/
-VERB5KA = @choice('dic/Verb/VERB5KA.txt')
-VERB5SA = @choice('dic/Verb/VERB5SA.txt')
-VERB5TA = @choice('dic/Verb/VERB5TA.txt')
-VERB5NA = @choice('dic/Verb/VERB5NA.txt')
-VERB5MA = @choice('dic/Verb/VERB5MA.txt')
-VERB5RA = @choice('dic/Verb/VERB5RA.txt')
-VERB5WA = @choice('dic/Verb/VERB5WA.txt')
-VERB5GA = @choice('dic/Verb/VERB5GA.txt')
-VERB5BA = @choice('dic/Verb/VERB5BA.txt')
-VERB1 = @choice('dic/Verb/VERB1.txt')
-KAHEN = @choice('dic/Verb/KAHEN.txt')
-SAHEN_SURU = @choice('dic/Verb/SAHEN_SURU.txt')
-SAHEN_ZURU = @choice('dic/Verb/SAHEN_ZURU.txt')
-VERB5IK = '行'
-
-
-
-/*
 形容詞の語幹と活用語尾
 実験的に助動詞や助詞、動詞を先読みで入れている
 語幹は辞書の"Adjective.dic"と"Noun.nai.dic"から生成
@@ -429,7 +418,6 @@ Adjective =
     / {ADJ 'い' !!(Aux_Youda/NounPhrase/PostpPhrase) #ADJRentai}
     / {ADJ !!(Aux_Souda1) #ADJGokan}
 
-ADJ = @choice('dic/ADJ.txt')
 
 /*
 形容動詞の語幹と活用語尾
@@ -446,7 +434,6 @@ AdjectiveVerb =
     / {ADJV 'なら' !!('ば'?) #ADJVKatei}
     / {ADJV !!(Aux_Souda1/Aux_Rashii/Aux_Desu) #ADJVGokan}
 
-ADJV = @choice('dic/ADJV.txt')
 
 /*
 補助動詞の「ある」
@@ -462,22 +449,15 @@ SUBNAI = 'な' ('かろ' / 'かっ' / 'く' / 'い' / 'けれ')
 数字と数え上げは事前にある程度定義している（名詞にない、とれない）
 カタカナや英語は名詞に入っている
 */
-Noun = {
-      {BLOCK #BLOCK}
+Noun =
+    / { BLOCK #Block }
+    / { NOUN #Noun }
     // / {KATA #KATA}
     // / {ALPHA #ALPHA}
-    / {NUM [つこ個]? [め目]? #NUM}
-    / {('ひと'/'ふた'/'みっ'/'よっ'/'いつ'/'むっ'/'なな'/'やっ'/'ここの') 'つ' [め目]? #COUNT}
+    / { NUM [つこ個]? [め目]? #Num }
+    / { ('ひと'/'ふた'/'みっ'/'よっ'/'いつ'/'むっ'/'なな'/'やっ'/'ここの') 'つ' [め目]? #Count }
     // / {SYMBOL #SYMBOL}
-    / {NOUN #NOUN}
-    #Noun
-}
 
-// 名詞依存のエラーはここの充実で下がる
-NOUN =
-    / @choice('dic/NOUN.txt')
-    / @choice('dic/Noun/rust.txt')
-    // / @choice('dic/Noun/ethereum.txt')
 
 BLOCK =
     / '\[' (!'\]' .)* '\]'
@@ -498,37 +478,19 @@ BLOCK =
 
 
 /* 助詞、手入力 */
-Postp = {
-    POSTP
-    #Postp
-}
-POSTP = @choice('dic/POSTP.txt')
-
+Postp = { POSTP #Postp }
 
 /* 連体詞、辞書から生成 */
-Adnominal = {
-    ADNM
-    #Adnominal
-}
-ADNM = @choice('dic/ADNM.txt')
-
+Adnominal = { ADNM #Adnominal }
 
 /* 副詞、辞書から生成 */
-Adverb = {
-    ADV
-    #Adverb
-}
-ADV = @choice('dic/ADV.txt')
-
+Adverb = { ADV #Adverb }
 
 /* 接続詞、辞書から生成 */
-Conjunction = {
-    CONJ
-    #Conjunction
-}
-CONJ = @choice('dic/CONJ.txt')
+Conjunction = { CONJ #Conjunction }
 
-
+/* 感動詞、辞書から生成 */
+Interjection = { INTJ #Interjection }
 
 
 /* 助動詞 */
@@ -536,8 +498,8 @@ CONJ = @choice('dic/CONJ.txt')
 Aux_Seru =
     / {'せ' #Mizen} (Aux_Rareru/Aux_Nai/Aux_You/Aux_Mai)
     / {'せ' #Renyo} (Aux_Tai/Aux_Tagaru/Aux_Ta/Aux_Souda1/Aux_Masu/!!(Eol/[はて]/SUBNAI))
-    / {'せる' #Syushi} (Aux_Souda2/Aux_Rashii/Aux_Daro/Aux_Desyo/!!(Eol))
-    / {'せる' #Rentai} (Aux_Youda)
+    / {'せる' #Syushi} (Aux_Souda2/Aux_Rashii/Aux_Daro/Aux_Desyo/!!(Eol/Chunk/Postp))
+    / {'せる' #Rentai} (Aux_Youda/!!([の]))
     / {'せれ' #Katei} (!!('ば'))
     / {'せろ' #Meirei} (!!(Eol))
     / {'せよ' #Meirei} (!!(Eol))
@@ -546,8 +508,8 @@ Aux_Seru =
 Aux_Saseru =
     / {'させ' #Mizen} (Aux_Rareru/Aux_Nai/Aux_You/Aux_Mai)
     / {'させ' #Renyo} (Aux_Tai/Aux_Tagaru/Aux_Ta/Aux_Souda1/Aux_Masu/!!(Eol/[はて]/SUBNAI))
-    / {'させる' #Syushi} (Aux_Souda2/Aux_Rashii/Aux_Daro/Aux_Desyo/!!(Eol))
-    / {'させる' #Rentai} (Aux_Youda)
+    / {'させる' #Syushi} (Aux_Souda2/Aux_Rashii/Aux_Daro/Aux_Desyo/!!(Eol/Chunk/Postp))
+    / {'させる' #Rentai} (Aux_Youda/!!([の]))
     / {'させれ' #Katei} (!!('ば'))
     / {'させろ' #Meirei} (!!(Eol))
     / {'させよ' #Meirei} (!!(Eol))
@@ -556,8 +518,8 @@ Aux_Saseru =
 Aux_Reru =
     / {'れ' #Mizen} (Aux_Nai/Aux_You/Aux_Mai)
     / {'れ' #Renyo} (Aux_Tai/Aux_Tagaru/Aux_Ta/Aux_Souda1/Aux_Masu/!!(Eol/[はて]/SUBNAI))
-    / {'れる' #Syushi} (Aux_Souda2/Aux_Rashii/Aux_Daro/Aux_Desyo/!!(Eol))
-    / {'れる' #Rentai} (Aux_Youda)
+    / {'れる' #Syushi} (Aux_Souda2/Aux_Rashii/Aux_Daro/Aux_Desyo/!!(Eol/Chunk/Postp))
+    / {'れる' #Rentai} (Aux_Youda/!!([の]))
     / {'れれ' #Katei} (!!('ば'))
     / {'れろ' #Meirei} (!!(Eol))
     / {'れよ' #Meirei} (!!(Eol))
@@ -577,109 +539,109 @@ Aux_Nai =
     / {'なかろ' #Mizen} (Aux_U)
     / {'なかっ' #Renyo} (Aux_Ta)
     / {'なく' #Renyo} (!!(Eol/[はて]/SUBNAI))
-    / {'ない' #Syushi} (Aux_Souda2/Aux_Rashii/Aux_Daro/Aux_Desyo/!!(Eol))
-    / {'ない' #Rentai} (Aux_Youda)
+    / {'ない' #Syushi} (Aux_Souda2/Aux_Rashii/Aux_Daro/Aux_Desyo/!!(Eol/Chunk/Postp))
+    / {'ない' #Rentai} (Aux_Youda/!!([の]))
     / {'なけれ' #Katei} (!!('ば'))
 
 // 話さず
 Aux_Nu =
     / {'ず' #Renyo} (!!(Eol/[に]))
-    / {'ぬ' #Syushi} (!!(Eol))
-    / {'ぬ' #Rentai} (Aux_Youda)
+    / {'ぬ' #Syushi} (!!(Eol/Chunk/Postp))
+    / {'ぬ' #Rentai} (Aux_Youda/!!([の]))
     / {'ね' #Katei} (!!('ば'))
 
 // しません
 Aux_Nn =
-    / {'ん' #Syushi} (!!(Eol))
-    / {'ん' #Rentai} (!!(Eol))  // FIX
+    / {'ん' #Syushi} (!!(Eol/Postp))
+    / {'ん' #Rentai} (!!([の]))  // FIX
 
 // 話しましょう
 Aux_U =
-    / {'う' #Syushi} (!!(Eol))
+    / {'う' #Syushi} (!!(Eol/Postp))
     / {'う' #Rentai} (!!(Eol))  // FIX
 
 // 起きよう
 Aux_You =
-    / {'よう' #Syushi} (!!(Eol))
-    / {'よう' #Rentai} (!!(Eol))  // FIX
+    / {'よう' #Syushi} (!!(Eol/Postp))
+    / {'よう' #Rentai} (!!(Eol/Noun))  // FIX
 
 // 話すまい
 Aux_Mai =
-    / {'まい' #Syushi} (!!(Eol))
+    / {'まい' #Syushi} (!!(Eol/Postp))
     / {'まい' #Rentai} (!!(Eol))  // FIX
 
 // 話したい
 Aux_Tai =
     / {'たかろ' #Mizen} (Aux_U)
     / {'たかっ' #Renyo} (Aux_Ta)
-    / {'たく' #Renyo} (!!(Eol/[はて]))
-    / {'たい' #Syushi} (Aux_Souda2/Aux_Rashii/Aux_Daro/Aux_Desyo/!!(Eol))
-    / {'たい' #Rentai} (Aux_Youda)
+    / {'たく' #Renyo} (!!(Eol/[はて]/Chunk))
+    / {'たい' #Syushi} (Aux_Souda2/Aux_Rashii/Aux_Daro/Aux_Desyo/!!(Eol/Chunk/Postp))
+    / {'たい' #Rentai} (Aux_Youda/!!([の]))
     / {'たけれ' #Katei} (!!('ば'))
 
 // 話したがる
 Aux_Tagaru =
     / {'たがら' #Mizen} (Aux_Nai/Aux_Nu)
-    / {'たがり' #Renyo} (Aux_Souda1/Aux_Masu/!!(Eol))
+    / {'たがり' #Renyo} (Aux_Souda1/Aux_Masu/!!(Eol/Postp))
     / {'たがっ' #Renyo} (Aux_Ta/!!([て]))
-    / {'たがる' #Syushi} (Aux_Souda2/Aux_Rashii/Aux_Daro/Aux_Desyo/!!(Eol))
-    / {'たがる' #Rentai} (Aux_Youda)
+    / {'たがる' #Syushi} (Aux_Souda2/Aux_Rashii/Aux_Daro/Aux_Desyo/!!(Eol/Chunk/Postp))
+    / {'たがる' #Rentai} (Aux_Youda/!!([の]))
     / {'たがれ' #Katei} (!!('ば'))
 
 // 話した
 Aux_Ta =
     / {'たろ' #Mizen} (Aux_U)
-    / {'た' #Syushi} (Aux_Souda2/Aux_Rashii/Aux_Daro/Aux_Desyo/!!(Eol))
-    / {'た' #Rentai} (Aux_Youda)
-    / {'たら' #Katei} (!!('ば')/!!(Eol))
+    / {'た' #Syushi} (Aux_Souda2/Aux_Rashii/Aux_Daro/Aux_Desyo/!!(Eol/Chunk/Postp))
+    / {'た' #Rentai} (Aux_Youda/!!([の]))
+    / {'たら' #Katei} (!!('ば'/Eol))
 
 // 呼んだ
 Aux_Da1 =
     / {'だろ' #Mizen} (Aux_U)
-    / {'だ' #Syushi} (Aux_Souda2/Aux_Rashii/Aux_Daro/Aux_Desyo/!!(Eol))
-    / {'だ' #Rentai} (Aux_Youda)
-    / {'だら' #Katei} (!!('ば')/!!(Eol))
+    / {'だ' #Syushi} (Aux_Souda2/Aux_Rashii/Aux_Daro/Aux_Desyo/!!(Eol/Chunk/Postp))
+    / {'だ' #Rentai} (Aux_Youda/!!([の]))
+    / {'だら' #Katei} (!!('ば'/Eol))
 
 // 起きそうだ
 Aux_Souda1 =
     / {'そうだろ' #Mizen} (Aux_U)
     / {'そうだっ' #Renyo} (Aux_Ta)
-    / {'そうで' #Renyo} (!!(Eol))
+    / {'そうで' #Renyo} (!!(Eol/Chunk/Postp))
     / {'そうに' #Renyo} (!!(SUBNAI))  // 補助形容詞の「ない」
-    / {'そうだ' #Syushi} (Aux_Souda2/Aux_Rashii/!!(Eol))
-    / {'そうな' #Rentai} (Aux_Youda)
-    / {'そうなら' #Katei} (!!('ば')/!!(Eol))
+    / {'そうだ' #Syushi} (Aux_Souda2/Aux_Rashii/!!(Eol/Postp))
+    / {'そうな' #Rentai} (Aux_Youda/!!(Eol/Chunk/Postp))
+    / {'そうなら' #Katei} (!!('ば'/Eol))
 
 // 起きるそうだ
 Aux_Souda2 =
-    / {'そうで' #Renyo} (!!(Eol))
-    / {'そうだ' #Syushi} (!!(Eol))
+    / {'そうで' #Renyo} (!!(Eol/Postp))
+    / {'そうだ' #Syushi} (!!(Eol/Postp))
 
 // 話すようだ
 Aux_Youda =
     / {'ようだろ' #Mizen} (Aux_U)
     / {'ようだっ' #Renyo} (Aux_Ta)
-    / {'ようで' #Renyo} (!!(Eol))
-    / {'ように' #Renyo} (!!(Eol))
-    / {'ようだ' #Syushi} (Aux_Souda2/Aux_Rashii/!!(Eol))
-    / {'ような' #Rentai} (!!(Eol))
-    / {'ようなら' #Katei} (!!('ば')/!!(Eol))
+    / {'ようで' #Renyo} (!!(Eol/Chunk/Postp))
+    / {'ように' #Renyo} (!!(Eol/Chunk/Postp))
+    / {'ようだ' #Syushi} (Aux_Souda2/Aux_Rashii/!!(Eol/Postp))
+    / {'ような' #Rentai} (!!(Eol/Chunk/Postp))
+    / {'ようなら' #Katei} (!!('ば'/Eol))
 
 
 // 話すらしい
 Aux_Rashii =
     / {'らしかっ' #Renyo} (Aux_Ta)
     / {'らしく' #Renyo} (!!(Eol/[はて]))
-    / {'らしい' #Syushi} (Aux_Souda2/Aux_Daro/Aux_Desyo/!!(Eol))
-    / {'らしい' #Rentai} (Aux_Youda)
-    / {'らしけれ' #Katei} (!!('ば')/!!(Eol))
+    / {'らしい' #Syushi} (Aux_Souda2/Aux_Daro/Aux_Desyo/!!(Eol/Chunk/Postp))
+    / {'らしい' #Rentai} (Aux_Youda/!!(Chunk/Postp))
+    / {'らしけれ' #Katei} (!!('ば'/Eol))
 
 // 話しましょう
 Aux_Masu =
     / {'ませ' #Mizen} (Aux_Nn)
     / {'ましょ' #Mizen} (Aux_U)
-    / {'まし' #Renyo} (Aux_Ta)
-    / {'ます' #Syushi} (Aux_Mai/Aux_Desyo/!!(Eol))
+    / {'まし' #Renyo} (Aux_Ta/Postp)
+    / {'ます' #Syushi} (Aux_Mai/Aux_Desyo/!!(Eol/'が'))
     / {'ます' #Rentai} (!!(Eol))  // FIX
     / {'ますれ' #Katei} (!!('ば'))
     / {'ませ' #Meirei} (!!(Eol))
@@ -690,23 +652,52 @@ Aux_Da2 =
     / {'だろ' #Mizen} (Aux_U)
     / {'だっ' #Renyo} (Aux_Ta)
     / {'で' #Renyo} (!!(SUBNAI))
-    / {'だ' #Syushi} (Aux_Souda2/Aux_Rashii/!!(Eol))
-    / {'な' #Rentai} (Aux_Youda)
-    / {'なら' #Katei} (!!('ば')/!!(Eol))
+    / {'だ' #Syushi} (Aux_Souda2/Aux_Rashii/!!(Eol/Postp))
+    / {'な' #Rentai} (Aux_Youda/!!(Chunk/Postp))
+    / {'なら' #Katei} (!!('ば'/Eol))
 
 // 話すだろう
 Aux_Daro =
     / {'だろ' #Mizen} (Aux_U)
     / {'で' #Renyo} (!!(Eol))  // 用法不明
-    / {'なら' #Katei} (!!('ば')/!!(Eol))
+    / {'なら' #Katei} (!!('ば'/Eol/Chunk))
 
 // 夢です
 Aux_Desu =
     / {'でしょ' #Mizen} (Aux_U)
-    / {'でし' #Renyo} (Aux_Ta)
-    / {'です' #Syushi} (!!(Eol))
-    / {'です' #Rentai} (!!(Eol))  // FIX
+    / {'でし' #Renyo} (Aux_Ta/!!(Postp))
+    / {'です' #Syushi} (!!(Eol/Postp))
+    / {'です' #Rentai} (!!(Eol/Postp))  // FIX
 
 // 話すでしょう
 Aux_Desyo =
     / {'でしょ' #Mizen} (Aux_U)
+
+
+
+
+/* 外部辞書の読み込み */
+NOUN = @choice('dic/TestNoun.txt')
+VERB5KA = @choice('dic/Verb/VERB5KA.txt')
+VERB5SA = @choice('dic/Verb/VERB5SA.txt')
+VERB5TA = @choice('dic/Verb/VERB5TA.txt')
+VERB5NA = @choice('dic/Verb/VERB5NA.txt')
+VERB5MA = @choice('dic/Verb/VERB5MA.txt')
+VERB5RA = @choice('dic/Verb/VERB5RA.txt')
+VERB5WA = @choice('dic/Verb/VERB5WA.txt')
+VERB5GA = @choice('dic/Verb/VERB5GA.txt')
+VERB5BA = @choice('dic/Verb/VERB5BA.txt')
+VERB1 = @choice('dic/Verb/VERB1.txt')
+KAHEN = @choice('dic/Verb/KAHEN.txt')
+SAHEN_SURU = @choice('dic/Verb/SAHEN_SURU.txt')
+SAHEN_ZURU = @choice('dic/Verb/SAHEN_ZURU.txt')
+VERB5IK = '行'
+ADJ = @choice('dic/ADJ.txt')
+ADJV = @choice('dic/ADJV.txt')
+POSTP = @choice('dic/POSTP.txt')
+ADNM = @choice('dic/ADNM.txt')
+ADV = @choice('dic/ADV.txt')
+CONJ = @choice('dic/CONJ.txt')
+INTJ = @choice('dic/INTJ.txt')
+
+

@@ -220,6 +220,7 @@ def main(path):
         MAX_COUNT = len(blocks)
         make_dir(f'graph/{fname}')
         for count, pair in enumerate(blocks):
+            if len(pair.split('\n')) < 2:return 0
             sys.stdout.write(f'\rNow Processing: {count+1}/{MAX_COUNT}')
             (bt, ast, *_) = pair.split('\n')
             gen_png((escape(bt), ast), f'graph/{fname}', str(count))
