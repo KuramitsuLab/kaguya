@@ -154,6 +154,10 @@ def gen_verb(dic_list):
                     if k in ['SAHEN_SURU', 'SAHEN_ZURU', 'KAHEN']:
                         # サ変、カ変は後ろ2文字が活用語尾
                         f.write(str(p)[:-2]+'\n')
+                    # elif k in ['VERB1']:
+                    #     # 一段動詞は語幹部分がひらがな1文字になるとよろしくない
+                    #     if len(str(p)) > 2:
+                    #         f.write(str(p)[:-1]+'\n')
                     else:
                         # 他の動詞は後ろ1文字が活用語尾
                         f.write(str(p)[:-1]+'\n')
@@ -174,15 +178,21 @@ def generate(dic_list):
         for p in dic_list['Adnominal.dic']:
             f.write(str(p) + '\n')
     with open(f'dic/POSTP.txt', mode='w') as f:
+        writed = []
         for p in dic_list['Postp.dic']:
-            f.write(str(p) + '\n')
-        for p in dic_list['Postp-col.dic']:
-            f.write(str(p) + '\n')
+            if not str(p) in ['ちゃ', 'ん'] and re.match('[ぁ-ん]+$', str(p)) and not str(p) in writed:
+                f.write(str(p) + '\n')
+                writed.append(str(p))
+        # for p in dic_list['Postp-col.dic']:
+        #     f.write(str(p) + '\n')
     with open(f'dic/CONJ.txt', mode='w') as f:
         for p in dic_list['Conjunction.dic']:
             f.write(str(p) + '\n')
     with open(f'dic/ADV.txt', mode='w') as f:
         for p in dic_list['Adverb.dic']:
+            f.write(str(p) + '\n')
+    with open(f'dic/INTJ.txt', mode='w') as f:
+        for p in dic_list['Interjection.dic']:
             f.write(str(p) + '\n')
 
 
