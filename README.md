@@ -3,36 +3,37 @@ KAGUYA関連のレポジトリ
 
 # ファイル概要
 ## `kaguya0.tpeg`
-+ KAGUYA文法本体
++ KAGUYA文法を目指している、(GAKKOU+先読み)文法
+
+
+## `gakkou.tpeg`
++ GAKKOU文法
+
+
+## `koinu.tpeg`
++ Puppy用の文法？
 
 
 ## `gen_dic.py`
-+ IPA辞書全般を扱うプログラム
-+ `dic/`下に各品詞を、`dic/Verb`下に動詞のチョイス用辞書を生成する
++ IPA辞書を扱うプログラム
++ `dic/`下に各品詞の辞書を、`dic/Verb`下に動詞の辞書を生成する
 + 辞書には "ipadic-2.7.0" を使用している
 
 
 ## `gen_noun.py`
 + Mecabでテストデータに形態素解析をかけて名詞辞書を生成するプログラム
-+ この辞書を文法側で読み込めば名詞ではエラーにならない（はず）
 
 
 ## `tester.py`
 + パーステストを行うプログラム
-+ `python tester.py test/<パース対象のファイル>`で実行する
-+ パース失敗の場合は、`test/result/fail/<ファイル名>.txt`に入力文字列と残り文字列を記述する
-+ パース成功の場合は、`test/result/success/<ファイル名>.txt`に入力文字列とASTを記述する
-
-
-## `gen_graph.py`
-+ ASTからツリー図を作成するプログラム
-+ "Graphviz" の`dot`コマンドを使える必要がある
++ `python tester.py test/<パース対象のファイル> <解析に使う文法>`で実行する
++ パース結果（テキスト）は、`test/result/<ファイル名>.txt`に出力する
++ 'Do test with generating graph?'に`y`でツリー図も生成する
+  + "Graphviz" の`dot`コマンドを使える必要がある
   + Homebrewが入っていれば`brew install graphviz`でインストールできる
-+ `python gen_graph.py test/result/success/<ファイル名>.txt`で実行する
-+ `graph/<ファイル名>/<番号>.png`として図を保存する
+  + `graph/<ファイル名>/<行番号>.png`として図を保存する
 
 
-## `checker.py`
-+ インタプリタでパースしつつ木をグラフ化するプログラム
-+ `python checker.py <文法ファイル>`で実行
-+ `./temp.png`が木の図
+## `all_test.sh`
++ `gakkou.tpeg`と`kaguya0.tpeg`のテストをまとめて行う
++ `sh all_test.sh python`で実行すると`test_python`に結果をまとめる
