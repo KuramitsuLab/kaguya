@@ -17,13 +17,13 @@ Sentence = {
 チョイスの順番はテストして最適な順番を見つけるしかない
 */
 Chunk =
-    / ConjunctionPhrase  // 接続詞
-    / AdverbPhrase  // 副詞
     / AdnominalPhrase  // 連体詞
+    / AdverbPhrase  // 副詞
     / VerbPhrase  // 動詞句
     / NounPhrase  // 名詞句
     / AdjectivePhrase  // 形容詞句
     / AdjectiveVerbPhrase  // 形容動詞句
+    / ConjunctionPhrase  // 接続詞
     / InterjectionPhrase  // 感動詞
 
 
@@ -49,34 +49,34 @@ SYMBOL =
 4. 動詞の活用した形+助動詞+動詞句の場合：話され始める
 */
 VerbPhrase = {
-      Verb AuxVerbForVerb PostpPhrase
-    / Verb AuxVerbForVerb !!(Chunk/Eol)
+      Verb AuxVerbForVerb PostpPhrase?
+    // / Verb AuxVerbForVerb !!(Chunk/Eol)
     / Verb PostpPhrase
     / Verb !!(Chunk/Eol)
     #VerbPhrase
 }
 // Verbの各活用形に対して接続しないものも試しているので失敗するかも
 AuxVerbForVerb = {
-      Aux_Seru
-    / Aux_Saseru
-    / Aux_Reru
+      Aux_Saseru
     / Aux_Rareru
-    / Aux_Nai
-    / Aux_Nu
-    / Aux_U
-    / Aux_You
-    / Aux_Mai
-    / Aux_Tai
     / Aux_Tagaru
-    / Aux_Ta
-    / Aux_Da1
     / Aux_Souda1
     / Aux_Souda2
     / Aux_Youda
     / Aux_Rashii
+    / Aux_Seru
+    / Aux_Reru
+    / Aux_Nai
+    / Aux_You
+    / Aux_Mai
+    / Aux_Tai
     / Aux_Masu
     / Aux_Daro
     / Aux_Desyo
+    / Aux_Nu
+    / Aux_U
+    / Aux_Ta
+    / Aux_Da1
     #AuxVerbForVerb
 }
 
@@ -86,21 +86,21 @@ AuxVerbForVerb = {
 組み方は動詞と一緒
 */
 AdjectivePhrase = {
-      Adjective AuxVerbForAdj PostpPhrase
-    / Adjective AuxVerbForAdj !!(Chunk/Eol)
+      Adjective AuxVerbForAdj PostpPhrase?
+    // / Adjective AuxVerbForAdj !!(Chunk/Eol)
     / Adjective PostpPhrase
     / Adjective !!(Chunk/Eol)
     #AdjectivePhrase
 }
 AuxVerbForAdj = {
-      Aux_U
-    / Aux_Ta
-    / Aux_Souda1
+      Aux_Souda1
     / Aux_Souda2
     / Aux_Youda
     / Aux_Rashii
-    / Aux_Daro
     / Aux_Desyo
+    / Aux_Daro
+    / Aux_U
+    / Aux_Ta
     #AuxVerbForAdj
 }
 
@@ -110,20 +110,20 @@ AuxVerbForAdj = {
 組み方は動詞と一緒
 */
 AdjectiveVerbPhrase = {
-      AdjectiveVerb AuxVerbForAdjv PostpPhrase
-    / AdjectiveVerb AuxVerbForAdjv !!(Chunk/Eol)
+      AdjectiveVerb AuxVerbForAdjv PostpPhrase?
+    // / AdjectiveVerb AuxVerbForAdjv !!(Chunk/Eol)
     / AdjectiveVerb PostpPhrase
     / AdjectiveVerb !!(Chunk/Eol)
     #AdjectiveVerbPhrase
 }
 AuxVerbForAdjv = {
-      Aux_U
-    / Aux_Ta
-    / Aux_Souda1
+      Aux_Souda1
     / Aux_Souda2
-    / Aux_Youda
     / Aux_Rashii
+    / Aux_Youda
     / Aux_Desu
+    / Aux_U
+    / Aux_Ta
     #AuxVerbForAdj
 }
 
@@ -133,16 +133,16 @@ AuxVerbForAdjv = {
 名詞にも助動詞が付属語としてつきうる
 */
 NounPhrase = {
-      Noun AuxVerbForNoun PostpPhrase
-    / Noun AuxVerbForNoun !!(Chunk/Eol)
+      Noun AuxVerbForNoun PostpPhrase?
+    // / Noun AuxVerbForNoun !!(Chunk/Eol)
     / Noun PostpPhrase
     / Noun !!(Chunk/Eol)
     #NounPhrase
 }
 AuxVerbForNoun = {
       Aux_Rashii
-    / Aux_Da2
     / Aux_Desu
+    / Aux_Da2
     #AuxVerbForNoun
 }
 
@@ -162,7 +162,7 @@ ConjunctionPhrase = {
 感動詞に助詞が続くことはないものとしている
 */
 InterjectionPhrase = {
-    Interjection
+    Interjection !!(Chunk/Eol)
     #InterjectionPhrase
 }
 
@@ -173,8 +173,8 @@ InterjectionPhrase = {
 連体詞には助詞は続かない（はず）
 */
 AdnominalPhrase = {
-      KoSoADo AuxVerbForAdnm PostpPhrase
-    / KoSoADo AuxVerbForAdnm !!(Chunk/Eol)
+      KoSoADo AuxVerbForAdnm PostpPhrase?
+    // / KoSoADo AuxVerbForAdnm !!(Chunk/Eol)
     / Adnominal !!(Chunk/Eol)
     // / Adnominal !PostPhrase !!(Chunk/Eol)
     #AdnominalPhrase
@@ -190,16 +190,16 @@ KoSoADo = { [こそあど] 'の' #Adnominal }
 副詞句
 */
 AdverbPhrase = {
-      Adverb AuxVerbForAdv PostpPhrase  // すぐ です ので
+      Adverb AuxVerbForAdv PostpPhrase?  // すぐ です ので
     / Adverb PostpNo !!(Chunk/Eol)  // しばらく の 間
-    / Adverb AuxVerbForAdv !!(Chunk/Eol)  // すぐ です
+    // / Adverb AuxVerbForAdv !!(Chunk/Eol)  // すぐ です
     / Adverb !!(Chunk/Eol)  // もっと
     #AdverbPhrase
 }
 AuxVerbForAdv = {
       Aux_Rashii
-    / Aux_Da2
     / Aux_Desu
+    / Aux_Da2
     #AuxVerbForAdv
 }
 
@@ -212,12 +212,12 @@ AuxVerbForAdv = {
 */
 PostpPhrase = {
       Postp AuxVerbNa !!('の') PostpPhrase
-    / PostpNo AfterPostpNo PostpPhrase
-    / PostpNo AfterPostpNo !!(Chunk/Eol)
+    / PostpNo AfterPostpNo PostpPhrase?
+    // / PostpNo AfterPostpNo !!(Chunk/Eol)
     / PostpNo PostpPhrase
     / PostpNo !!(Chunk/Eol)
-    / Postp AfterPostp PostpPhrase
-    / Postp AfterPostp !!(Chunk/Eol)
+    / Postp AfterPostp PostpPhrase?
+    // / Postp AfterPostp !!(Chunk/Eol)
     / Postp PostpPhrase
     / Postp !!(Chunk/Eol)
     #PostpPhrase
@@ -259,7 +259,8 @@ Mizen = {
     / VERB5BA ( [ば] !!(AuxV5Mizen) / [ぼ] !!(Aux_U) )
     / VERB5IK ( [か] !!(AuxV5Mizen) / [こ] !!(Aux_U) )
     / VERB1 !!(AuxV1Mizen)
-    / NOUN? ( [さ] !!(AuxVSaMizen) / [し] !!(AuxVSiMizen) / [せ] !!(Aux_Nu) )
+    / NOUN ( [さ] !!(AuxVSaMizen) / [し] !!(AuxVSiMizen) / [せ] !!(Aux_Nu) )
+    / ( [さ] !!(AuxVSaMizen) / [し] !!(AuxVSiMizen) / [せ] !!(Aux_Nu) )
     / SAHEN_SURU ( [さ] !!(AuxVSaMizen) / [し] !!(AuxVSiMizen) / [せ] !!(Aux_Nu) )
     / SAHEN_ZURU ( [ざ] !!(AuxVSaMizen) / [じ] !!(AuxVSiMizen) / [ぜ] !!(Aux_Nu) )
     / KAHEN? [来こ] !!(AuxVKaMizen)
@@ -286,7 +287,8 @@ Renyo = {
     / VERB5IK ( [き] !!(AuxV5Renyo/AfterRenyo) / [っ] !!(Aux_Ta/[て]) )
     / VERB1 !!(AuxV1Renyo/AfterRenyo/[て])
     / KAHEN? [来き] !!(AuxVKaRenyo/AfterRenyo/[て])
-    / NOUN? [し] !!(AuxVSaRenyo/AfterRenyo/[て])
+    / NOUN [し] !!(AuxVSaRenyo/AfterRenyo/[て])
+    / [し] !!(AuxVSaRenyo/AfterRenyo/[て])
     / SAHEN_SURU [し] !!(AuxVSaRenyo/AfterRenyo/[て])
     / SAHEN_ZURU [じ] !!(AuxVSaRenyo/AfterRenyo/[て])
     #Renyo
@@ -316,7 +318,8 @@ Syushi = {
     / VERB5IK [く] !!(AuxV5Syushi/AfterSyushi)
     / VERB1 [る] !!(AuxV1Syushi/AfterSyushi)
     / KAHEN? ('くる' / '来る') !!(AuxVKaSyushi/AfterSyushi)
-    / NOUN? 'する' !!(AuxVSaSyushi/AfterSyushi)
+    / NOUN 'する' !!(AuxVSaSyushi/AfterSyushi)
+    / 'する' !!(AuxVSaSyushi/AfterSyushi)
     / SAHEN_SURU 'する' !!(AuxVSaSyushi/AfterSyushi)
     / SAHEN_ZURU 'ずる' !!(AuxVSaSyushi/AfterSyushi)
     #Syushi
@@ -346,7 +349,8 @@ Rentai = {
     / VERB5IK [く] !!(AuxV5Rentai/AfterRentai)
     / VERB1 [る] !!(AuxV1Rentai/AfterRentai)
     / KAHEN? ('くる' / '来る') !!(AuxVKaRentai/AfterRentai)
-    / NOUN? 'する' !!(AuxVSaRentai/AfterRentai)
+    / NOUN 'する' !!(AuxVSaRentai/AfterRentai)
+    / 'する' !!(AuxVSaRentai/AfterRentai)
     / SAHEN_SURU 'する' !!(AuxVSaRentai/AfterRentai)
     / SAHEN_ZURU 'ずる' !!(AuxVSaRentai/AfterRentai)
     #Rentai
@@ -376,7 +380,8 @@ Katei = {
     / VERB5IK [け] !!'ば'
     / VERB1 [れ] !!'ば'
     / KAHEN? ('くれ' / '来れ') !!'ば'
-    / NOUN? 'すれ' !!'ば'
+    / NOUN 'すれ' !!'ば'
+    / 'すれ' !!'ば'
     / SAHEN_SURU 'すれ' !!'ば'
     / SAHEN_ZURU 'ずれ' !!'ば'
     #Katei
@@ -396,7 +401,8 @@ Meirei = {
     / VERB5IK [け] !!(Eol)
     / VERB1 [ろよ] !!(Eol)
     / KAHEN? ('こい' / '来い') !!(Eol)
-    / NOUN? ('しろ' / 'せよ') !!(Eol)
+    / NOUN ('しろ' / 'せよ') !!(Eol)
+    / ('しろ' / 'せよ') !!(Eol)
     / SAHEN_SURU ('しろ' / 'せよ') !!(Eol)
     / SAHEN_ZURU ('じろ' / 'ぜよ') !!(Eol)
     / ('ください'/'下さい') !!(Eol)  // 敬語動詞「下さる」の命令形は特殊
@@ -454,8 +460,8 @@ Noun =
     / { NOUN #Noun }
     // / {KATA #KATA}
     // / {ALPHA #ALPHA}
-    / { NUM [つこ個]? [め目]? #Num }
-    / { ('ひと'/'ふた'/'みっ'/'よっ'/'いつ'/'むっ'/'なな'/'やっ'/'ここの') 'つ' [め目]? #Count }
+    // / { NUM [つこ個]? [め目]? #Num }
+    // / { ('ひと'/'ふた'/'みっ'/'よっ'/'いつ'/'むっ'/'なな'/'やっ'/'ここの') 'つ' [め目]? #Count }
     // / {SYMBOL #SYMBOL}
 
 
@@ -497,7 +503,7 @@ Interjection = { INTJ #Interjection }
 // 買わせる
 Aux_Seru =
     / {'せ' #Mizen} (Aux_Rareru/Aux_Nai/Aux_You/Aux_Mai)
-    / {'せ' #Renyo} (Aux_Tai/Aux_Tagaru/Aux_Ta/Aux_Souda1/Aux_Masu/!!(Eol/[はて]/SUBNAI))
+    / {'せ' #Renyo} (Aux_Tai/Aux_Tagaru/Aux_Ta/Aux_Souda1/Aux_Masu/!!(Eol/Chunk/[はて]/SUBNAI))
     / {'せる' #Syushi} (Aux_Souda2/Aux_Rashii/Aux_Daro/Aux_Desyo/!!(Eol/Chunk/Postp))
     / {'せる' #Rentai} (Aux_Youda/!!([の]))
     / {'せれ' #Katei} (!!('ば'))
@@ -507,7 +513,7 @@ Aux_Seru =
 // 起きさせる
 Aux_Saseru =
     / {'させ' #Mizen} (Aux_Rareru/Aux_Nai/Aux_You/Aux_Mai)
-    / {'させ' #Renyo} (Aux_Tai/Aux_Tagaru/Aux_Ta/Aux_Souda1/Aux_Masu/!!(Eol/[はて]/SUBNAI))
+    / {'させ' #Renyo} (Aux_Tai/Aux_Tagaru/Aux_Ta/Aux_Souda1/Aux_Masu/!!(Eol/Chunk/[はて]/SUBNAI))
     / {'させる' #Syushi} (Aux_Souda2/Aux_Rashii/Aux_Daro/Aux_Desyo/!!(Eol/Chunk/Postp))
     / {'させる' #Rentai} (Aux_Youda/!!([の]))
     / {'させれ' #Katei} (!!('ば'))
@@ -517,7 +523,7 @@ Aux_Saseru =
 // 話される
 Aux_Reru =
     / {'れ' #Mizen} (Aux_Nai/Aux_You/Aux_Mai)
-    / {'れ' #Renyo} (Aux_Tai/Aux_Tagaru/Aux_Ta/Aux_Souda1/Aux_Masu/!!(Eol/[はて]/SUBNAI))
+    / {'れ' #Renyo} (Aux_Tai/Aux_Tagaru/Aux_Ta/Aux_Souda1/Aux_Masu/!!(Eol/Chunk/[はて]/SUBNAI))
     / {'れる' #Syushi} (Aux_Souda2/Aux_Rashii/Aux_Daro/Aux_Desyo/!!(Eol/Chunk/Postp))
     / {'れる' #Rentai} (Aux_Youda/!!([の]))
     / {'れれ' #Katei} (!!('ば'))
@@ -527,8 +533,8 @@ Aux_Reru =
 // 起きられる
 Aux_Rareru =
     / {'られ' #Mizen} (Aux_Nai/Aux_You/Aux_Mai)
-    / {'られ' #Renyo} (Aux_Tai/Aux_Tagaru/Aux_Ta/Aux_Souda1/Aux_Masu/!!(Eol/[はて]/SUBNAI))
-    / {'られる' #Syushi} (Aux_Souda2/Aux_Rashii/Aux_Daro/Aux_Desyo/!!(Eol))
+    / {'られ' #Renyo} (Aux_Tai/Aux_Tagaru/Aux_Ta/Aux_Souda1/Aux_Masu/!!(Eol/Chunk/[はて]/SUBNAI))
+    / {'られる' #Syushi} (Aux_Souda2/Aux_Rashii/Aux_Daro/Aux_Desyo/!!(Eol/Chunk))
     / {'られる' #Rentai} (Aux_Youda)
     / {'られれ' #Katei} (!!('ば'))
     / {'られろ' #Meirei} (!!(Eol))
@@ -545,7 +551,7 @@ Aux_Nai =
 
 // 話さず
 Aux_Nu =
-    / {'ず' #Renyo} (!!(Eol/[に]))
+    / {'ず' #Renyo} (!!(Eol/Chunk/[に]))
     / {'ぬ' #Syushi} (!!(Eol/Chunk/Postp))
     / {'ぬ' #Rentai} (Aux_Youda/!!([の]))
     / {'ね' #Katei} (!!('ば'))
@@ -574,7 +580,7 @@ Aux_Mai =
 Aux_Tai =
     / {'たかろ' #Mizen} (Aux_U)
     / {'たかっ' #Renyo} (Aux_Ta)
-    / {'たく' #Renyo} (!!(Eol/[はて]/Chunk))
+    / {'たく' #Renyo} (!!(Eol/Chunk/[はて]))
     / {'たい' #Syushi} (Aux_Souda2/Aux_Rashii/Aux_Daro/Aux_Desyo/!!(Eol/Chunk/Postp))
     / {'たい' #Rentai} (Aux_Youda/!!([の]))
     / {'たけれ' #Katei} (!!('ば'))
@@ -582,7 +588,7 @@ Aux_Tai =
 // 話したがる
 Aux_Tagaru =
     / {'たがら' #Mizen} (Aux_Nai/Aux_Nu)
-    / {'たがり' #Renyo} (Aux_Souda1/Aux_Masu/!!(Eol/Postp))
+    / {'たがり' #Renyo} (Aux_Souda1/Aux_Masu/!!(Eol/Chunk/Postp))
     / {'たがっ' #Renyo} (Aux_Ta/!!([て]))
     / {'たがる' #Syushi} (Aux_Souda2/Aux_Rashii/Aux_Daro/Aux_Desyo/!!(Eol/Chunk/Postp))
     / {'たがる' #Rentai} (Aux_Youda/!!([の]))
@@ -614,7 +620,7 @@ Aux_Souda1 =
 
 // 起きるそうだ
 Aux_Souda2 =
-    / {'そうで' #Renyo} (!!(Eol/Postp))
+    / {'そうで' #Renyo} (!!(Eol/Chunk/Postp))
     / {'そうだ' #Syushi} (!!(Eol/Postp))
 
 // 話すようだ
@@ -653,7 +659,7 @@ Aux_Da2 =
     / {'だっ' #Renyo} (Aux_Ta)
     / {'で' #Renyo} (!!(SUBNAI))
     / {'だ' #Syushi} (Aux_Souda2/Aux_Rashii/!!(Eol/Postp))
-    / {'な' #Rentai} (Aux_Youda/!!(Chunk/Postp))
+    / {'な' #Rentai} (Aux_Youda/!!(Eol/Chunk/Postp))
     / {'なら' #Katei} (!!('ば'/Eol))
 
 // 話すだろう

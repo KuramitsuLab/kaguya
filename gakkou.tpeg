@@ -18,13 +18,13 @@ Sentence = {
 */
 
 Chunk =
-    / ConjunctionPhrase  // 接続詞
-    / AdverbPhrase  // 副詞
     / AdnominalPhrase  // 連体詞
+    / AdverbPhrase  // 副詞
     / VerbPhrase  // 動詞句
     / NounPhrase  // 名詞句
     / AdjectivePhrase  // 形容詞句
     / AdjectiveVerbPhrase  // 形容動詞句
+    / ConjunctionPhrase  // 接続詞
     / InterjectionPhrase  // 感動詞
 
 
@@ -144,136 +144,24 @@ AuxVerbPhrase = {
 動詞の語幹と活用語尾
 活用順にしており、活用語尾が同じものまとめている
 */
-Verb =
-    / Mizen
-    / Renyo
-    / Syushi
-    / Rentai
-    / Katei
-    / Meirei
-
-
-Mizen = {
-      VERB5KA [かこ]
-    / VERB5SA [さそ]
-    / VERB5TA [たと]
-    / VERB5NA [なの]
-    / VERB5MA [まも]
-    / VERB5RA [らろ]
-    / VERB5WA [わお]
-    / VERB5GA [がご]
-    / VERB5BA [ばぼ]
-    / VERB5KASOKU [かこ]
-    / VERB1
-    / SAHEN_SURU [さ]
-    / SAHEN_ZURU [ざ]
-    / (KANJI/KATA)* [さ]
-    / KAHEN? [来]
-    / SAHEN_SURU [し]
-    / SAHEN_ZURU [じ]
-    / (KANJI/KATA)* [し]
-    / KAHEN? [こ]  // 命令形の活用語尾「こい」と競合する
-    / SAHEN_SURU [せ]  // 命令形の活用語尾「せよ」と競合する
-    / SAHEN_ZURU [ぜ]  // 命令形の活用語尾「ぜよ」と競合する
-    / (KANJI/KATA)* [せ]  // 命令形の活用語尾「せよ」と競合する
-    #Mizen
-}
-
-Renyo = {
-      VERB5KA [きい]
-    / VERB5SA [し]
-    / VERB5TA [ちっ]
-    / VERB5NA [にん]
-    / VERB5MA [みん]
-    / VERB5RA [りっ]
-    / VERB5WA [いっ]
-    / VERB5GA [ぎい]
-    / VERB5BA [びん]
-    / VERB5KASOKU [きっ]
-    / VERB1
-    / KAHEN? [き]
-    / KAHEN? [来]
-    / SAHEN_SURU [し]
-    / SAHEN_ZURU [じ]
-    / (KANJI/KATA)* [し]
-    #Renyo
-}
-
-Syushi = {
-      VERB5KA [く]
-    / VERB5SA [す]
-    / VERB5TA [つ]
-    / VERB5NA [ぬ]
-    / VERB5MA [む]
-    / VERB5RA [る]
-    / VERB5WA [う]
-    / VERB5GA [ぐ]
-    / VERB5BA [ぶ]
-    / VERB5KASOKU [く]
-    / VERB1 [る]
-    / KAHEN? ('くる' / '来る')
-    / SAHEN_SURU 'する'
-    / SAHEN_ZURU 'ずる'
-    / (KANJI/KATA)* 'する'
-    #Syushi
-}
-
-Rentai = {
-      VERB5KA [く]
-    / VERB5SA [す]
-    / VERB5TA [つ]
-    / VERB5NA [ぬ]
-    / VERB5MA [む]
-    / VERB5RA [る]
-    / VERB5WA [う]
-    / VERB5GA [ぐ]
-    / VERB5BA [ぶ]
-    / VERB5KASOKU [く]
-    / VERB1 [る]
-    / KAHEN? ('くる' / '来る')
-    / SAHEN_SURU 'する'
-    / SAHEN_ZURU 'ずる'
-    / (KANJI/KATA)* 'する'
-    #Rentai
-}
-
-Katei = {
-      VERB5KA [け]
-    / VERB5SA [せ]
-    / VERB5TA [て]
-    / VERB5NA [ね]
-    / VERB5MA [め]
-    / VERB5RA [れ]
-    / VERB5WA [え]
-    / VERB5GA [げ]
-    / VERB5BA [べ]
-    / VERB5KASOKU [け]
-    / VERB1 [れ]
-    / KAHEN? ('くれ' / '来れ')
-    / SAHEN_SURU 'すれ'
-    / SAHEN_ZURU 'ずれ'
-    / (KANJI/KATA)+ 'すれ'
-    #Katei
-}
-
-Meirei = {
-      VERB5KA [け]
-    / VERB5SA [せ]
-    / VERB5TA [て]
-    / VERB5NA [ね]
-    / VERB5MA [め]
-    / VERB5RA [れ]
-    / VERB5WA [え]
-    / VERB5GA [げ]
-    / VERB5BA [べ]
-    / VERB5KASOKU [け]
-    / VERB1 [ろよ]
-    / KAHEN? ('こい' / '来い')
-    / SAHEN_SURU ('しろ' / 'せよ')
-    / SAHEN_ZURU ('じろ' / 'ぜよ')
-    / (KANJI/KATA)+ ('しろ' / 'せよ')
+Verb = {
+      VERB5KA [かきくけこい]
+    / VERB5SA [さしすせそ]
+    / VERB5TA [たちつてとっ]
+    / VERB5NA [なにぬねのん]
+    / VERB5MA [まみむめもん]
+    / VERB5RA [らりるれろっ]
+    / VERB5WA [わいうえおっ]
+    / VERB5GA [がぎぐげごい]
+    / VERB5BA [ばびぶべぼん]
+    / VERB5KASOKU [かきくけこっ]
+    / SAHEN_SURU 'する'/'すれ'/'しろ'/'せよ'/[さしせ]
+    / SAHEN_ZURU 'ずる'/'ずれ'/'じろ'/'ぜよ'/[ざじぜ]
+    / (KANJI/KATA)* 'する'/'すれ'/'しろ'/'せよ'/[さしせ]
+    / KAHEN? ( ([来] [るれい]?) / ('くる'/'くれ'/'こい'/[こき]) )
     / ('ください'/'下さい')  // 敬語動詞「下さる」の命令形は特殊
-    #Meirei
+    / VERB1 [るれろよ]?
+    #Verb
 }
 
 
@@ -285,8 +173,8 @@ Meirei = {
 Adjective =
     / {ADJ 'かろ' #ADJMizen}
     / {ADJ 'かっ' #ADJRenyo}
-    / {ADJ 'く' #ADJRenyo}
     / {ADJ 'けれ' #ADJKatei}
+    / {ADJ 'く' #ADJRenyo}
     / {ADJ 'い' #ADJSyushi}
     / {ADJ 'い' #ADJRentai}
     / {ADJ #ADJGokan}
@@ -300,11 +188,11 @@ Adjective =
 AdjectiveVerb =
     / {ADJV 'だろ' #ADJVMizen}
     / {ADJV 'だっ' #ADJVRenyo}
+    / {ADJV 'なら' #ADJVKatei}
     / {ADJV 'で' #ADJVRenyo}
     / {ADJV 'に' #ADJVRenyo}
     / {ADJV 'だ' #ADJVSyushi}
     / {ADJV 'な' #ADJVRentai}
-    / {ADJV 'なら' #ADJVKatei}
     / {ADJV #ADJVGokan}
 
 /*
@@ -326,8 +214,8 @@ Noun =
     / { NOUN #Noun }
     // / { KATA #KATA }
     // / { ALPHA #ALPHA }
-    / { NUM [つこ個]? [め目]? #Num }
-    / { ('ひと'/'ふた'/'みっ'/'よっ'/'いつ'/'むっ'/'なな'/'やっ'/'ここの') 'つ' [め目]? #Count }
+    // / { NUM [つこ個]? [め目]? #Num }
+    // / { ('ひと'/'ふた'/'みっ'/'よっ'/'いつ'/'むっ'/'なな'/'やっ'/'ここの') 'つ' [め目]? #Count }
     // / { SYMBOL #SYMBOL }
 
 
@@ -365,210 +253,85 @@ Conjunction = { CONJ #Conjunction }
 Interjection = { INTJ #Interjection }
 
 AuxVerb =
-    / Aux_Seru
-    / Aux_Saseru
-    / Aux_Reru
-    / Aux_Rareru
-    / Aux_Nai
-    / Aux_Nu
-    / Aux_Nn
-    / Aux_U
-    / Aux_You
-    / Aux_Mai
-    / Aux_Tai
-    / Aux_Tagaru
-    / Aux_Ta
-    / Aux_Da1
-    / Aux_Souda1
-    / Aux_Souda2
-    / Aux_Youda
-    / Aux_Rashii
-    / Aux_Masu
-    / Aux_Da2
-    / Aux_Daro
-    / Aux_Desu
-    / Aux_Desyo
-
-
-/* 助動詞 */
-// 買わせる
-Aux_Seru =
-    / {'せ' #Mizen}
-    / {'せ' #Renyo}
-    / {'せる' #Syushi}
-    / {'せる' #Rentai}
-    / {'せれ' #Katei}
-    / {'せろ' #Meirei}
-    / {'せよ' #Meirei}
-
-// 起きさせる
-Aux_Saseru =
-    / {'させ' #Mizen}
-    / {'させ' #Renyo}
-    / {'させる' #Syushi}
-    / {'させる' #Rentai}
+    / {'そうだろ' #Mizen}
+    / {'そうだっ' #Renyo}
+    / {'そうなら' #Katei}
+    / {'ようだろ' #Mizen}
+    / {'ようだっ' #Renyo}
+    / {'ようなら' #Katei}
+    / {'らしかっ' #Renyo}
+    / {'らしけれ' #Katei}
+    / {'させる' #SyushiRentai}
     / {'させれ' #Katei}
     / {'させろ' #Meirei}
     / {'させよ' #Meirei}
-
-// 話される
-Aux_Reru =
-    / {'れ' #Mizen}
-    / {'れ' #Renyo}
-    / {'れる' #Syushi}
-    / {'れる' #Rentai}
-    / {'れれ' #Katei}
-    / {'れろ' #Meirei}
-    / {'れよ' #Meirei}
-
-// 起きられる
-Aux_Rareru =
-    / {'られ' #Mizen}
-    / {'られ' #Renyo}
-    / {'られる' #Syushi}
-    / {'られる' #Rentai}
+    / {'られる' #SyushiRentai}
     / {'られれ' #Katei}
     / {'られろ' #Meirei}
     / {'られよ' #Meirei}
-
-// 話さない
-Aux_Nai =
     / {'なかろ' #Mizen}
     / {'なかっ' #Renyo}
-    / {'なく' #Renyo}
-    / {'ない' #Syushi}
-    / {'ない' #Rentai}
     / {'なけれ' #Katei}
-
-// 話さず
-Aux_Nu =
-    / {'ず' #Renyo}
-    / {'ぬ' #Syushi}
-    / {'ぬ' #Rentai}
-    / {'ね' #Katei}
-
-// しません
-Aux_Nn =
-    / {'ん' #Syushi}
-    / {'ん' #Rentai}
-
-// 話しましょう
-Aux_U =
-    / {'う' #Syushi}
-    / {'う' #Rentai}
-
-// 起きよう
-Aux_You =
-    / {'よう' #Syushi}
-    / {'よう' #Rentai}
-
-// 話すまい
-Aux_Mai =
-    / {'まい' #Syushi}
-    / {'まい' #Rentai}
-
-// 話したい
-Aux_Tai =
     / {'たかろ' #Mizen}
     / {'たかっ' #Renyo}
-    / {'たく' #Renyo}
-    / {'たい' #Syushi}
-    / {'たい' #Rentai}
     / {'たけれ' #Katei}
-
-// 話したがる
-Aux_Tagaru =
     / {'たがら' #Mizen}
     / {'たがり' #Renyo}
     / {'たがっ' #Renyo}
-    / {'たがる' #Syushi}
-    / {'たがる' #Rentai}
+    / {'たがる' #SyushiRentai}
     / {'たがれ' #Katei}
-
-// 話した
-Aux_Ta =
-    / {'たろ' #Mizen}
-    / {'た' #Syushi}
-    / {'た' #Rentai}
-    / {'たら' #Katei}
-
-// 呼んだ
-Aux_Da1 =
-    / {'だろ' #Mizen}
-    / {'だ' #Syushi}
-    / {'だ' #Rentai}
-    / {'だら' #Katei}
-
-// 起きそうだ
-Aux_Souda1 =
-    / {'そうだろ' #Mizen}
-    / {'そうだっ' #Renyo}
     / {'そうで' #Renyo}
     / {'そうに' #Renyo}
     / {'そうだ' #Syushi}
     / {'そうな' #Rentai}
-    / {'そうなら' #Katei}
-
-// 起きるそうだ
-Aux_Souda2 =
-    / {'そうで' #Renyo}
-    / {'そうだ' #Syushi}
-
-// 話すようだ
-Aux_Youda =
-    / {'ようだろ' #Mizen}
-    / {'ようだっ' #Renyo}
     / {'ようで' #Renyo}
     / {'ように' #Renyo}
     / {'ようだ' #Syushi}
     / {'ような' #Rentai}
-    / {'ようなら' #Katei}
-
-
-// 話すらしい
-Aux_Rashii =
-    / {'らしかっ' #Renyo}
     / {'らしく' #Renyo}
-    / {'らしい' #Syushi}
-    / {'らしい' #Rentai}
-    / {'らしけれ' #Katei}
-
-// 話しましょう
-Aux_Masu =
-    / {'ませ' #Mizen}
+    / {'らしい' #SyushiRentai}
     / {'ましょ' #Mizen}
-    / {'まし' #Renyo}
-    / {'ます' #Syushi}
-    / {'ます' #Rentai}
+    / {'でしょ' #Mizen}
     / {'ますれ' #Katei}
-    / {'ませ' #Meirei}
-    / {'まし' #Meirei}
-
-// 夢だ
-Aux_Da2 =
+    / {'せる' #SyushiRentai}
+    / {'せれ' #Katei}
+    / {'せろ' #Meirei}
+    / {'せよ' #Meirei}
+    / {'させ' #MizenRenyo}
+    / {'れる' #SyushiRentai}
+    / {'れれ' #Katei}
+    / {'れろ' #Meirei}
+    / {'れよ' #Meirei}
+    / {'なく' #Renyo}
+    / {'ない' #SyushiRentai}
+    / {'よう' #SyushiRentai}
+    / {'まい' #SyushiRentai}
+    / {'られ' #MizenRenyo}
+    / {'たく' #Renyo}
+    / {'たい' #SyushiRentai}
+    / {'たろ' #Mizen}
+    / {'たら' #Katei}
     / {'だろ' #Mizen}
+    / {'だら' #Katei}
+    / {'ませ' #MizenMeirei}
+    / {'まし' #RenyoMeirei}
+    / {'ます' #SyushiRentai}
     / {'だっ' #Renyo}
-    / {'で' #Renyo}
-    / {'だ' #Syushi}
-    / {'な' #Rentai}
     / {'なら' #Katei}
-
-// 話すだろう
-Aux_Daro =
-    / {'だろ' #Mizen}
-    / {'で' #Renyo}
-    / {'なら' #Katei}
-
-// 夢です
-Aux_Desu =
-    / {'でしょ' #Mizen}
     / {'でし' #Renyo}
-    / {'です' #Syushi}
-    / {'です' #Rentai}
+    / {'です' #SyushiRentai}
+    / {'せ' #MizenRenyo}
+    / {'れ' #MizenRenyo}
+    / {'ず' #Renyo}
+    / {'ぬ' #SyushiRentai}
+    / {'ね' #Katei}
+    / {'ん' #SyushiRentai}
+    / {'う' #SyushiRentai}
+    / {'た' #SyushiRentai}
+    / {'だ' #SyushiRentai}
+    / {'で' #Renyo}
+    / {'な' #Rentai}
 
-// 話すでしょう
-Aux_Desyo =
-    / {'でしょ' #Mizen}
 
 
 
