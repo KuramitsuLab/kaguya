@@ -1,4 +1,4 @@
-/* KAGUYA文法 */
+/* GAKKOU文法+先読み */
 
 /*
 トップの規則
@@ -14,7 +14,7 @@ Sentence = {
 
 /*
 形容詞句や動詞句などのひとかたまりごとにマッチする規則
-チョイスの順番はテストして最適な順番を見つけるしかない
+予備実験の結果、以下が良い結果になりやすかった
 */
 Chunk =
     / AdnominalPhrase  // 連体詞
@@ -43,19 +43,22 @@ SYMBOL =
 /*
 動詞句
 スモールケースから順に
-1. 動詞の活用した形のみの場合：話す、話し
-2. 動詞の活用した形+助動詞の場合：話した、話される
-3. 動詞の活用した形+動詞句の場合：話し始める
-4. 動詞の活用した形+助動詞+動詞句の場合：話され始める
+1. 動詞の活用した形のみ -> 話す、話し
+2. 動詞の活用した形+助詞句 -> 話して、話すので
+2. 動詞の活用した形+助動詞句 -> 話した、話される
+4. 動詞の活用した形+助動詞+助詞句 -> 話されたから
 */
 VerbPhrase = {
       Verb AuxVerbForVerb PostpPhrase?
-    // / Verb AuxVerbForVerb !!(Chunk/Eol)
     / Verb PostpPhrase
     / Verb !!(Chunk/Eol)
     #VerbPhrase
 }
-// Verbの各活用形に対して接続しないものも試しているので失敗するかも
+
+/*
+動詞に連接可能な助動詞句
+だいたい最長順になるように配置
+*/
 AuxVerbForVerb = {
       Aux_Saseru
     / Aux_Rareru
@@ -82,16 +85,18 @@ AuxVerbForVerb = {
 
 
 /*
-形容詞
-組み方は動詞と一緒
+形容詞句
 */
 AdjectivePhrase = {
       Adjective AuxVerbForAdj PostpPhrase?
-    // / Adjective AuxVerbForAdj !!(Chunk/Eol)
     / Adjective PostpPhrase
     / Adjective !!(Chunk/Eol)
     #AdjectivePhrase
 }
+
+/*
+形容詞に連接可能な助動詞句
+*/
 AuxVerbForAdj = {
       Aux_Souda1
     / Aux_Souda2
@@ -106,16 +111,18 @@ AuxVerbForAdj = {
 
 
 /*
-形容動詞
-組み方は動詞と一緒
+形容動詞句
 */
 AdjectiveVerbPhrase = {
       AdjectiveVerb AuxVerbForAdjv PostpPhrase?
-    // / AdjectiveVerb AuxVerbForAdjv !!(Chunk/Eol)
     / AdjectiveVerb PostpPhrase
     / AdjectiveVerb !!(Chunk/Eol)
     #AdjectiveVerbPhrase
 }
+
+/*
+形容動詞に連接可能な助動詞句
+*/
 AuxVerbForAdjv = {
       Aux_Souda1
     / Aux_Souda2
@@ -130,15 +137,17 @@ AuxVerbForAdjv = {
 
 /*
 名詞句
-名詞にも助動詞が付属語としてつきうる
 */
 NounPhrase = {
       Noun AuxVerbForNoun PostpPhrase?
-    // / Noun AuxVerbForNoun !!(Chunk/Eol)
     / Noun PostpPhrase
     / Noun !!(Chunk/Eol)
     #NounPhrase
 }
+
+/*
+名詞に連接可能な助動詞句
+*/
 AuxVerbForNoun = {
       Aux_Rashii
     / Aux_Desu
@@ -149,17 +158,16 @@ AuxVerbForNoun = {
 
 /*
 接続詞句
-接続詞に助詞が続くことはないものとしている
+接続詞は連接語がないものとしている
 */
 ConjunctionPhrase = {
-    //   Conjunction PostpPhrase
     Conjunction !!(Chunk/Eol)
     #ConjunctionPhrase
 }
 
 /*
 感動詞句
-感動詞に助詞が続くことはないものとしている
+感動詞は連接語がないものとしている
 */
 InterjectionPhrase = {
     Interjection !!(Chunk/Eol)
@@ -169,16 +177,18 @@ InterjectionPhrase = {
 
 /*
 連体詞句
-「この・その・あの・どの」には助動詞「ようだ」がつきうる
-連体詞には助詞は続かない（はず）
+「この・その・あの・どの」には助動詞「ようだ」が連接可能で、その場合は助詞句も連接しうる
+他の連体詞は連接語がないものとしている
 */
 AdnominalPhrase = {
       KoSoADo AuxVerbForAdnm PostpPhrase?
-    // / KoSoADo AuxVerbForAdnm !!(Chunk/Eol)
     / Adnominal !!(Chunk/Eol)
-    // / Adnominal !PostPhrase !!(Chunk/Eol)
     #AdnominalPhrase
 }
+
+/*
+連体詞に連接可能な助動詞句
+*/
 AuxVerbForAdnm = {
     Aux_Youda
     #AuxVerbForAdnm
@@ -188,14 +198,18 @@ KoSoADo = { [こそあど] 'の' #Adnominal }
 
 /*
 副詞句
+副詞に連接可能な助詞は「の」のみ
 */
 AdverbPhrase = {
       Adverb AuxVerbForAdv PostpPhrase?  // すぐ です ので
     / Adverb PostpNo !!(Chunk/Eol)  // しばらく の 間
-    // / Adverb AuxVerbForAdv !!(Chunk/Eol)  // すぐ です
     / Adverb !!(Chunk/Eol)  // もっと
     #AdverbPhrase
 }
+
+/*
+副詞に連接可能な助動詞句
+*/
 AuxVerbForAdv = {
       Aux_Rashii
     / Aux_Desu
@@ -208,16 +222,13 @@ AuxVerbForAdv = {
 助詞句
 助詞の「の」だけに続く助動詞があるため別扱いしている
 助詞に続く助動詞「な」はその後が限定的なので別扱いしている
-チョイスの順番決めが難しい
 */
 PostpPhrase = {
       Postp AuxVerbNa !!('の') PostpPhrase
     / PostpNo AfterPostpNo PostpPhrase?
-    // / PostpNo AfterPostpNo !!(Chunk/Eol)
     / PostpNo PostpPhrase
     / PostpNo !!(Chunk/Eol)
     / Postp AfterPostp PostpPhrase?
-    // / Postp AfterPostp !!(Chunk/Eol)
     / Postp PostpPhrase
     / Postp !!(Chunk/Eol)
     #PostpPhrase
@@ -230,7 +241,7 @@ AuxVerbNa = { 'な' #AuxVerbForPostp }
 
 /*
 動詞の語幹と活用語尾
-活用順にしており、活用語尾が同じものまとめている
+活用形順にしている
 */
 Verb =
     / Mizen
@@ -243,9 +254,6 @@ Verb =
 
 /*
 動詞の未然形活用
-未然形はほぼ確実に助動詞が繋がるため先読みで誤マッチを抑制している
-これで「止まる」の先頭文字列「止ま」が「止む」の未然形「止ま」にマッチしない
-以下、他の活用も同様
 */
 Mizen = {
       VERB5KA ( [か] !!(AuxV5Mizen) / [こ] !!(Aux_U) )
@@ -264,16 +272,22 @@ Mizen = {
     / SAHEN_SURU ( [さ] !!(AuxVSaMizen) / [し] !!(AuxVSiMizen) / [せ] !!(Aux_Nu) )
     / SAHEN_ZURU ( [ざ] !!(AuxVSaMizen) / [じ] !!(AuxVSiMizen) / [ぜ] !!(Aux_Nu) )
     / KAHEN? [来こ] !!(AuxVKaMizen)
-    // / KAHEN? [こ] !!(AuxVKaMizen)  // 命令形の活用語尾「こい」と競合するかも
     #Mizen
 }
+
+/*
+各活用の種類の動詞の未然形に連接可能な助動詞群
+五段活用、一段活用、サ行変格活用の活用語尾が「さ・ざ」または「し・じ」、カ行変格活用
+*/
 AuxV5Mizen = Aux_Seru/Aux_Reru/Aux_Nai/Aux_Nu
 AuxV1Mizen = Aux_Saseru/Aux_Rareru/Aux_Nai/Aux_You/Aux_Mai/Aux_Nu
 AuxVSaMizen = Aux_Seru/Aux_Reru
 AuxVSiMizen = Aux_Nai/Aux_You/Aux_Mai
 AuxVKaMizen = Aux_Saseru/Aux_Rareru/Aux_Nai/Aux_Nu/Aux_You/Aux_Mai
 
-
+/*
+動詞の連用形活用
+*/
 Renyo = {
       VERB5KA ( [き] !!(AuxV5Renyo/AfterRenyo) / [い] !!(Aux_Ta/[て]) )
     / VERB5SA ( [し] !!(AuxV5Renyo/AfterRenyo/[て]) )
@@ -293,18 +307,28 @@ Renyo = {
     / SAHEN_ZURU [じ] !!(AuxVSaRenyo/AfterRenyo/[て])
     #Renyo
 }
+
+/*
+動詞の連用形に連接可能な助動詞群
+*/
 AuxV5Renyo = Aux_Tai/Aux_Tagaru/Aux_Souda1/Aux_Masu
 AuxV1Renyo = Aux_Tai/Aux_Tagaru/Aux_Ta/Aux_Souda1/Aux_Masu
 AuxVSaRenyo = Aux_Tai/Aux_Tagaru/Aux_Ta/Aux_Souda1/Aux_Masu
 AuxVKaRenyo = Aux_Tai/Aux_Tagaru/Aux_Ta/Aux_Souda1/Aux_Masu
 
+/*
+動詞の連用形の助動詞以外の連接語
+*/
 AfterRenyo = {
-      VerbPhrase
+      VerbPhrase  // Chunkでは？
     / TEN
     / PostpPhrase
     #AfterRenyo
 }
 
+/*
+動詞の終止形活用
+*/
 Syushi = {
       VERB5KA [く] !!(AuxV5Syushi/AfterSyushi)
     / VERB5SA [す] !!(AuxV5Syushi/AfterSyushi)
@@ -324,11 +348,18 @@ Syushi = {
     / SAHEN_ZURU 'ずる' !!(AuxVSaSyushi/AfterSyushi)
     #Syushi
 }
+
+/*
+動詞の終止形に連接可能な助動詞群
+*/
 AuxV5Syushi = Aux_Mai/Aux_Souda2/Aux_Rashii/Aux_Daro/Aux_Desyo
 AuxV1Syushi = Aux_Souda2/Aux_Rashii/Aux_Daro/Aux_Desyo
 AuxVSaSyushi = Aux_Souda2/Aux_Rashii/Aux_Daro/Aux_Desyo
 AuxVKaSyushi = Aux_Souda2/Aux_Rashii/Aux_Daro/Aux_Desyo
 
+/*
+動詞の終止形の助動詞以外の連接語
+*/
 AfterSyushi = {
       PostpPhrase
     / Eol
@@ -336,6 +367,9 @@ AfterSyushi = {
 }
 
 
+/*
+動詞の連体形活用
+*/
 Rentai = {
       VERB5KA [く] !!(AuxV5Rentai/AfterRentai)
     / VERB5SA [す] !!(AuxV5Rentai/AfterRentai)
@@ -355,11 +389,18 @@ Rentai = {
     / SAHEN_ZURU 'ずる' !!(AuxVSaRentai/AfterRentai)
     #Rentai
 }
+
+/*
+動詞の連体形に連接可能な助動詞群
+*/
 AuxV5Rentai = Aux_Youda
 AuxV1Rentai = Aux_Youda
 AuxVSaRentai = Aux_Youda
 AuxVKaRentai = Aux_Youda
 
+/*
+動詞の連体形の助動詞以外の連接語
+*/
 AfterRentai = {
       NounPhrase
     / PostpPhrase
@@ -367,6 +408,10 @@ AfterRentai = {
 }
 
 
+/*
+動詞の仮定形活用
+連接語は助詞の「ば」のみとしている
+*/
 Katei = {
       VERB5KA [け] !!'ば'
     / VERB5SA [せ] !!'ば'
@@ -388,6 +433,10 @@ Katei = {
 }
 
 
+/*
+動詞の命令形活用
+連接語は文の終わり、つまり言い切りの形のみとしている
+*/
 Meirei = {
       VERB5KA [け] !!(Eol)
     / VERB5SA [せ] !!(Eol)
@@ -412,8 +461,6 @@ Meirei = {
 
 /*
 形容詞の語幹と活用語尾
-実験的に助動詞や助詞、動詞を先読みで入れている
-語幹は辞書の"Adjective.dic"と"Noun.nai.dic"から生成
 */
 Adjective =
     / {ADJ 'かろ' !!(Aux_U) #ADJMizen}
@@ -427,23 +474,21 @@ Adjective =
 
 /*
 形容動詞の語幹と活用語尾
-形容詞とやっていることは同じ
-語幹は辞書の"Noun.adjv.dic"から生成
 */
 AdjectiveVerb =
     / {ADJV 'だろ' !!(Aux_U) #ADJVMizen}
     / {ADJV 'だっ' !!(Aux_Ta) #ADJVRenyo}
+    / {ADJV 'なら' !!('ば'?) #ADJVKatei}
     / {ADJV 'で' !!([はも]/SUBARU/SUBNAI/TEN) #ADJVRenyo}
     / {ADJV 'に' !!(Chunk) #ADJVRenyo}
     / {ADJV 'だ' !!(Aux_Souda2/PostpPhrase/Eol) #ADJVSyushi}
     / {ADJV 'な' !!(Aux_Youda/NounPhrase) #ADJVRentai}
-    / {ADJV 'なら' !!('ば'?) #ADJVKatei}
     / {ADJV !!(Aux_Souda1/Aux_Rashii/Aux_Desu) #ADJVGokan}
 
 
 /*
-補助動詞の「ある」
-補助形容詞の「ない」
+補助動詞の「ある」と、補助形容詞の「ない」
+先読み専用で、マッチする際はVerbPhraseやAdjectivePhraseにマッチする
 */
 SUBARU = 'あ' [らりるれろっ]
 SUBNAI = 'な' ('かろ' / 'かっ' / 'く' / 'い' / 'けれ')
@@ -451,20 +496,28 @@ SUBNAI = 'な' ('かろ' / 'かっ' / 'く' / 'い' / 'けれ')
 
 /*
 名詞
-括弧で括ったものも名詞
-数字と数え上げは事前にある程度定義している（名詞にない、とれない）
-カタカナや英語は名詞に入っている
+括弧で括ったものも名詞としている
 */
 Noun =
     / { BLOCK #Block }
     / { NOUN #Noun }
-    // / {KATA #KATA}
-    // / {ALPHA #ALPHA}
-    // / { NUM [つこ個]? [め目]? #Num }
-    // / { ('ひと'/'ふた'/'みっ'/'よっ'/'いつ'/'むっ'/'なな'/'やっ'/'ここの') 'つ' [め目]? #Count }
-    // / {SYMBOL #SYMBOL}
+    // / OtherNoun
 
+/*
+専用の名詞辞書を使わなくてもある程度解析可能にしたい時の対応案
+*/
+OtherNoun =
+    / {KATA+ #KATA}
+    / {ALPHA+ #ALPHA}
+    / { NUM [つこ個]? [め目]? #Num }
+    / { ('ひと'/'ふた'/'みっ'/'よっ'/'いつ'/'むっ'/'なな'/'やっ'/'ここの') 'つ' [め目]? #Count }
+    / {SYMBOL+ #SYMBOL}
+    / {(!Chunk KANJI)+ #Kanji}
 
+/*
+括弧のネスト
+二重括弧は非対応
+*/
 BLOCK =
     / '\[' (!'\]' .)* '\]'
     / '\{' (!'\}' .)* '\}'
@@ -483,23 +536,23 @@ BLOCK =
     / '\〔' (!'\〕' .)* '\〕'
 
 
-/* 助詞、手入力 */
+/* 助詞 */
 Postp = { POSTP #Postp }
 
-/* 連体詞、辞書から生成 */
+/* 連体詞 */
 Adnominal = { ADNM #Adnominal }
 
-/* 副詞、辞書から生成 */
+/* 副詞 */
 Adverb = { ADV #Adverb }
 
-/* 接続詞、辞書から生成 */
+/* 接続詞 */
 Conjunction = { CONJ #Conjunction }
 
-/* 感動詞、辞書から生成 */
+/* 感動詞 */
 Interjection = { INTJ #Interjection }
 
 
-/* 助動詞 */
+/* 助動詞、18種類 */
 // 買わせる
 Aux_Seru =
     / {'せ' #Mizen} (Aux_Rareru/Aux_Nai/Aux_You/Aux_Mai)
