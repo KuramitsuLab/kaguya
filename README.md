@@ -2,8 +2,15 @@
 KAGUYA関連のレポジトリ
 
 # ファイル概要
+## `kaguya0-kai.tpeg`
++ (GAKKOU+先読み)文法の改良版
++ 助詞も助動詞のように自前で定義した
++ 外部辞書には、手を加えた`dic-edited`を用いる
+  + 誤ったマッチを引き起こしやすい、マイナーな単語を除去した
+  + 除外した単語は`dic-edited/removed.txt`に記述している
+
 ## `kaguya0.tpeg`
-+ KAGUYA文法を目指している、(GAKKOU+先読み)文法
++ (GAKKOU+先読み)文法
 
 
 ## `gakkou.tpeg`
