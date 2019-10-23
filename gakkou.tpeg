@@ -6,30 +6,33 @@
 文をChunkの繰り返しとみる
 */
 Sentence = {
-    // (TEN/Chunk)* [。．.\n]? {.* #Remain}  // デバッグモード
-    (TEN/Chunk)* EOS
+    // (Chunk/TEN)* [。．.\n]? {.* #Remain}  // デバッグモード
+    (Chunk/TEN)* EOS
     #Sentence
 }
 
 
 /*
 形容詞句や動詞句などのひとかたまりごとにマッチする規則
+予備実験の結果、以下が良い結果になりやすかった
 */
 Chunk =
     / AdnominalPhrase  // 連体詞
     / AdverbPhrase  // 副詞
     / VerbPhrase  // 動詞句
+    / AdjectiveVerbPhrase  // 形容動詞句
     / NounPhrase  // 名詞句
     / AdjectivePhrase  // 形容詞句
-    / AdjectiveVerbPhrase  // 形容動詞句
     / ConjunctionPhrase  // 接続詞
     / InterjectionPhrase  // 感動詞
 
 
 EOF = !.
-EOS = [。．.\n]? EOF
-TEN = [・、，,:：\n]
+EOS = [!！?？。．.\n]? EOF
+TEN = [\/／\(\)・、，,:：\n]
 Eol = { (TEN/EOS) #Eol }
+
+/* 未使用
 KANJI = [㐀-䶵一-龠々〇〻ーご]
 KATA = [ァ-ヶー・]+
 ALPHA = [a-zA-Zａ-ｚＡ-Ｚ]+
@@ -38,7 +41,7 @@ NUM = [\-ー]? [0-9０-９] [\.\,．，]? [0-9０-９]*
 SYMBOL =
     / [^＾~〜\-ー_＿!！?？#＃$＄&＆=＝@＠*＊+＋/・]
     / [\[\]\(\)\<\>\{\}\'\"\`「」（）＜＞『』［］【】”“｀”“’‘｛｝〔〕]
-
+*/
 
 /*
 動詞句
@@ -48,6 +51,7 @@ VerbPhrase = {
     #VerbPhrase
 }
 
+example VerbPhrase 動いたので
 
 /*
 形容詞句
@@ -147,8 +151,9 @@ Verb = {
     / VERB5KASOKU [かきくけこっ]
     / SAHEN_SURU ('する'/'すれ'/'しろ'/'せよ'/[さしせ])
     / SAHEN_ZURU ('ずる'/'ずれ'/'じろ'/'ぜよ'/[ざじぜ])
-    / (KANJI/KATA)* ('する'/'すれ'/'しろ'/'せよ'/[さしせ])
-    / KAHEN? ( ([来] [るれい]?) / ('くる'/'くれ'/'こい'/[こき]) )
+    / ('する'/'すれ'/'しろ'/'せよ'/[さしせ])
+    / KAHEN ( ([来] [るれい]?) / ('くる'/'くれ'/'こい'/[こき]) )
+    / ( ([来] [るれい]?) / ('くる'/'くれ'/'こい'/[こき]) )
     / ('ください'/'下さい')  // 敬語動詞「下さる」の命令形は特殊
     / VERB1 [るれろよ]?
     #Verb
@@ -231,84 +236,84 @@ Interjection = { INTJ #Interjection }
 
 /* 助動詞、18種類 */
 AuxVerb =
-    / {'そうだろ' #Mizen}
-    / {'そうだっ' #Renyo}
-    / {'そうなら' #Katei}
-    / {'ようだろ' #Mizen}
-    / {'ようだっ' #Renyo}
-    / {'ようなら' #Katei}
-    / {'らしかっ' #Renyo}
-    / {'らしけれ' #Katei}
-    / {'させる' #SyushiRentai}
-    / {'させれ' #Katei}
-    / {'させろ' #Meirei}
-    / {'させよ' #Meirei}
-    / {'られる' #SyushiRentai}
-    / {'られれ' #Katei}
-    / {'られろ' #Meirei}
-    / {'られよ' #Meirei}
-    / {'なかろ' #Mizen}
-    / {'なかっ' #Renyo}
-    / {'なけれ' #Katei}
-    / {'たかろ' #Mizen}
-    / {'たかっ' #Renyo}
-    / {'たけれ' #Katei}
-    / {'たがら' #Mizen}
-    / {'たがり' #Renyo}
-    / {'たがっ' #Renyo}
-    / {'たがる' #SyushiRentai}
-    / {'たがれ' #Katei}
-    / {'そうで' #Renyo}
-    / {'そうに' #Renyo}
-    / {'そうだ' #Syushi}
-    / {'そうな' #Rentai}
-    / {'ようで' #Renyo}
-    / {'ように' #Renyo}
-    / {'ようだ' #Syushi}
-    / {'ような' #Rentai}
-    / {'らしく' #Renyo}
-    / {'らしい' #SyushiRentai}
-    / {'ましょ' #Mizen}
-    / {'でしょ' #Mizen}
-    / {'ますれ' #Katei}
-    / {'せる' #SyushiRentai}
-    / {'せれ' #Katei}
-    / {'せろ' #Meirei}
-    / {'せよ' #Meirei}
-    / {'させ' #MizenRenyo}
-    / {'れる' #SyushiRentai}
-    / {'れれ' #Katei}
-    / {'れろ' #Meirei}
-    / {'れよ' #Meirei}
-    / {'なく' #Renyo}
-    / {'ない' #SyushiRentai}
-    / {'よう' #SyushiRentai}
-    / {'まい' #SyushiRentai}
-    / {'られ' #MizenRenyo}
-    / {'たく' #Renyo}
-    / {'たい' #SyushiRentai}
-    / {'たろ' #Mizen}
-    / {'たら' #Katei}
-    / {'だろ' #Mizen}
-    / {'だら' #Katei}
-    / {'ませ' #MizenMeirei}
-    / {'まし' #RenyoMeirei}
-    / {'ます' #SyushiRentai}
-    / {'だっ' #Renyo}
-    / {'なら' #Katei}
-    / {'でし' #Renyo}
-    / {'です' #SyushiRentai}
-    / {'せ' #MizenRenyo}
-    / {'れ' #MizenRenyo}
-    / {'ず' #Renyo}
-    / {'ぬ' #SyushiRentai}
-    / {'ね' #Katei}
-    / {'ん' #SyushiRentai}
-    / {'う' #SyushiRentai}
-    / {'た' #SyushiRentai}
-    / {'だ' #SyushiRentai}
-    / {'で' #Renyo}
-    / {'な' #Rentai}
+    / {'そうだろ' #AUXMizen}
+    / {'そうだっ' #AUXRenyo}
+    / {'そうなら' #AUXKatei}
+    / {'ようだろ' #AUXMizen}
+    / {'ようだっ' #AUXRenyo}
+    / {'ようなら' #AUXKatei}
+    / {'らしかっ' #AUXRenyo}
+    / {'らしけれ' #AUXKatei}
+    / {'させる' #AUXSyushiRentai}
+    / {'させれ' #AUXKatei}
+    / {'させろ' #AUXMeirei}
+    / {'させよ' #AUXMeirei}
+    / {'られる' #AUXSyushiRentai}
+    / {'られれ' #AUXKatei}
+    / {'られろ' #AUXMeirei}
+    / {'られよ' #AUXMeirei}
+    / {'なかろ' #AUXMizen}
+    / {'なかっ' #AUXRenyo}
+    / {'なけれ' #AUXKatei}
+    / {'たかろ' #AUXMizen}
+    / {'たかっ' #AUXRenyo}
+    / {'たけれ' #AUXKatei}
+    / {'たがら' #AUXMizen}
+    / {'たがり' #AUXRenyo}
+    / {'たがっ' #AUXRenyo}
+    / {'たがる' #AUXSyushiRentai}
+    / {'たがれ' #AUXKatei}
+    / {'そうで' #AUXRenyo}
+    / {'そうに' #AUXRenyo}
+    / {'そうだ' #AUXSyushi}
+    / {'そうな' #AUXRentai}
+    / {'ようで' #AUXRenyo}
+    / {'ように' #AUXRenyo}
+    / {'ようだ' #AUXSyushi}
+    / {'ような' #AUXRentai}
+    / {'らしく' #AUXRenyo}
+    / {'らしい' #AUXSyushiRentai}
+    / {'ましょ' #AUXMizen}
+    / {'でしょ' #AUXMizen}
+    / {'ますれ' #AUXKatei}
+    / {'せる' #AUXSyushiRentai}
+    / {'せれ' #AUXKatei}
+    / {'せろ' #AUXMeirei}
+    / {'せよ' #AUXMeirei}
+    / {'させ' #AUXMizenRenyo}
+    / {'れる' #AUXSyushiRentai}
+    / {'れれ' #AUXKatei}
+    / {'れろ' #AUXMeirei}
+    / {'れよ' #AUXMeirei}
+    / {'なく' #AUXRenyo}
+    / {'ない' #AUXSyushiRentai}
+    / {'よう' #AUXSyushiRentai}
+    / {'まい' #AUXSyushiRentai}
+    / {'られ' #AUXMizenRenyo}
+    / {'たく' #AUXRenyo}
+    / {'たい' #AUXSyushiRentai}
+    / {'たろ' #AUXMizen}
+    / {'たら' #AUXKatei}
+    / {'だろ' #AUXMizen}
+    / {'だら' #AUXKatei}
+    / {'ませ' #AUXMizenMeirei}
+    / {'まし' #AUXRenyoMeirei}
+    / {'ます' #AUXSyushiRentai}
+    / {'だっ' #AUXRenyo}
+    / {'なら' #AUXKatei}
+    / {'でし' #AUXRenyo}
+    / {'です' #AUXSyushiRentai}
+    / {'せ' #AUXMizenRenyo}
+    / {'れ' #AUXMizenRenyo}
+    / {'ず' #AUXRenyo}
+    / {'ぬ' #AUXSyushiRentai}
+    / {'ね' #AUXKatei}
+    / {'ん' #AUXSyushiRentai}
+    / {'う' #AUXSyushiRentai}
+    / {'た' #AUXSyushiRentai}
+    / {'だ' #AUXSyushiRentai}
+    / {'で' #AUXRenyo}
+    / {'な' #AUXRentai}
 
 
 
