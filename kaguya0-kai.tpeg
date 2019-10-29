@@ -209,7 +209,7 @@ KoSoADo = { 'これらの'/'それらの'/'あれらの'/([こそあど] 'の') 
 */
 AdverbPhrase = {
       Adverb AuxVerbForAdv PostpPhrase?  // すぐ です ので
-    / Adverb !PostpConnect PostpNoPhrase  // しばらく の 間
+    / Adverb !PostpConnect PostpPhrase  // しばらく の 間
     / Adverb !!(Chunk/Eol)  // もっと
     #AdverbPhrase
 }
@@ -486,7 +486,7 @@ SUBNAI = 'な' ('かろ' / 'かっ' / 'く' / 'い' / 'けれ')
 括弧で括ったものも名詞としている
 */
 Noun =
-    / { Block #BlockNoun }
+    / Block
     / { NOUN #Noun }
     // / DefinedNoun
 
@@ -840,7 +840,7 @@ Aux_Masu =
 Aux_Da2 =
     / {'だろ' #AUXMizen} (Aux_U)
     / {'だっ' #AUXRenyo} (Aux_Ta/!!(Postp_Tari/Postp_Te))
-    / {'で' #AUXRenyo} (!!(Postp_Nante/Postp_Sae/Postp_Sura/Postp_Sika/Postp_Ha/Postp_Mo/Chunk/Eol))
+    / {'で' #AUXRenyo} (!!(Postp_Nante/Postp_Sae/Postp_Sura/Postp_Sika/Postp_Ha/Postp_Mo/(SUBARU/SUBNAI)/Eol))
     / {'だ' #AUXSyushi} (Aux_Souda2/Aux_Rashii/!!(Eol/AfterSyushiPostp))
     / {'なら' #AUXKatei} (!!(Postp_Ba/Eol))
     / {'な' #AUXRentai} (Aux_Youda/!!(Postp_Node/Postp_Noni/Postp_No))
@@ -884,7 +884,7 @@ SAHEN_SURU = @choice('dic-edited/Verb/SAHEN_SURU.txt')
 SAHEN_ZURU = @choice('dic-edited/Verb/SAHEN_ZURU.txt')
 VERB5IK = '行'
 ADJ = @choice('dic-edited/ADJ.txt')
-ADJV = @choice('dic-edited/ADJV.txt')
+ADJV = @choice('dic-edited/TestAdjv.txt')
     //  / @choice('dic-edited/TestNoun.txt')
 POSTP = @choice('dic-edited/POSTP.txt')
 ADNM = @choice('dic-edited/ADNM.txt')

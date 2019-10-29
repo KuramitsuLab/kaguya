@@ -233,7 +233,7 @@ PostpPhrase = {
     / Postp !!(Chunk/Eol)
     #PostpPhrase
 }
-PostpNo = { 'の' #PostpNo }
+PostpNo = { 'の' #Postp }
 AfterPostpNo = { Aux_Youda #AuxVerbForPostpNo }
 AfterPostp = { (Aux_Rashii/Aux_Da2/Aux_Desu) #AuxVerbForPostp }
 AuxVerbNa = { 'な' #AuxVerbForPostp }
@@ -505,7 +505,7 @@ SUBNAI = 'な' ('かろ' / 'かっ' / 'く' / 'い' / 'けれ')
 括弧で括ったものも名詞としている
 */
 Noun =
-    / { BLOCK #BlockNoun }
+    / Block
     / { NOUN #Noun }
     // / DefinedNoun
 
@@ -574,8 +574,8 @@ Interjection = { INTJ #Interjection }
 /* 助動詞、18種類 */
 // 買わせる
 Aux_Seru =
-    / {'せる' #AUXSyushi} (Aux_Souda2/Aux_Rashii/Aux_Daro/Aux_Desyo/!!(Chunk/Eol/PostpPhrase))
     / {'せる' #AUXRentai} (Aux_Youda/!!(PostpPhrase))
+    / {'せる' #AUXSyushi} (Aux_Souda2/Aux_Rashii/Aux_Daro/Aux_Desyo/!!(Chunk/Eol/PostpPhrase))
     / {'せれ' #AUXKatei} (!!('ば'))
     / {'せろ' #AUXMeirei} (!!(Eol))
     / {'せよ' #AUXMeirei} (!!(Eol))
@@ -584,8 +584,8 @@ Aux_Seru =
 
 // 起きさせる
 Aux_Saseru =
-    / {'させる' #AUXSyushi} (Aux_Souda2/Aux_Rashii/Aux_Daro/Aux_Desyo/!!(Chunk/Eol/PostpPhrase))
     / {'させる' #AUXRentai} (Aux_Youda/!!(PostpPhrase))
+    / {'させる' #AUXSyushi} (Aux_Souda2/Aux_Rashii/Aux_Daro/Aux_Desyo/!!(Chunk/Eol/PostpPhrase))
     / {'させれ' #AUXKatei} (!!('ば'))
     / {'させろ' #AUXMeirei} (!!(Eol))
     / {'させよ' #AUXMeirei} (!!(Eol))
@@ -594,8 +594,8 @@ Aux_Saseru =
 
 // 話される
 Aux_Reru =
-    / {'れる' #AUXSyushi} (Aux_Souda2/Aux_Rashii/Aux_Daro/Aux_Desyo/!!(Chunk/Eol/PostpPhrase))
     / {'れる' #AUXRentai} (Aux_Youda/!!(PostpPhrase))
+    / {'れる' #AUXSyushi} (Aux_Souda2/Aux_Rashii/Aux_Daro/Aux_Desyo/!!(Chunk/Eol/PostpPhrase))
     / {'れれ' #AUXKatei} (!!('ば'))
     / {'れろ' #AUXMeirei} (!!(Eol))
     / {'れよ' #AUXMeirei} (!!(Eol))
@@ -604,8 +604,8 @@ Aux_Reru =
 
 // 起きられる
 Aux_Rareru =
-    / {'られる' #AUXSyushi} (Aux_Souda2/Aux_Rashii/Aux_Daro/Aux_Desyo/!!(Chunk/Eol))
     / {'られる' #AUXRentai} (Aux_Youda)
+    / {'られる' #AUXSyushi} (Aux_Souda2/Aux_Rashii/Aux_Daro/Aux_Desyo/!!(Chunk/Eol))
     / {'られれ' #AUXKatei} (!!('ば'))
     / {'られろ' #AUXMeirei} (!!(Eol))
     / {'られよ' #AUXMeirei} (!!(Eol))
@@ -770,7 +770,7 @@ SAHEN_SURU = @choice('dic/Verb/SAHEN_SURU.txt')
 SAHEN_ZURU = @choice('dic/Verb/SAHEN_ZURU.txt')
 VERB5IK = '行'
 ADJ = @choice('dic/ADJ.txt')
-ADJV = @choice('dic/ADJV.txt')
+ADJV = @choice('dic/TestAdjv.txt')
 POSTP = @choice('dic/POSTP.txt')
 ADNM = @choice('dic/ADNM.txt')
 ADV = @choice('dic/ADV.txt')
