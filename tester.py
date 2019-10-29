@@ -222,6 +222,7 @@ def leaf2token(word, nodes):
     NON_UTILIZE = {
         'Noun': '名詞',
         'Block': '名詞',
+        'Postp': '助詞',
         'Adnominal': '連体詞',
         'Adverb': '副詞',
         'Conjunction': '接続詞',
@@ -241,7 +242,7 @@ def leaf2token(word, nodes):
         return f'{word} ({NON_UTILIZE[nodes[-1]]})'
 
 
-def gen_compare(ast):
+def gen_compare(ast, count):
     def make_words(tree, words, nodes):
         if len(tree.subs()) == 0:
             leaf = str(tree)
@@ -252,9 +253,8 @@ def gen_compare(ast):
                 current = [tree.tag] if tree.tag != '' else []
                 make_words(child, words, nodes+current)
 
-    words = []
+    words = [f'No_{count}']
     make_words(ast, words, [])
-    words.append('。 (文末)')
     return words
 
 
@@ -283,7 +283,7 @@ def test(target_name, grammar='kaguya0.tpeg', print_log='True', _='y or n'):
             fail_cnt += 1
         else:
             results.append((True, count+1, s, repr(tree)))
-            compare_words += gen_compare(tree)
+            compare_words += gen_compare(tree, count)
         sys.stdout.flush()
     print()
     write_result(f'test/result/{FILE_NAME}.txt', results)

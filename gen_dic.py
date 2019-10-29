@@ -191,11 +191,10 @@ def generate(dic_list):
     with open(f'dic/ADV.txt', mode='w') as f:
         for p in dic_list['Adverb.dic']:
             f.write(str(p) + '\n')
+        for p in dic_list['Noun.adverbal.dic']:
+            f.write(str(p) + '\n')
     with open(f'dic/INTJ.txt', mode='w') as f:
         for p in dic_list['Interjection.dic']:
-            f.write(str(p) + '\n')
-    with open(f'dic/TestNoun.txt', mode='w') as f:
-        for p in dic_list['Noun.dic']:
             f.write(str(p) + '\n')
 
 
