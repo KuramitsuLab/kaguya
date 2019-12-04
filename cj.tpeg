@@ -1,4 +1,4 @@
-/* KOINU 文法 */
+/* CJ Controlled Japanese 文法 */
 
 /*
 トップの規則
@@ -10,6 +10,96 @@ Sentence = {
     (Chunk/TEN)* EOS
     #S
 }
+
+
+Chunk =
+    / Conjunction // 接続詞
+    / Adverb  // 副詞
+    / AdjvChunk  // 形容詞節or形容動詞節
+    / VerbChunk  // 動詞節
+    // このような この様な
+    // {[こそあど] 'の' AFTERADNM #AdnominalPhrase}  // 連体詞節
+    // {Conjunction &(Chunk/TEN) #LookAHead}  // 接続詞
+    / Adnominal  // 連体詞
+    / NounChunk  // 名詞節
+
+
+
+/* 接続詞 CONJ.txt */
+
+Conjunction = { // e.g., こうして
+    CONJDIC #Conj 
+}
+CONJDIC = @choice('dic/CONJ.txt')
+
+/* 副詞 ADV.txt */
+Adverb = {   // e.g., 少し 順次
+    ADV #Adverb 
+}
+ADV = @choice('dic/ADV.txt')
+
+/*
+名詞 Nounらしいもので始まる
+*/
+
+NounChunk = 
+    Noun (^{ NounSuffix })? 
+
+NounSuffix = 
+    / { [はも] #Subject }
+    / { [をに] #Object }
+    / { 'から' #From }
+    / { 'まで' #Until }
+    / { 'する' / 'して' / 'である' / 'です' #Verb }
+
+/*
+名詞 Noun
+*/
+
+Noun = 
+    / Code
+    / NonHiraNoun
+    / NewNoun
+    / HiraNoun
+
+/* コードは名詞扱い */
+
+Code = {
+    [A-Za-z0-9]+
+    #Code
+}
+
+/* ひらがな以外は全て名詞扱い */
+
+NonHiraNoun = {
+    NONHIRA+
+    #Noun
+}
+
+NewNoun =
+    / '\「' { (!'\」' .)* #Noun } '\」'
+    / '\『' { (!'\』' .)* #Noun } '\』'
+    / '\【' { (!'\】' .)* #Noun } '\】'
+    / '\〔' { (!'\〕' .)* #Noun } '\〕'
+
+
+HiraNoun = {
+    @choice('dic/NOUN.txt')
+    / 'ところ'
+    / 'ため'
+    / 'こと'
+    / 'もの'
+    / 'うち'
+    / 'あと'
+    / ([こそど]/'あそ') 'こ'
+    / [こそあど] 'れ'
+    / NUM [つこ個] [め目]?
+    / ('ひと'/'ふた'/'みっ'/'よっ'/'いつ'/'むっ'/'なな'/'やっ'/'ここの') 'つ' [め目]?
+}
+
+
+
+
 
 example Sentence 要求は認められないので代案を用意せよ
 example Sentence 僕は転びそうだったが持ちこたえた
@@ -33,28 +123,12 @@ example Sentence 変数に数値を代入し、計算を実行し、結果をコ
 チョイスの順番はテストして最適な順番を見つけるしかない
 */
 
-Chunk =
-    / Conjunction // 接続詞
-    / Adverb  // 副詞
-    / AdjvChunk  // 形容詞節or形容動詞節
-    / VerbChunk  // 動詞節
-    // このような この様な
-    // {[こそあど] 'の' AFTERADNM #AdnominalPhrase}  // 連体詞節
-    // {Conjunction &(Chunk/TEN) #LookAHead}  // 接続詞
-    / Adnominal  // 連体詞
-    / NounChunk  // 名詞節
 
 /* 連体詞、辞書から生成 */
 Adnominal = { ADNM #Adnominal }
 ADNM = @choice('dic/ADNM.txt')
 
-/* 副詞、辞書から生成 */
-Adverb = { ADV #Adverb }
-ADV = @choice('dic/ADV.txt')
 
-/* 接続詞、辞書から生成 */
-Conjunction = { CONJDIC #Conj }
-CONJDIC = @choice('dic/CONJ.txt')
 
 
 /* 文字コード */
@@ -218,7 +292,6 @@ VerbBASE =
     / Verb5WA 'う' // 笑う
     / Verb5GA 'ぐ' // 防ぐ
     / Verb5BA 'ぶ' // 遊ぶ
-    / VerbVarSA [すず] 'る' // 勉強する, 論ずる
     / { '行く' / 'やってくる' / 'やって来る' / 'くる' / '来る' #Verb }
     / Verb1 'る' // 着る
 
@@ -286,34 +359,31 @@ VerbYETBASE =
 活用型ごとの動詞の語幹を辞書から生成
 「行く」はカ行五段活用だが、イ音便ではなく促音便で活用が異なるため別枠
 */
-VERB5KA = @choice('dic/Verb/VERB5KA.txt')
-VERB5SA = @choice('dic/Verb/VERB5SA.txt')
-VERB5TA = @choice('dic/Verb/VERB5TA.txt')
-VERB5NA = @choice('dic/Verb/VERB5NA.txt')
-VERB5MA = @choice('dic/Verb/VERB5MA.txt')
-VERB5RA = @choice('dic/Verb/VERB5RA.txt')
-VERB5WA = @choice('dic/Verb/VERB5WA.txt')
-VERB5GA = @choice('dic/Verb/VERB5GA.txt')
-VERB5BA = @choice('dic/Verb/VERB5BA.txt')
-VERB1 = @choice('dic/Verb/VERB1.txt')
-KAHEN = @choice('dic/Verb/KAHEN.txt')
-SAHEN_SURU = @choice('dic/Verb/SAHEN_SURU.txt')
-SAHEN_ZURU = @choice('dic/Verb/SAHEN_ZURU.txt')
-VERB5KASOKU = '行'
 
-SAHEN = SAHEN_SURU / SAHEN_ZURU / NONHIRA+ &[さしすせざじずぜ]
-Verb5KA = { VERB5KA &[か-こい] #Verb }
-Verb5SA = { VERB5SA &[さ-そ] #Verb }
-Verb5TA = { VERB5TA &[た-とっ] #Verb }
-Verb5NA = { VERB5NA &[な-のん] #Verb }
-Verb5MA = { VERB5MA &[ま-もん] #Verb }
-Verb5RA = { VERB5RA &[ら-ろっ] #Verb }
-Verb5WA = { VERB5WA &[わいうえおっ] #Verb }
-Verb5GA = { VERB5GA &[が-ごい] #Verb }
-Verb5BA = { VERB5BA &[ば-ぼん] #Verb }
-Verb1   = { VERB1   #Verb }
-VerbVarKA = { KAHEN #Verb}
-VerbVarSA = { SAHEN #Verb }
+VERB5KA = @choice('dic/Verb/VERB5KA.txt') &[か-こい]
+VERB5SA = @choice('dic/Verb/VERB5SA.txt') &[さ-そ]
+VERB5TA = @choice('dic/Verb/VERB5TA.txt') &[た-とっ]
+VERB5NA = @choice('dic/Verb/VERB5NA.txt') &[な-のん]
+VERB5MA = @choice('dic/Verb/VERB5MA.txt') &[ま-もん]
+VERB5RA = @choice('dic/Verb/VERB5RA.txt') &[ら-ろっ]
+VERB5WA = @choice('dic/Verb/VERB5WA.txt') &[わいうえおっ]
+VERB5GA = @choice('dic/Verb/VERB5GA.txt') &[が-ごい]
+VERB5BA = @choice('dic/Verb/VERB5BA.txt') &[ば-ぼん]
+VERB1 = @choice('dic/Verb/VERB1.txt')
+
+Verb5KA = { { VERB5KA #Verb } Verb5KASuffix } 
+Verb5SA = { { VERB5SA #Verb } Verb5SASuffix } 
+
+Verb5KASuffix = // 書き
+    / {'かない' #Not }
+    / {'く' ('とき' / 'なら'/ '場合') / 'けば' #Case }
+    / {'く' / 'き' / 'いて' / 'け' / 'こう' #Base}
+
+Verb5SASuffix = // 話す
+    / {'さない' #Not }
+    / {'す ('とき' / 'なら'/ '場合') / 'せば' #Case }
+    / {'す' / 'し' / 'して' / 'せ' / 'そう' #Base}
+
 
 /*
 形容詞の語幹と活用語尾
@@ -416,63 +486,8 @@ AdjvDIC = { ADJV #Adjv }
 SUBARU = 'あ' [らりるれろっ]
 SUBNAI = 'な' ('かろ' / 'かっ' / 'く' / 'い' / 'けれ')
 
-/*
-名詞
-漢字カタカナアルファベット数字
-混合した場合も可（例：アップル社）
-括弧で括ったものも名詞
-*/
-
-NounChunk = {
-    Noun (Suffix)?
-    #Chunk
-}
-
-Noun = {
-    NOUN
-    #Noun
-}
-
-NOUN =
-    / NONHIRA+
-    / NOUNDIC
-    / BLOCK
-    / 'ところ'
-    / 'ため'
-    / 'こと'
-    / 'もの'
-    / 'うち'
-    / 'あと'
-    / ([こそど]/'あそ') 'こ'
-    / [こそあど] 'れ'
-    / NUM [つこ個] [め目]?
-    / ('ひと'/'ふた'/'みっ'/'よっ'/'いつ'/'むっ'/'なな'/'やっ'/'ここの') 'つ' [め目]?
-
-NOUNDIC = @choice('dic/NOUN.txt')
-
-Suffix =
-    / { 'から' #From }
-    / { 'まで' #Until }
-    / { [はも] #Subject }
-    / { [をに] #Object }
 
 
-BLOCK =
-    / '\[' (!'\]' .)* '\]'
-    / '\{' (!'\}' .)* '\}'
-    / '\(' (!'\)' .)* '\)'
-    / '\"' (!'\"' .)* '\"'
-    / '\'' (!'\'' .)* '\''
-    / '\<' (!'\>' .)* '\>'
-    / '\（' (!'\）' .)* '\）'
-    / '\「' (!'\」' .)* '\」'
-    / '\『' (!'\』' .)* '\』'
-    / '\“' (!'\”' .)* '\”'
-    / '\‘' (!'\’' .)* '\’'
-    / '\【' (!'\】' .)* '\】'
-    / '\［' (!'\］' .)* '\］'
-    / '\｛' (!'\｝' .)* '\｝'
-    / '\〔' (!'\〕' .)* '\〕'
 
 
 // /* 助詞、手入力 */
