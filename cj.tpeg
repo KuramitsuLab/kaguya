@@ -2,55 +2,57 @@
 
 /*
 トップの規則
-入力をChunkの繰り返しとみる
+入力をClauseの繰り返しとみる
 */
 
 Sentence = {
-    // Chunk* [。．.\n]? {.* #Remain}  // デバッグモード
-    (Chunk/TEN)* EOS
+    // Clause* [。．.\n]? {.* #Remain}  // デバッグモード
+    (Clause / TEN)* EOS
     #S
 }
 
+Clause =
+    / ExtraClause   // 接続詞, 副詞, 連体詞
+    / AdjvClause    // 形容詞節, 形容動詞節
+    / VerbClause    // 動詞節
+    / NounClause    // 名詞節
 
-Chunk =
+ExtraClause =
     / Conjunction // 接続詞
     / Adverb  // 副詞
-    / AdjvChunk  // 形容詞節or形容動詞節
-    / VerbChunk  // 動詞節
-    // このような この様な
-    // {[こそあど] 'の' AFTERADNM #AdnominalPhrase}  // 連体詞節
-    // {Conjunction &(Chunk/TEN) #LookAHead}  // 接続詞
     / Adnominal  // 連体詞
-    / NounChunk  // 名詞節
-
-
 
 /* 接続詞 CONJ.txt */
 
 Conjunction = { // e.g., こうして
-    CONJDIC #Conj 
+    @choice('dic/CONJ.txt') #Conj 
 }
-CONJDIC = @choice('dic/CONJ.txt')
 
 /* 副詞 ADV.txt */
 Adverb = {   // e.g., 少し 順次
-    ADV #Adverb 
+    @choice('dic/ADV.txt') #Adverb 
 }
-ADV = @choice('dic/ADV.txt')
+
+/* 連体詞 ADNM */
+Adnominal = { 
+    @choice('dic/ADNM.txt') #Adnominal 
+}
 
 /*
 名詞 Nounらしいもので始まる
 */
 
-NounChunk = 
-    Noun (^{ NounSuffix })? 
+NounClause = 
+    { Noun NounSuffix? #NounClause } 
 
 NounSuffix = 
     / { [はも] #Subject }
     / { [をに] #Object }
     / { 'から' #From }
     / { 'まで' #Until }
-    / { 'する' / 'して' / 'である' / 'です' #Verb }
+    / { 'である' / 'だ' #Be }
+    / { 'とする' #Let }
+    / { 'する' / 'して' #Do }
 
 /*
 名詞 Noun
@@ -82,7 +84,6 @@ NewNoun =
     / '\【' { (!'\】' .)* #Noun } '\】'
     / '\〔' { (!'\〕' .)* #Noun } '\〕'
 
-
 HiraNoun = {
     @choice('dic/NOUN.txt')
     / 'ところ'
@@ -97,97 +98,25 @@ HiraNoun = {
     / ('ひと'/'ふた'/'みっ'/'よっ'/'いつ'/'むっ'/'なな'/'やっ'/'ここの') 'つ' [め目]?
 }
 
-
-
-
-
-example Sentence 要求は認められないので代案を用意せよ
-example Sentence 僕は転びそうだったが持ちこたえた
-example Sentence 紅茶を入れますわ
-example Sentence 駐車場に車を止める
-example Sentence 駐車場に車が止まる
-example Sentence 駐車場に車が止まらない
-example Sentence 雨が止む
-example Sentence 酒は飲んでも飲まれるな
-example Sentence スマホを充電してあげる
-example Sentence 変数を定義して数値を代入する
-example Sentence 会いたくて震える
-example Sentence 期限を過ぎなければ提出を認めるだろう
-example Sentence 階段を駆け上がったので息が切れた
-example Sentence 雨が降ったらしいけれど家に居たので何も知らなかった
-example Sentence 変数に数値を代入し計算を実行し結果をコンソールに出力する
-example Sentence 変数に数値を代入し、計算を実行し、結果をコンソールに出力する。
-
-/*
-形容詞や形容動詞や動詞や連体詞などのひとかたまりごとにマッチする規則
-チョイスの順番はテストして最適な順番を見つけるしかない
-*/
-
-
-/* 連体詞、辞書から生成 */
-Adnominal = { ADNM #Adnominal }
-ADNM = @choice('dic/ADNM.txt')
-
-
-
-
-/* 文字コード */
-
-EOF = !.
-EOS = [。．.\n]? EOF
-TEN = [、，,\n]
-KANJI = [㐀-䶵一-龠々〇〻ーご]
-KATA = [ァ-ヶー・]
-HIRA = [ぁ-ん]
-NONHIRA = (!HIRA .)
-ALPHA = [a-zA-Zａ-ｚＡ-Ｚ]
-NUM = [\.,0-9０-９一二三四五六七八九十百千万億兆京垓秭穰溝澗正載極]
-SYMBOL = [^＾~〜\-ー_＿!！?？#＃$＄&＆=＝@＠*＊+＋/・]
-
-
-
-/*
-名詞（体言）
-体言にも助動詞が付属語としてつきうる
-NounPhrase = {
-      {Noun AuxVerbForNoun &(Chunk/TEN/EOS) #LookAHead}
-    / {Noun &(Chunk/TEN/EOS) #LookAHead}
-    #NounPhrase
-}
-
-AuxVerbForNoun = {
-    AFTERNOUN
-    #AuxVerbForNoun
-}
-
-PostpPhrase = {
-      {{'の' #PostpNo} {AFTERPOSTPNO #AuxVerbForPostpNo} &(Chunk/TEN/EOS) #LookAHead}  // 助詞の「の」節
-    / {Postp {AFTERPOSTP #AuxVerbForPostp} &(Chunk/TEN/EOS) #LookAHead}  //助詞節
-    / Postp {'な' #AuxVerbForPostp} &('ので'/'のに'/'の')
-    / {Postp &(Chunk/TEN/EOS) #LookAHead}  // 助詞
-    #PostpPhrase
-}
-*/
-
 /*
 動詞の語幹と活用語尾
 活用順にしており、活用語尾が同じものまとめている
 */
 
-example VerbChunk 歩く
-example VerbChunk 認める
-example VerbChunk 会う
-example VerbChunk 止む
-example VerbChunk 止まる
-example VerbChunk 止める
+example VerbClause 歩く
+example VerbClause 認める
+example VerbClause 会う
+example VerbClause 止む
+example VerbClause 止まる
+example VerbClause 止める
 
-example VerbChunk 話したく思う    // 連文節
-example VerbChunk 攻撃され始めた
-example VerbChunk 話し終わる
-example VerbChunk 駆け上がる
-example VerbChunk 立ち止まる
-example VerbChunk 止まる
-example VerbChunk 止まらない
+example VerbClause 話したく思う    // 連文節
+example VerbClause 攻撃され始めた
+example VerbClause 話し終わる
+example VerbClause 駆け上がる
+example VerbClause 立ち止まる
+example VerbClause 止まる
+example VerbClause 止まらない
 
 /*
 動詞の未然形活用
@@ -196,164 +125,19 @@ example VerbChunk 止まらない
 以下、他の活用も同様
 */
 
-VerbChunk =
-    / { VerbYET (YetYET)* (YetBASE (BaseSuffix)* / YetCASE / YetTHEN ) #V }
-    / { VerbAND ( VerbBASE (BaseSuffix)* / AndTHEN / AndBASE (BaseSuffix)* ) #V }
-    / { VerbBASE (BaseSuffix)* #V }
-    / { VerbCASE #Case }
-    / { VerbYETBASE / VerbDO #V }
-
-// 未然形
-// VerbYET (YetYET)* (YetBASE BaseCASE? / YetCASE / YetAND )
-
-VerbYET =
-    / Verb5KA 'か' // 書か
-    / Verb5SA 'さ' // 探さ
-    / Verb5TA 'た' // 勝た
-    / Verb5NA 'な' // 死な
-    / Verb5MA 'ま' // 読ま
-    / Verb5RA 'ら' // 切ら
-    / Verb5WA 'わ' // 笑わ
-    / Verb5GA 'が' // 防が
-    / Verb5BA 'ば' // 遊ば
-    / VerbVarSA [しじ] // 勉強し, 論じ
-    / { '行か' / 'やってこ' / 'やって来' / 'こ' / '来' #Verb }
-    / Verb1 // 着ない
-
-YetYET =
-    / { 'られ' #Have }
-    / { 'れ'   #Have }
-    / { 'され' #Make }
-    / { 'させ' #Make }
-    / { 'せ'   #Make }
-
-YetBASE =
-    / { 'ない' #Not }
-    / { 'なかろう' #WouldNot }
-    / { 'なかった' #DidNot }
-    / { 'れる' #Have }
-    / { 'られる' #Have}
-    / { 'せる' #Make }
-    / { 'される' #Make }
-    / { 'させる' #Make }
-    / { 'ず' #Make }
-
-YetCASE =
-    / { 'なくば' #CaseNot }
-    / { 'なければ' #CaseNot }
-    / { 'れば' #Case }
-    / { 'されれば' #Case }
-
-YetTHEN =
-    / { 'なくもなく' 'て'? }
-    / { 'なく' !'ば' 'て'? }
-
-// 連用形
-// VerbAND ( AndTHEN / AndBASE ( BaseBASE / BaseCASE))
-VerbAND =
-    / Verb5KA [きい] // 書き
-    / Verb5SA 'し' // 探し
-    / Verb5TA [ちっ] // 勝ち
-    / Verb5NA [にん] // 死に
-    / Verb5MA [みん] // 読み
-    / Verb5RA [りっ] // 切り
-    / Verb5WA [いっ] // 笑い
-    / Verb5GA [ぎい] // 防ぎ
-    / Verb5BA [びん] // 遊ひ
-    / VerbVarSA [しじ] // 勉強し, 論じ
-    / { '行っ' / 'やってき' / 'やって来' / 'き' / '来' #Verb }
-    / Verb1 // 着そう
-
-// 連用形に接続する助詞・助動詞として
-//「て」「つつ」「ながら」「き」「けり」「つ」「ぬ」「たり」
-
-AndTHEN = 
-    / { 'たくて' }
-    / { 'たくなくて' }
-    / { 'て' } 
-    / { 'つつ' } 
-    / { 'ながら' }
-
-AndBASE = 
-    / { 'たい' #Want }
-    / { 'たくない' #NotWant }
-    / { 'たかった' }
-    / { 'た' }
-    / { 'そう' }
-    / { 'てください' } / { 'て下さい' }
-
-VerbBASE = 
-    / Verb5KA 'く' // 書く
-    / Verb5SA 'す' // 探す
-    / Verb5TA 'つ' // 勝つ
-    / Verb5NA 'ぬ' // 死ぬ
-    / Verb5MA 'む' // 読む
-    / Verb5RA 'る' // 切る
-    / Verb5WA 'う' // 笑う
-    / Verb5GA 'ぐ' // 防ぐ
-    / Verb5BA 'ぶ' // 遊ぶ
-    / { '行く' / 'やってくる' / 'やって来る' / 'くる' / '来る' #Verb }
-    / Verb1 'る' // 着る
-
-BaseSuffix = 
-    / { 'かも知れない' #May } / {'かもしれない' #May }
-    / { 'に違いない' #Must }
-    / { 'だろう' #Will } 
-    / { 'だった' #Will } 
-    / { 'でしょう' #Will }
-    / { 'です' } 
-    / { 'らしい' #Seem }
-    / { 'ようだ' #Seem }
-    / { 'とき' TEN #Case }  
-    / { '時' TEN #Case } 
-    / { 'ところ' TEN #Case }
-
- // 仮定形
-VerbCASE =
-    / Verb5KA 'けば' // 書く
-    / Verb5SA 'せば' // 探す
-    / Verb5TA 'てば' // 勝つ
-    / Verb5NA 'ねば' // 死ぬ
-    / Verb5MA 'めば' // 読む
-    / Verb5RA 'れば' // 切る
-    / Verb5WA 'えば' // 笑う
-    / Verb5GA 'げば' // 防ぐ
-    / Verb5BA 'べば' // 遊ぶ
-    / VerbVarSA [すず] 'れば' // 勉強する, 論ずる
-    / { '行けば' / 'やってくれば' / 'やって来れば' / 'くれば' / '来れば' #Verb }
-    / Verb1 'れば' // 着る
-
- // 命令形
-VerbDO =
-    / Verb5KA 'け' // 書く
-    / Verb5SA 'せ' // 探す
-    / Verb5TA 'て' // 勝つ
-    / Verb5NA 'ね' // 死ぬ
-    / Verb5MA 'め' // 読む
-    / Verb5RA 'れ' // 切る
-    / Verb5WA 'え' // 笑う
-    / Verb5GA 'げ' // 防ぐ
-    / Verb5BA 'べ' // 遊ぶ
-    / VerbVarSA 'しろ' / 'せよ' / 'じろ' / 'ぜよ' // 勉強する, 論ずる
-    / { '行けば' / 'やってこい' / 'やって来い' / 'こい' / '来い' #Verb }
-    / Verb1 [ろよ] // 着る
-
-// 未然形の一種だがこれしかないらしい
-
-VerbYETBASE = 
-    / Verb5KA 'こう' // 書かない
-    / Verb5SA 'そう' // 探さない
-    / Verb5TA 'とう' // 勝たない
-    / Verb5NA 'のう' // 死なない
-    / Verb5MA 'もう' // 読まない
-    / Verb5RA 'ろう' // 切ろう
-    / Verb5WA 'おう' // 笑おう
-    / Verb5GA 'ごう' // 
-    / Verb5BA 'ぼう' // 遊ばない
-    / VerbVarSA [しじ] 'よう' // 勉強しない, 論じない
-    / { '行こう' / 'やってこよう' / 'やって来よう' / 'こよう' / '来よう' #Verb }
-    / Verb1 'よう' // 着よう
-
+VerbClause = {
+      { VERB5KA #Verb } VerbSuffix5KA
+    / { VERB5SA #Verb } VerbSuffix5SA 
+    / { VERB5TA #Verb } VerbSuffix5TA
+    / { VERB5NA #Verb } VerbSuffix5NA
+    / { VERB5MA #Verb } VerbSuffix5MA
+    / { VERB5RA #Verb } VerbSuffix5RA
+    / { VERB5WA #Verb } VerbSuffix5WA
+    / { VERB5GA #Verb } VerbSuffix5GA
+    / { VERB5BA #Verb } VerbSuffix5BA
+    / { VERB1 #Verb }   VerbSuffix1
+    #VerbClause    
+}
 
 /*
 活用型ごとの動詞の語幹を辞書から生成
@@ -371,130 +155,116 @@ VERB5GA = @choice('dic/Verb/VERB5GA.txt') &[が-ごい]
 VERB5BA = @choice('dic/Verb/VERB5BA.txt') &[ば-ぼん]
 VERB1 = @choice('dic/Verb/VERB1.txt')
 
-Verb5KA = { { VERB5KA #Verb } Verb5KASuffix } 
-Verb5SA = { { VERB5SA #Verb } Verb5SASuffix } 
+VerbSuffix5KA = // 書
+    / {'かない' #DoNot }
+    / {'く' ('とき' / 'なら'/ '場合') / 'いたら' / 'けば' #If }
+    / {'き' ('つつ' / 'ながら') #While }
+    / {'く' / 'き' / 'いて' / 'け' / 'こう' #Do }
 
-Verb5KASuffix = // 書き
-    / {'かない' #Not }
-    / {'く' ('とき' / 'なら'/ '場合') / 'けば' #Case }
-    / {'く' / 'き' / 'いて' / 'け' / 'こう' #Base}
+VerbSuffix5SA = // 探
+    / {'さない' #DoNot }
+    / {'す' ('とき' / 'なら'/ '場合') / 'したら' / 'せば' #Case }
+    / {'す' / 'して' / 'し' / 'せ' / 'そう' #Do }
 
-Verb5SASuffix = // 話す
-    / {'さない' #Not }
-    / {'す ('とき' / 'なら'/ '場合') / 'せば' #Case }
-    / {'す' / 'し' / 'して' / 'せ' / 'そう' #Base}
+VerbSuffix5TA = // 勝
+    / {'たない' #DoNot }
+    / {'つ' ('とき' / 'なら'/ '場合') / 'ったら' / 'てば' #Case }
+    / {'つ' / 'ち' / 'って' / 'て' / 'とう' #Do }
 
+VerbSuffix5NA = // 死
+    / {'なない' #DoNot }
+    / {'ぬ' ('とき' / 'なら'/ '場合') / 'ねば' #Case }
+    / {'ぬ' / 'に' / 'んで' / 'ね' / 'のう' #Do }
 
-/*
-形容詞の語幹と活用語尾
-実験的に助動詞や助詞、動詞を先読みで入れている
-語幹は辞書の"Adjective.dic"と"Noun.nai.dic"から生成
-Adjective = {
-      {ADJ 'かろ' #ADJMizen} &AFTERADJMIZEN
-    / {ADJ 'かっ' #ADJRenyo} &AFTERADJRENYO
-    / {ADJ 'く' #ADJRenyo} &([ては]/Verb/Adjective/AdjectiveVerb)
-    / {ADJ 'けれ' #ADJKatei} &'ば'
-    / {ADJ 'い' #ADJSyushi} &(AFTERADJSYUSHI/POSTP/TEN/EOS)
-    / {ADJ 'い' #ADJRentai} &(AFTERADJRENTAI/Noun/POSTP)
-    / {ADJ #ADJGokan} &AFTERADJGOKAN
-    #LookAHead
+VerbSuffix5MA = // 読
+    / {'まない' #DoNot }
+    / {'む' ('とき' / 'なら'/ '場合') / 'せば' #Case }
+    / {'む' / 'み' / 'んで' / 'め' / 'もう' #Do }
+
+VerbSuffix5RA = // 切
+    / {'らない' #DoNot }
+    / {'る' ('とき' / 'なら'/ '場合') / 'れば' #Case }
+    / {'る' / 'り' / 'って' / 'れ' / 'ろう' #Do }
+
+VerbSuffix5WA = // 笑
+    / {'わない' #DoNot }
+    / {'う' ('とき' / 'なら'/ '場合') / 'えば' #Case }
+    / {'う' / 'い' / 'って' / 'え' / 'おう' #Do }
+
+VerbSuffix5GA = // 防
+    / {'がない' #DoNot }
+    / {'ぐ' ('とき' / 'なら'/ '場合') / 'げば' #Case }
+    / {'ぐ' / 'ぎ' / 'いで' / 'げ' / 'ごう' #Do }
+
+VerbSuffix5BA = // 遊
+    / {'ばない' #DoNot }
+    / {'ぶ' ('とき' / 'なら'/ '場合') / 'べば' #Case }
+    / {'ぶ' / 'び' / 'んで' / 'べ' / 'ぼう' #Do }
+
+VerbSuffix1 = // 着る
+    / {'ない' #DoNot }
+    / {'る' ('とき' / 'なら'/ '場合') / 'れば' #Case }
+    / { TEN / 'て' / [よろ] / 'よう' #Do }
+
+example AdjvClause 赤いボール
+example AdjvClause 赤かったボール
+example AdjvClause うるさい人
+example AdjvClause うるさかった人
+example AdjvClause うるさくない人
+example AdjvClause うるさかろう人
+example AdjvClause うるさそうだった人
+example AdjvClause うるさいらしい人
+example AdjvClause うるさいでしょう
+example AdjvClause 赤くないボール
+example AdjvClause 赤くなく青いボール
+example AdjvClause 赤くかっこいい人
+example AdjvClause 健康な人
+example AdjvClause 健康だった人
+example AdjvClause 健康でしょう
+example AdjvClause ぞっこんだ
+example AdjvClause なめいもの
+example AdjvClause なめかったもの
+example AdjvClause なめらかだ
+example AdjvClause なめらかなやわらかい布
+
+AdjvClause =
+    / { Adj AdjSuffix #AdjClause }
+    / { AdjVerb AdjVerbSuffix #AdjClause }
+
+// 美し
+Adj = { 
+    @choice('dic/ADJ.txt') &[かくけい] #Adj 
 }
 
-形容動詞の語幹と活用語尾
-形容詞とやっていることは同じ
-語幹は辞書の"Noun.adjv.dic"から生成
-AdjectiveVerb = {
-      {ADJV 'だろ' #ADJVMizen} &AFTERADJVMIZEN
-    / {ADJV 'だっ' #ADJVRenyo} &AFTERADJVRENYO
-    / {ADJV 'で' #ADJVRenyo} &([はも]/SUBARU/SUBNAI/TEN)
-    / {ADJV 'に' #ADJVRenyo} &(VerbPhrase/AdjvChunk)
-    / {ADJV 'だ' #ADJVSyushi} &(AFTERADJVSYUSHI/POSTP/TEN/EOS)
-    / {ADJV 'な' #ADJVRentai} &(AFTERADJVRENTAI/Noun/AdjvChunk)
-    / {ADJV 'なら' #ADJVKatei} &('ば'?)
-    / {ADJV #ADJVGokan} &AFTERADJVGOKAN
-    #LookAHead
-}
-
-*/
-
-example AdjvChunk 赤いボール
-example AdjvChunk 赤かったボール
-example AdjvChunk うるさい人
-example AdjvChunk うるさかった人
-example AdjvChunk うるさくない人
-example AdjvChunk うるさかろう人
-example AdjvChunk うるさそうだった人
-example AdjvChunk うるさいらしい人
-example AdjvChunk うるさいでしょう
-example AdjvChunk 赤くないボール
-example AdjvChunk 赤くなく青いボール
-example AdjvChunk 赤くかっこいい人
-example AdjvChunk 健康な人
-example AdjvChunk 健康だった人
-example AdjvChunk 健康でしょう
-example AdjvChunk ぞっこんだ
-example AdjvChunk なめいもの
-example AdjvChunk なめかったもの
-example AdjvChunk なめらかだ
-example AdjvChunk なめらかなやわらかい布
-
-
-AdjvChunk =
-    / { AdjvYET AYetBASE (BaseSuffix)* #X}
-    / { AdjvTHEN #Then }
-    / { ( AdjvBASE / AdjvPASTBASE ) (BaseSuffix)*  #X}
-    / { AdjvTHEN #CASE }
-
-AdjvYET = 
-    / AdjDIC ('そうで' / 'く')   // 美しくない, 美しそうでない
-    / AdjvDIC 'で'  // 素敵でない
-
-AYetBASE =
-    / { 'ある' }
-    / { 'ない' #Not }
-    / { 'なかった' #PastNot }
-
-AdjvTHEN =
-    / AdjDIC ('そうに' / 'く') // 美しい
-    / AdjvDIC 'に' // 素敵に 素敵 
-
-AdjvPASTBASE = 
-    / { AdjDIC ('そうだった' / 'かった') #Past }   // 美しかった
-    / { AdjvDIC 'だった' #Past }  // 素敵だった
-
-AdjvBASE =
-    / AdjDIC ('そう' [なだ]? / 'い') // 美しい
-    / AdjvDIC [なだ]? // 素敵だ, 素敵な, 素敵 
-
-AdjvCASE =
-    / AdjDIC ('そうならば' / 'ければ') // 美しければ
-    / AdjvDIC 'ならば' // 素敵な
-
-ADJ = @choice('dic/ADJ.txt') / 'な'
-AdjDIC = { ADJ &[かくけい] #Adj }
-
-ADJV = 
+// 素敵
+ADJVERB = 
     / @cat(@choice('dic/ADJV.txt'), 'そう')
     / @choice('dic/ADJV.txt')
-AdjvDIC = { ADJV #Adjv }
+AdjVerb = { ADJVERB #Adjv }
 
+AdjSuffix =
+    / { 'ければ' #If }
+    / { 'くない' #Not }
+    / { [くい] #Be }
 
-/*
-補助動詞の「ある」
-補助形容詞の「ない」
-*/
-SUBARU = 'あ' [らりるれろっ]
-SUBNAI = 'な' ('かろ' / 'かっ' / 'く' / 'い' / 'けれ')
+AdjVerbSuffix =
+    / { 'ならば' #If }
+    / { 'でない' #Not }
+    / { [にでだな] #Be }
 
+/* 文字コード */
 
+Ten = { TEN #Ten }
 
-
-
-// /* 助詞、手入力 */
-// Postp = {
-//     POSTP
-//     #Postp
-// }
-// POSTP = @choice('dic/POSTP.txt')
+EOF = !.
+EOS = [。．.\n]? EOF
+TEN = [、，,\n]
+KANJI = [㐀-䶵一-龠々〇〻ーご]
+KATA = [ァ-ヶー・]
+HIRA = [ぁ-ん]
+NONHIRA = (!HIRA .)
+ALPHA = [a-zA-Zａ-ｚＡ-Ｚ]
+NUM = [\.,0-9０-９一二三四五六七八九十百千万億兆京垓秭穰溝澗正載極]
+SYMBOL = [^＾~〜\-ー_＿!！?？#＃$＄&＆=＝@＠*＊+＋/・]
 
 
