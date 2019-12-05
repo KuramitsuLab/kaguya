@@ -103,20 +103,20 @@ HiraNoun = {
 活用順にしており、活用語尾が同じものまとめている
 */
 
-example VerbClause 歩く
-example VerbClause 認める
-example VerbClause 会う
-example VerbClause 止む
-example VerbClause 止まる
-example VerbClause 止める
+example Sentence 歩く
+example Sentence 認める
+example Sentence 会う
+example Sentence 止む
+example Sentence 止まる
+example Sentence 止める
 
-example VerbClause 話したく思う    // 連文節
-example VerbClause 攻撃され始めた
-example VerbClause 話し終わる
-example VerbClause 駆け上がる
-example VerbClause 立ち止まる
-example VerbClause 止まる
-example VerbClause 止まらない
+example Sentence 話したく思う    // 連文節
+example Sentence 攻撃され始めた
+example Sentence 話し終わる
+example Sentence 駆け上がる
+example Sentence 立ち止まる
+example Sentence 止まる
+example Sentence 止まらない
 
 /*
 動詞の未然形活用
@@ -126,16 +126,16 @@ example VerbClause 止まらない
 */
 
 VerbClause = {
-      { VERB5KA #Verb } VerbSuffix5KA
-    / { VERB5SA #Verb } VerbSuffix5SA 
-    / { VERB5TA #Verb } VerbSuffix5TA
-    / { VERB5NA #Verb } VerbSuffix5NA
-    / { VERB5MA #Verb } VerbSuffix5MA
-    / { VERB5RA #Verb } VerbSuffix5RA
-    / { VERB5WA #Verb } VerbSuffix5WA
-    / { VERB5GA #Verb } VerbSuffix5GA
-    / { VERB5BA #Verb } VerbSuffix5BA
-    / { VERB1 #Verb }   VerbSuffix1
+      { VERB5KA #VerbKA } VerbSuffix5KA
+    / { VERB5SA #VerbSA } VerbSuffix5SA 
+    / { VERB5TA #VerbTA } VerbSuffix5TA
+    / { VERB5NA #VerbNA } VerbSuffix5NA
+    / { VERB5MA #VerbMA } VerbSuffix5MA
+    / { VERB5RA #VerbRA } VerbSuffix5RA
+    / { VERB5WA #VerbWA } VerbSuffix5WA
+    / { VERB5GA #VerbGA } VerbSuffix5GA
+    / { VERB5BA #VerbBA } VerbSuffix5BA
+    / { VERB1 #Verb1 }   VerbSuffix1
     #VerbClause    
 }
 
@@ -155,77 +155,115 @@ VERB5GA = @choice('dic/Verb/VERB5GA.txt') &[が-ごい]
 VERB5BA = @choice('dic/Verb/VERB5BA.txt') &[ば-ぼん]
 VERB1 = @choice('dic/Verb/VERB1.txt')
 
+YetBase = 
+    / { 'ない' #DoNot }
+    / { 'なかった' #DiDNot }
+    / { 'さ'? 'せる' #Make }
+    / { 'さ'? 'せない' #MakeNot }
+
+
+BaseSuffix = 
+    / BaseCase
+    / BaseVerb
+
+BaseVerb = {
+    'と' VerbClause
+}
+
+BaseCase = {
+    'とき' / 'の'? 'なら' / '場合' / 'ら' #If
+}
+
 VerbSuffix5KA = // 書
-    / {'かない' #DoNot }
-    / {'く' ('とき' / 'なら'/ '場合') / 'いたら' / 'けば' #If }
-    / {'き' ('つつ' / 'ながら') #While }
-    / {'く' / 'き' / 'いて' / 'け' / 'こう' #Do }
+    / 'か' YetBase
+    / 'き' { ('つつ' / 'ながら') #While }
+    / 'い' { 'た' #Did }
+    / { 'けば' #If }
+    / {'く' / 'き' / 'いて' / 'け' !'る' / 'こう' #Do }
 
 VerbSuffix5SA = // 探
-    / {'さない' #DoNot }
-    / {'す' ('とき' / 'なら'/ '場合') / 'したら' / 'せば' #Case }
-    / {'す' / 'して' / 'し' / 'せ' / 'そう' #Do }
+    / 'さ' YetBase
+    / 'し' { 'た' #Did }
+    / 'し' { ('つつ' / 'ながら') #While }
+    / { 'せば' #If }
+    / {'す' / 'して' / 'し' / 'せ' !'る' / 'そう' #Do }
 
 VerbSuffix5TA = // 勝
-    / {'たない' #DoNot }
-    / {'つ' ('とき' / 'なら'/ '場合') / 'ったら' / 'てば' #Case }
-    / {'つ' / 'ち' / 'って' / 'て' / 'とう' #Do }
+    / 'た' YetBase
+    / 'っ' { 'た' #Did }
+    / 'ち' { ('つつ' / 'ながら') #While }
+    / { 'てば' #If }
+    / {'つ' / 'ち' / 'って' / 'て' !'る' / 'とう' #Do }
 
 VerbSuffix5NA = // 死
-    / {'なない' #DoNot }
-    / {'ぬ' ('とき' / 'なら'/ '場合') / 'ねば' #Case }
-    / {'ぬ' / 'に' / 'んで' / 'ね' / 'のう' #Do }
+    / 'な' YetBase
+    / 'ん' { 'だ' #Did }
+    / 'に' { ('つつ' / 'ながら') #While }
+    / {'ねば' #If }
+    / {'ぬ' / 'に' / 'んで' / 'ね' !'る' / 'のう' #Do }
 
 VerbSuffix5MA = // 読
-    / {'まない' #DoNot }
-    / {'む' ('とき' / 'なら'/ '場合') / 'せば' #Case }
-    / {'む' / 'み' / 'んで' / 'め' / 'もう' #Do }
+    / 'ま' YetBase
+    / 'ん' { 'だ' #Did }
+    / 'み' { ('つつ' / 'ながら') #While }
+    / {'めば' #If }
+    / {'む' / 'み' / 'んで' / 'め' !'る' / 'もう' #Do }
 
 VerbSuffix5RA = // 切
-    / {'らない' #DoNot }
-    / {'る' ('とき' / 'なら'/ '場合') / 'れば' #Case }
-    / {'る' / 'り' / 'って' / 'れ' / 'ろう' #Do }
+    / 'ら' YetBase
+    / 'っ' { 'た' #Did }
+    / 'り' { ('つつ' / 'ながら') #While }
+    / { 'れば' #If }
+    / {'る' / 'り' / 'って' / 'れ' !'る' / 'ろう' #Do }
 
 VerbSuffix5WA = // 笑
-    / {'わない' #DoNot }
-    / {'う' ('とき' / 'なら'/ '場合') / 'えば' #Case }
+    / 'わ' YetBase
+    / 'っ' { 'た' #Did }
+    / 'い' { ('つつ' / 'ながら') #While }
+    / {'えば' #If }
     / {'う' / 'い' / 'って' / 'え' / 'おう' #Do }
 
 VerbSuffix5GA = // 防
-    / {'がない' #DoNot }
-    / {'ぐ' ('とき' / 'なら'/ '場合') / 'げば' #Case }
-    / {'ぐ' / 'ぎ' / 'いで' / 'げ' / 'ごう' #Do }
+    / 'が' YetBase
+    / 'い' { 'だ' #Did }
+    / 'ぎ' { ('つつ' / 'ながら') #While }
+    / { 'げば' #If }
+    / {'ぐ' / 'ぎ' / 'いで' / 'げ' !'る' / 'ごう' #Do }
 
 VerbSuffix5BA = // 遊
-    / {'ばない' #DoNot }
-    / {'ぶ' ('とき' / 'なら'/ '場合') / 'べば' #Case }
-    / {'ぶ' / 'び' / 'んで' / 'べ' / 'ぼう' #Do }
+    / 'ば' YetBase
+    / 'ん' { 'だ' #Did }
+    / 'び' { ('つつ' / 'ながら') #While }
+    / {'べば' #If }
+    / {'ぶ' / 'び' / 'んで' / 'べ' !'る' / 'ぼう' #Do }
 
 VerbSuffix1 = // 着る
-    / {'ない' #DoNot }
-    / {'る' ('とき' / 'なら'/ '場合') / 'れば' #Case }
-    / { TEN / 'て' / [よろ] / 'よう' #Do }
+    / YetBase
+    / { 'た' #Did }
+    / { ('つつ' / 'ながら') #While }
+    / { 'れば' #If }
+    / { 'る' / TEN / 'て' / [よろ] / 'よう' #Do }
 
-example AdjvClause 赤いボール
-example AdjvClause 赤かったボール
-example AdjvClause うるさい人
-example AdjvClause うるさかった人
-example AdjvClause うるさくない人
-example AdjvClause うるさかろう人
-example AdjvClause うるさそうだった人
-example AdjvClause うるさいらしい人
-example AdjvClause うるさいでしょう
-example AdjvClause 赤くないボール
-example AdjvClause 赤くなく青いボール
-example AdjvClause 赤くかっこいい人
-example AdjvClause 健康な人
-example AdjvClause 健康だった人
-example AdjvClause 健康でしょう
-example AdjvClause ぞっこんだ
-example AdjvClause なめいもの
-example AdjvClause なめかったもの
-example AdjvClause なめらかだ
-example AdjvClause なめらかなやわらかい布
+example Sentence 赤いボール
+example Sentence 赤かったボール
+example Sentence うるさい人
+example Sentence うるさかった人
+example Sentence うるさくない人
+example Sentence うるさかろう人
+example Sentence うるさそうだった人
+example Sentence うるさいらしい人
+example Sentence うるさいでしょう
+example Sentence 赤くないボール
+example Sentence 赤くなく青いボール
+example Sentence 赤くかっこいい人
+example Sentence 健康な人
+example Sentence 健康だった人
+example Sentence 健康でしょう
+example Sentence ぞっこんだ
+example Sentence なめいもの
+example Sentence なめかったもの
+example Sentence なめらかだ
+example Sentence なめらかなやわらかい布
 
 AdjvClause =
     / { Adj AdjSuffix #AdjClause }
