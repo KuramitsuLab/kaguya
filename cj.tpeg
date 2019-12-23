@@ -43,7 +43,7 @@ Adnominal = {
 */
 
 NounClause = 
-    { Noun NounSuffix? #NounClause } 
+    { Noun NounSuffix? #NounChunk } 
 
 NounSuffix = 
     / { [はがも] #Subject }
@@ -143,7 +143,7 @@ VerbClause = {
     / { VERB5BA #VerbBA } VerbSuffix5BA BaseSuffix?
     / { VERB1 #Verb1 }   VerbSuffix1 BaseSuffix?
     / NounDo VerbSuffixSHN BaseSuffix?
-    #VerbClause    
+    #VerbChunk  
 }
 
 /*
@@ -282,8 +282,8 @@ example Sentence なめらかだ
 example Sentence なめらかなやわらかい布
 
 AdjvClause =
-    / { Adj AdjSuffix #AdjClause }
-    / { AdjVerb AdjVerbSuffix #AdjClause }
+    / { Adj AdjSuffix #AdjChunk }
+    / { AdjVerb AdjVerbSuffix #AdjChunk }
 
 // 美し
 Adj = { 
