@@ -6,7 +6,7 @@
 */
 
 Sentence = {
-    (Chunk / TEN)* EOS
+    (Chunk / Error / TEN)* EOS
     #S
 }
 
@@ -16,69 +16,105 @@ Chunk =
     / VerbChunk    // 動詞節
     / NounChunk    // 名詞節
 
-ExtraClause =
-    / Conjunction // 接続詞
+// ExtraChunk
+// 名詞、形容詞、動詞を大域的に修飾するチャンク
+
+ExtraChunk = {
+    Conjunction // 接続詞
     / Adverb  // 副詞
+    / Measure // 助数詞
     / Adnominal  // 連体詞
-
-/* 接続詞 CONJ.txt */
-
-Conjunction = { // e.g., こうして
-    @choice('dic/CONJ.txt') #Conj 
+    #ExtraChunk
 }
 
-/* 副詞 ADV.txt */
+// CJルール 接続詞
+// 「しかし、」 のように必ず TEN をつける
+
+Conjunction = { // e.g., こうして
+    @choice('cjdic/CONJ.txt') 
+    TEN
+    #Conj 
+}
+
+// CJルール 副詞
+// TODO: 辞書が微妙 もう少し整頓すべき
+
 Adverb = {   // e.g., 少し 順次
-    @choice('dic/ADV.txt') #Adverb 
+    @choice('cjdic/ADV.txt') 
+    #Adverb 
+}
+
+// CJルール 助数詞
+// Code に数量を表す語が続く
+
+Measure = {
+    Code 
+    SPC?
+    Unit
+    'ほど'?
+    #Measure
+}
+
+Unit = {
+    @choice('cjdic/UNIT.txt')
+    #Unit
 }
 
 /* 連体詞 ADNM */
 Adnominal = { 
-    @choice('dic/ADNM.txt') #Adnominal 
+    @choice('cjdic/ADNM.txt') 
+    #Adnominal 
 }
 
 /*
 名詞 Nounらしいもので始まる
 */
 
-NounClause = 
-    { Noun NounSuffix? #NounChunk } 
+NounChunk = { 
+    Noun NounSuffix? 
+    #NounChunk 
+} 
+
+example Sentence ハワイについて
+example Sentence ハワイに着いて
 
 NounSuffix = 
     / { [はがも] #Subject }
-    / { [をとに] #Object }
     / { 'の' #Of }
     / { 'から' #From }
     / { 'まで' #Until }
-    / { 'である' / 'だ' #Be }
+    / { 'による' / 'によって' #By }
+    / { 'について' / 'に関' ('して' / 'する') #About }
+    / { 'である' / 'です' / 'だ' #Be }
     / { 'とする' / 'として' #Let }
-
+    / { [をとに] #Object }
 
 /*
 名詞 Noun
 */
 
+// CJルール 名詞
+// 平仮名が含まれない字句は外来語（名詞）とする
+//   ForeignNoun  例. クラス・メソッド
+// 平仮名が含まれる名詞は
+//  あらかじめ辞書に登録する  DictNone 
+//  「奥の細道」のようにカッコで書く  NewNoun
+
+
 Noun = 
     / Code
-    / NonHiraNoun
     / NewNoun
-    / HiraNoun
+    / ForeignNoun
+    / DictNoun
 
-NounDo = 
-    / NonHiraNoun
+NounDo =  // サ変動詞 〜する
     / NewNoun
-    / HiraNoun
+    / ForeignNoun
+    / DictNoun
 
-/* コードは名詞扱い */
+// CJルール 名詞
 
-Code = {
-    [A-Za-z0-9]+
-    #Code
-}
-
-/* ひらがな以外は全て名詞扱い */
-
-NonHiraNoun = {
+ForeignNoun = {
     NONHIRA+
     #Noun
 }
@@ -89,7 +125,7 @@ NewNoun =
     / '\【' { (!'\】' .)* #Noun } '\】'
     / '\〔' { (!'\〕' .)* #Noun } '\〕'
 
-HiraNoun = {
+DictNoun = {
     @choice('dic/NOUN.txt')
     / 'ところ'
     / 'ため'
@@ -104,33 +140,13 @@ HiraNoun = {
 }
 
 /*
-動詞の語幹と活用語尾
-活用順にしており、活用語尾が同じものまとめている
-*/
-
-example Sentence 歩く
-example Sentence 認める
-example Sentence 会う
-example Sentence 止む
-example Sentence 止まる
-example Sentence 止める
-
-example Sentence 話したく思う    // 連文節
-example Sentence 攻撃され始めた
-example Sentence 話し終わる
-example Sentence 駆け上がる
-example Sentence 立ち止まる
-example Sentence 止まる
-example Sentence 止まらない
-
-/*
 動詞の未然形活用
 未然形はほぼ確実に助動詞が繋がるため先読みで誤マッチを抑制している
 これで「止まる」の先頭文字列「止ま」が「止む」の未然形「止ま」にマッチしない
 以下、他の活用も同様
 */
 
-VerbClause = {
+VerbChunk = {
       { VERB5KA #VerbKA } VerbSuffix5KA BaseSuffix?
     / { VERB5SA #VerbSA } VerbSuffix5SA BaseSuffix?
     / { VERB5TA #VerbTA } VerbSuffix5TA BaseSuffix?
@@ -164,28 +180,40 @@ VERB1 = @choice('dic/Verb/VERB1.txt')
 YetBase = 
     / { 'ない' #DoNot }
     / { 'なかった' #DiDNot }
-    / { 'さ'? 'せ' 'られ'? 'る'? #Make }
-    / { 'れ' 'る'?  #Been }
+    / { 'さ'? 'せ' 'られ'? [るた]? #Make }
+    / { 'れ' [るた]?  #Been }
 
 BaseSuffix = 
     / BaseCase
-    / BaseVerb
+    / BaseSince
+    / BaseThat
 
-BaseVerb = {
-    'と' VerbClause
+BaseThat = {
+    'と' VerbChunk
+    #That
 }
 
 BaseCase = {
-    'とき' / 'の'? 'なら' / '場合' / 'ら' #If
+    ('とき' / 'の'? 'なら' / '場合' / 'ら' )
+    TEN?
+    #If
 }
 
-VerbSuffixSHN = // 行動
-    / 'し' YetBase
-    / 'し' { ('つつ' / 'ながら') #While }
-    / 'し' { 'た' #Did }
-    / { 'すれば' #If }
-    / { 'され' 'る'? #Been }
-    / {'する' / 'して' / 'しよう' / 'し' #Do }
+BaseSince = {
+    ('ため' / 'ので' / '為' )
+    TEN?
+    #Since
+}
+
+VSKIP = ('ます' / 'ください')?
+
+VerbSuffixSHN = // 例. 行動する 論じる
+    / [しじ] YetBase
+    / [しじ] { ('つつ' / 'ながら') #While }
+    / [しじ] { 'た' #Did }
+    / { [すず] 'れば' #If }
+    / { 'され' [るた]? #Been }
+    / { [すず] 'る' / [しじ] ('て' / 'よう')? #Do } VSKIP
 
 
 VerbSuffix5KA = // 書
@@ -193,63 +221,63 @@ VerbSuffix5KA = // 書
     / 'き' { ('つつ' / 'ながら') #While }
     / 'い' { 'た' #Did }
     / { 'けば' #If }
-    / {'く' / 'き' / 'いて' / 'こう' #Do }
+    / {'く' / 'き' / 'いて' / 'こう' #Do } VSKIP
 
 VerbSuffix5SA = // 探
     / 'さ' YetBase
     / 'し' { 'た' #Did }
     / 'し' { ('つつ' / 'ながら') #While }
     / { 'せば' #If }
-    / {'す' / 'して' / 'し' / 'そう' #Do }
+    / {'す' / 'して' / 'し' / 'そう' #Do } VSKIP
 
 VerbSuffix5TA = // 勝
     / 'た' YetBase
     / 'っ' { 'た' #Did }
     / 'ち' { ('つつ' / 'ながら') #While }
     / { 'てば' #If }
-    / {'つ' / 'ち' / 'って' / 'とう' #Do }
+    / {'つ' / 'ち' / 'って' / 'とう' #Do } VSKIP
 
 VerbSuffix5NA = // 死
     / 'な' YetBase
     / 'ん' { 'だ' #Did }
     / 'に' { ('つつ' / 'ながら') #While }
     / {'ねば' #If }
-    / {'ぬ' / 'に' / 'んで' / 'のう' #Do }
+    / {'ぬ' / 'に' / 'んで' / 'のう' #Do } VSKIP
 
 VerbSuffix5MA = // 読
     / 'ま' YetBase
     / 'ん' { 'だ' #Did }
     / 'み' { ('つつ' / 'ながら') #While }
     / {'めば' #If }
-    / {'む' / 'み' / 'んで' / 'もう' #Do }
+    / {'む' / 'み' / 'んで' / 'もう' #Do } VSKIP
 
 VerbSuffix5RA = // 切
     / 'ら' YetBase
     / 'っ' { 'た' #Did }
     / 'り' { ('つつ' / 'ながら') #While }
     / { 'れば' #If }
-    / {'る' / 'り' / 'って' / 'ろう' #Do }
+    / {'る' / 'り' / 'って' / 'ろう' #Do } VSKIP
 
 VerbSuffix5WA = // 笑
     / 'わ' YetBase
     / 'っ' { 'た' #Did }
     / 'い' { ('つつ' / 'ながら') #While }
     / {'えば' #If }
-    / {'う' / 'い' / 'って' / 'おう' #Do }
+    / {'う' / 'い' / 'って' / 'おう' #Do } VSKIP
 
 VerbSuffix5GA = // 防
     / 'が' YetBase
     / 'い' { 'だ' #Did }
     / 'ぎ' { ('つつ' / 'ながら') #While }
     / { 'げば' #If }
-    / {'ぐ' / 'ぎ' / 'いで' / 'ごう' #Do }
+    / {'ぐ' / 'ぎ' / 'いで' / 'ごう' #Do } VSKIP
 
 VerbSuffix5BA = // 遊
     / 'ば' YetBase
     / 'ん' { 'だ' #Did }
     / 'び' { ('つつ' / 'ながら') #While }
     / {'べば' #If }
-    / {'ぶ' / 'び' / 'んで' / 'ぼう' #Do }
+    / {'ぶ' / 'び' / 'んで' / 'ぼう' #Do } VSKIP
 
 VerbSuffix1 = // 着る
     / YetBase
@@ -257,30 +285,11 @@ VerbSuffix1 = // 着る
     / { ('つつ' / 'ながら') #While }
     / { 'れば' #If }
     / { 'られ' 'る'? #Been }
-    / { 'よう' / 'る' / 'て' #Do }
+    / { ('よう' / 'る' / 'て')? #Do } VSKIP
 
-example Sentence 赤いボール
-example Sentence 赤かったボール
-example Sentence うるさい人
-example Sentence うるさかった人
-example Sentence うるさくない人
-example Sentence うるさかろう人
-example Sentence うるさそうだった人
-example Sentence うるさいらしい人
-example Sentence うるさいでしょう
-example Sentence 赤くないボール
-example Sentence 赤くなく青いボール
-example Sentence 赤くかっこいい人
-example Sentence 健康な人
-example Sentence 健康だった人
-example Sentence 健康でしょう
-example Sentence ぞっこんだ
-example Sentence なめいもの
-example Sentence なめかったもの
-example Sentence なめらかだ
-example Sentence なめらかなやわらかい布
+/* 形容詞 */
 
-AdjvClause =
+AdjvChunk =
     / { Adj AdjSuffix #AdjChunk }
     / { AdjVerb AdjVerbSuffix #AdjChunk }
 
@@ -305,10 +314,26 @@ AdjVerbSuffix =
     / { 'でない' #Not }
     / { [にでだな] #Be }
 
+
+/* コードは名詞扱い */
+
+Code = {
+    [A-Za-z0-9]+
+    #Code
+}
+
+// CJ.TPEG マッチしない名詞はエラーとしてスキップする
+
+Error = {
+    HIRA+
+    #err
+}
+
 /* 文字コード */
 
 Ten = { TEN #Ten }
 
+SPC = [ ]
 EOF = !.
 EOS = [。．.\n]? EOF
 TEN = [、，,\n]
