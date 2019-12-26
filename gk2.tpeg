@@ -1,4 +1,4 @@
-/* GAKKOU文法+先読み+助詞の調整 */
+/* 助詞を厳格に扱う、先読みを加えた学校文法 */
 
 /*
 トップの規則
@@ -20,12 +20,12 @@ Chunk =
     / ConjunctionOnlyPhrase
     / AdnominalPhrase  // 連体詞
     / AdverbPhrase  // 副詞
+    / NounPhrase  // 名詞句
     / VerbPhrase  // 動詞句
     / AdjectiveVerbPhrase  // 形容動詞句
-    / NounPhrase  // 名詞句
     / AdjectivePhrase  // 形容詞句
     / ConjunctionPhrase  // 接続詞
-    / InterjectionPhrase  // 感動詞
+    // / InterjectionPhrase  // 感動詞
 
 
 EOF = !.
@@ -140,11 +140,21 @@ AuxVerbForAdjv = {
 名詞句
 */
 NounPhrase = {
+    !Noun_Suru (
       Noun AuxVerbForNoun PostpPhrase?
     / Noun !PostpConnect PostpPhrase
     / Noun !!(Chunk/Eol)
+    )
     #NounPhrase
 }
+
+Noun_Suru =
+    / NOUN ( [さ] !!(AuxVSaMizen) / [し] !!(AuxVSiMizen) / [せ] !!(Aux_Nu) )
+    / NOUN [し] !!(AuxVSaRenyo/AfterRenyo/Postp_Temo/Postp_Te/Postp_Tari)
+    / NOUN 'する' !!(AuxVSaSyushi/AfterSyushi)
+    / NOUN 'する' !!(AuxVSaRentai/AfterRentai)
+    / NOUN 'すれ' !!(Postp_Ba)
+    / NOUN ('しろ' / 'せよ') !!(Eol)
 
 /*
 名詞に連接可能な助動詞句
