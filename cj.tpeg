@@ -6,16 +6,15 @@
 */
 
 Sentence = {
-    // Clause* [。．.\n]? {.* #Remain}  // デバッグモード
-    (Clause / TEN)* EOS
+    (Chunk / TEN)* EOS
     #S
 }
 
-Clause =
-    / ExtraClause   // 接続詞, 副詞, 連体詞
-    / AdjvClause    // 形容詞節, 形容動詞節
-    / VerbClause    // 動詞節
-    / NounClause    // 名詞節
+Chunk =
+    / ExtraChunk   // 接続詞, 副詞, 連体詞
+    / AdjvChunk    // 形容詞節, 形容動詞節
+    / VerbChunk    // 動詞節
+    / NounChunk    // 名詞節
 
 ExtraClause =
     / Conjunction // 接続詞
