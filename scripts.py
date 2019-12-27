@@ -65,9 +65,10 @@ class Statistics():
   def __init__(self):
     self.token_amount_of_sentence = []  # indexが読点の数で、valueは文の構成トークン数を追加していく配列
     self.count_of = {}  # 品詞情報を入れていく、keyがMeCabの単語情報でvalueが{size: keyに当てはまる単語数, data: さらに細分化したデータ}
+    # MeCabの品詞情報で"*"にまとめられてしまう「名詞、記号、感動詞」は個別に集計する
     self.set_of_Noun = {}  # 名詞の辞書
-    self.set_of_Postp = {}  # 助詞の辞書
-    self.set_of_Verb = {}  # 動詞の辞書
+    self.set_of_Symbol = {}  # 記号の辞書
+    self.set_of_Intj = {}  # 感動詞の辞書
     self.sentence_type = {  # 基本文型の分類
       '名詞文': 0,  # 名詞文, 状態
       '動詞文': 0,  # 動詞文, 操作
@@ -118,16 +119,16 @@ class Statistics():
           self.set_of_Noun[t.word] += 1
         else:
           self.set_of_Noun[t.word] = 1
-      elif t.品詞 == '動詞':
-        if t.原形 in self.set_of_Verb:
-          self.set_of_Verb[t.原形] += 1
+      elif t.品詞 == '感動詞':
+        if t.word in self.set_of_Intj:
+          self.set_of_Intj[t.word] += 1
         else:
-          self.set_of_Verb[t.原形] = 1
-      elif t.品詞 == '助詞':
-        if t.原形 in self.set_of_Postp:
-          self.set_of_Postp[t.原形] += 1
+          self.set_of_Intj[t.word] = 1
+      elif t.品詞 == '記号':
+        if t.word in self.set_of_Symbol:
+          self.set_of_Symbol[t.word] += 1
         else:
-          self.set_of_Postp[t.原形] = 1
+          self.set_of_Symbol[t.word] = 1
       # 助動詞の連続回数の記録
       if t.品詞 == '助動詞' or (t.品詞 == '動詞' and t.原形 in ['れる','られる','せる','させる']):
         if continuing:
@@ -172,11 +173,11 @@ class Statistics():
     with open(LOG_PATH/'JavadocNoun.txt', 'w', encoding='utf_8') as f:
       f.write('\n'.join(list(map(lambda tpl:f'{tpl[0]},{tpl[1]}', sorted(self.set_of_Noun.items(), key=lambda kv: kv[1], reverse=True)))))
     # 助詞辞書の作成
-    with open(LOG_PATH/'JavadocPostp.txt', 'w', encoding='utf_8') as f:
-      f.write('\n'.join(list(map(lambda tpl:f'{tpl[0]},{tpl[1]}', sorted(self.set_of_Postp.items(), key=lambda kv: kv[1], reverse=True)))))
+    with open(LOG_PATH/'JavadocSymbol.txt', 'w', encoding='utf_8') as f:
+      f.write('\n'.join(list(map(lambda tpl:f'{tpl[0]},{tpl[1]}', sorted(self.set_of_Symbol.items(), key=lambda kv: kv[1], reverse=True)))))
     # 動詞辞書の作成
-    with open(LOG_PATH/'JavadocVerb.txt', 'w', encoding='utf_8') as f:
-      f.write('\n'.join(list(map(lambda tpl:f'{tpl[0]},{tpl[1]}', sorted(self.set_of_Verb.items(), key=lambda kv: kv[1], reverse=True)))))
+    with open(LOG_PATH/'JavadocIntj.txt', 'w', encoding='utf_8') as f:
+      f.write('\n'.join(list(map(lambda tpl:f'{tpl[0]},{tpl[1]}', sorted(self.set_of_Intj.items(), key=lambda kv: kv[1], reverse=True)))))
     # 文の統計情報の書き出し
     with open(LOG_PATH/'token_amount_of_sentence.txt', 'w', encoding='utf_8') as f:
       s = '# 文の統計\n'
