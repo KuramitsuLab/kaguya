@@ -28,8 +28,8 @@ Chunk =
 
 
 EOF = !.
-EOS = [!！?？。．.\n]? EOF
-TEN = [\/／\(\)・、，,:：\n]
+EOS = [!！?？。\n]? EOF
+TEN = [.．\/／・、，,:：\[\]\(\)\<\>\{\}\'\"\`「」（）＜＞『』［］【】”“｀”“’‘｛｝〔〕]
 Eol = { (TEN/EOS) #Eol }
 KANJI = [㐀-䶵一-龠々〇〻ーご]
 KATA = [ァ-ヶー・]+
@@ -502,57 +502,10 @@ SUBNAI = 'な' ('かろ' / 'かっ' / 'く' / 'い' / 'けれ')
 
 /*
 名詞
-括弧で括ったものも名詞としている
+括弧で括ったものは名詞にしない
 */
 Noun =
-    / Block
     / { NOUN #Noun }
-    // / DefinedNoun
-
-/*
-専用の名詞辞書を使わなくてもある程度解析可能にしたい時の対応案
-*/
-DefinedNoun =
-    / { KATA+ #KATA }
-    / { ALPHA+ #ALPHA }
-    / { NUM [つこ個]? [め目]? #Num }
-    / { ('ひと'/'ふた'/'みっ'/'よっ'/'いつ'/'むっ'/'なな'/'やっ'/'ここの') 'つ' [め目]? #Count }
-    / { SYMBOL+ #SYMBOL }
-    / { HIRANOUN #HIRA }
-    / { KANJI+ #Kanji }
-/*
-括弧のネスト
-二重括弧は非対応
-*/
-Block =
-    / '\[' {(!'\]' .)* #Block} '\]'
-    / '\{' {(!'\}' .)* #Block} '\}'
-    / '\(' {(!'\)' .)* #Block} '\)'
-    / '\"' {(!'\"' .)* #Block} '\"'
-    / '\'' {(!'\'' .)* #Block} '\''
-    / '\<' {(!'\>' .)* #Block} '\>'
-    / '\（' {(!'\）' .)* #Block} '\）'
-    / '\「' {(!'\」' .)* #Block} '\」'
-    / '\『' {(!'\』' .)* #Block} '\』'
-    / '\“' {(!'\”' .)* #Block} '\”'
-    / '\‘' {(!'\’' .)* #Block} '\’'
-    / '\【' {(!'\】' .)* #Block} '\】'
-    / '\［' {(!'\］' .)* #Block} '\］'
-    / '\｛' {(!'\｝' .)* #Block} '\｝'
-    / '\〔' {(!'\〕' .)* #Block} '\〕'
-
-HIRANOUN =
-    / 'いくつか'
-    / 'みなさん'
-    / 'あなた'
-    / '皆さん'
-    / '後ろ'
-    / 'これ'
-    / 'こと'
-    / 'ため'
-    / '後ろ'
-    / 'どこ'
-    / 'はず'
 
 
 /* 助詞 */
@@ -754,7 +707,11 @@ Aux_Desyo =
 
 
 /* 外部辞書の読み込み */
+/* 対象文書から作成した辞書を読み込む */
 NOUN = @choice('dic/TestNoun.txt')
+
+/* IPA辞書から作成した辞書を読み込む */
+// NOUN = @choice('dic/Noun_ipa.txt')
 VERB5KA = @choice('dic/Verb/VERB5KA.txt')
 VERB5SA = @choice('dic/Verb/VERB5SA.txt')
 VERB5TA = @choice('dic/Verb/VERB5TA.txt')
@@ -770,7 +727,7 @@ SAHEN_SURU = @choice('dic/Verb/SAHEN_SURU.txt')
 SAHEN_ZURU = @choice('dic/Verb/SAHEN_ZURU.txt')
 VERB5IK = '行'
 ADJ = @choice('dic/ADJ.txt')
-ADJV = @choice('dic/TestAdjv.txt')
+ADJV = @choice('dic/ADJV.txt')
 POSTP = @choice('dic/POSTP.txt')
 ADNM = @choice('dic/ADNM.txt')
 ADV = @choice('dic/ADV.txt')

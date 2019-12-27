@@ -1,4 +1,5 @@
 import sys
+import time
 import re
 from pathlib import Path
 import unicodedata
@@ -6,6 +7,7 @@ import subprocess
 import shutil
 from pegpy.main import *
 
+sys.setrecursionlimit(2**31-1)
 
 # sub functions for test()
 def txt2array(path):
@@ -20,10 +22,12 @@ def txt2array(path):
 def write_result(fpath, results):
     with open(fpath, mode='w', encoding='utf_8') as f:
         s = ''
+        print('Now Caching Result')
         for bl, cnt, ipt, res in results:
             sf = 'OK' if bl else 'NG'
             s += f'{cnt},{sf}: {ipt}\n'
             s += f'{res}\n\n'
+        print('Now Writing Result')
         f.write(s[:-2])
 
 
@@ -227,6 +231,7 @@ def leaf2token(word, nodes):
         'Adverb': '副詞',
         'Conjunction': '接続詞',
         'Interjection': '感動詞',
+        'Sentence': 'TEN'
     }
     if   nodes[-1].startswith('ADJV'):
         return f'{word} (形容動詞)'
@@ -260,6 +265,7 @@ def gen_compare(ast, count):
 
 # main tester functions
 def test(target_name, grammar='kaguya0.tpeg', print_log='True', _='y or n'):
+    target = Path(target_name)
     options = parse_options(['-g', grammar])
     peg = load_grammar(options)
     parser = generator(options)(peg, **options)
@@ -267,11 +273,11 @@ def test(target_name, grammar='kaguya0.tpeg', print_log='True', _='y or n'):
     compare_words = []
     fail_cnt = 0
 
-    input_list = txt2array(target_name)
-    FILE_NAME = target_name[(target_name.rfind('/')) +
-                            1: (target_name.rfind('.'))]
+    input_list = txt2array(target)
+    FILE_NAME = target.stem
     Path('test/result').mkdir(parents=True, exist_ok=True)
 
+    START = time.time()
     for count, s in enumerate(input_list):
         sys.stdout.write(f'\rNow Processing: {count+1}/{len(input_list)}')
         try:
@@ -283,15 +289,18 @@ def test(target_name, grammar='kaguya0.tpeg', print_log='True', _='y or n'):
             fail_cnt += 1
         else:
             results.append((True, count+1, s, repr(tree)))
-            compare_words += gen_compare(tree, count)
+            # compare_words += gen_compare(tree, count)
         sys.stdout.flush()
     print()
     write_result(f'test/result/{FILE_NAME}.txt', results)
-    with open(f'test/result/{FILE_NAME}_for_compare.txt', mode='w', encoding='utf_8') as f:
-        f.write('\n'.join(compare_words))
+    # with open(f'test/result/{FILE_NAME}_for_compare.txt', mode='w', encoding='utf_8') as f:
+    #     f.write('\n'.join(compare_words))
     if not print_log in ['0', 'false', 'False']:
         print_err(results)
-    print('Fail Rate: %d / %d' % (fail_cnt, len(input_list)))
+    END = time.time() - START
+    TOTAL = len(input_list)
+    print(f'SUCCESS RATE  : {TOTAL-fail_cnt}/{TOTAL} => {100*(TOTAL-fail_cnt)/TOTAL}[%]')
+    print(f'EXECUTION TIME: {END}[sec]')
     return results
 
 
