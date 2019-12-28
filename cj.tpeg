@@ -6,24 +6,24 @@
 */
 
 Sentence = {
-    (Chunk / Error / TEN)* EOS
+    (TEN / Chunk / Error)* EOS
     #S
 }
 
 Chunk =
-    / ExtraChunk   // 接続詞, 副詞, 連体詞
     / AdjvChunk    // 形容詞節, 形容動詞節
     / VerbChunk    // 動詞節
+    / ExtraChunk   // 接続詞, 副詞, 連体詞
     / NounChunk    // 名詞節
 
 // ExtraChunk
 // 名詞、形容詞、動詞を大域的に修飾するチャンク
 
 ExtraChunk = {
-    Conjunction // 接続詞
-    / Adverb  // 副詞
-    / Measure // 助数詞
+    Measure // 助数詞
     / Adnominal  // 連体詞
+    / Adverb  // 副詞
+    / Conjunction // 接続詞
     #ExtraChunk
 }
 
@@ -32,9 +32,9 @@ ExtraChunk = {
 
 Conjunction = { // e.g., こうして
     @choice('cjdic/CONJ.txt') 
-    TEN
+    &TEN
     #Conj 
-}
+} TEN
 
 // CJルール 副詞
 // TODO: 辞書が微妙 もう少し整頓すべき
@@ -80,14 +80,17 @@ example Sentence ハワイに着いて
 
 NounSuffix = 
     / { [はがも] #Subject }
+    / { 'のいずれか' #EachOf }
     / { 'の' #Of }
-    / { 'から' #From }
+    / { 'から' / 'より' #From }
     / { 'まで' #Until }
-    / { 'による' / 'によって' #By }
+    / { 'による' / 'によって' / 'により' #By }
+    / { 'に対する' / 'に対して' #Against }
     / { 'について' / 'に関' ('して' / 'する') #About }
     / { 'である' / 'です' / 'だ' #Be }
     / { 'とする' / 'として' #Let }
-    / { [をとに] #Object }
+    / { [をとにで] #Object }
+    / { [や] #AndOr }
 
 /*
 名詞 Noun
@@ -107,10 +110,8 @@ Noun =
     / ForeignNoun
     / DictNoun
 
-NounDo =  // サ変動詞 〜する
-    / NewNoun
-    / ForeignNoun
-    / DictNoun
+NounVerb =  // サ変動詞 〜する
+    (NewNoun / ForeignNoun / DictNoun ) &([さしすざじず]/'でき')
 
 // CJルール 名詞
 
@@ -143,149 +144,207 @@ DictNoun = {
 動詞の未然形活用
 未然形はほぼ確実に助動詞が繋がるため先読みで誤マッチを抑制している
 これで「止まる」の先頭文字列「止ま」が「止む」の未然形「止ま」にマッチしない
-以下、他の活用も同様
 */
 
 VerbChunk = {
-      { VERB5KA #VerbKA } VerbSuffix5KA BaseSuffix?
-    / { VERB5SA #VerbSA } VerbSuffix5SA BaseSuffix?
-    / { VERB5TA #VerbTA } VerbSuffix5TA BaseSuffix?
-    / { VERB5NA #VerbNA } VerbSuffix5NA BaseSuffix?
-    / { VERB5MA #VerbMA } VerbSuffix5MA BaseSuffix?
-    / { VERB5RA #VerbRA } VerbSuffix5RA BaseSuffix?
-    / { VERB5WA #VerbWA } VerbSuffix5WA BaseSuffix?
-    / { VERB5GA #VerbGA } VerbSuffix5GA BaseSuffix?
-    / { VERB5BA #VerbBA } VerbSuffix5BA BaseSuffix?
-    / { VERB1 #Verb1 }   VerbSuffix1 BaseSuffix?
-    / NounDo VerbSuffixSHN BaseSuffix?
+      Verb5KA XVerb5KA
+    / Verb5SA XVerb5SA
+    / Verb5TA XVerb5TA
+    / Verb5NA XVerb5NA
+    / Verb5MA XVerb5MA
+    / Verb5RA XVerb5RA
+    / Verb5WA XVerb5WA
+    / Verb5GA XVerb5GA
+    / Verb5BA XVerb5BA
+    / Verb1 XVerb1
+    / NounVerb XNounVerb
     #VerbChunk  
 }
 
-/*
-活用型ごとの動詞の語幹を辞書から生成
-「行く」はカ行五段活用だが、イ音便ではなく促音便で活用が異なるため別枠
-*/
+Verb5KA = { @choice('dic/Verb/VERB5KA.txt') &[か-こい] #VerbKA }
+Verb5SA = { @choice('dic/Verb/VERB5SA.txt') &[さ-そ] #VerbSA }
+Verb5TA = { @choice('dic/Verb/VERB5TA.txt') &[た-とっ] #VerbTA }
+Verb5NA = { @choice('dic/Verb/VERB5NA.txt') &[な-のん] #VerbNA }
+Verb5MA = { @choice('dic/Verb/VERB5MA.txt') &[ま-もん] #VerbMA }
+Verb5RA = { @choice('dic/Verb/VERB5RA.txt') &[ら-ろっ] #VerbRA }
+Verb5WA = { @choice('dic/Verb/VERB5WA.txt') &[わいうえおっ] #VerbWA }
+Verb5GA = { @choice('dic/Verb/VERB5GA.txt') &[が-ごい] #VerbGA }
+Verb5BA = { @choice('dic/Verb/VERB5BA.txt') &[ば-ぼん] #VerbBA }
+Verb1 = { @choice('dic/Verb/VERB1.txt') #Verb1 }
 
-VERB5KA = @choice('dic/Verb/VERB5KA.txt') &[か-こい]
-VERB5SA = @choice('dic/Verb/VERB5SA.txt') &[さ-そ]
-VERB5TA = @choice('dic/Verb/VERB5TA.txt') &[た-とっ]
-VERB5NA = @choice('dic/Verb/VERB5NA.txt') &[な-のん]
-VERB5MA = @choice('dic/Verb/VERB5MA.txt') &[ま-もん]
-VERB5RA = @choice('dic/Verb/VERB5RA.txt') &[ら-ろっ]
-VERB5WA = @choice('dic/Verb/VERB5WA.txt') &[わいうえおっ]
-VERB5GA = @choice('dic/Verb/VERB5GA.txt') &[が-ごい]
-VERB5BA = @choice('dic/Verb/VERB5BA.txt') &[ば-ぼん]
-VERB1 = @choice('dic/Verb/VERB1.txt')
+XBase = 
+    / XBaseCase
+    / XBaseSince
+    / XBaseThat
 
-YetBase = 
-    / { 'ない' #DoNot }
-    / { 'なかった' #DiDNot }
-    / { 'さ'? 'せ' 'られ'? [るた]? #Make }
-    / { 'れ' [るた]?  #Been }
-
-BaseSuffix = 
-    / BaseCase
-    / BaseSince
-    / BaseThat
-
-BaseThat = {
-    'と' VerbChunk
+XBaseThat = {
+    'と' 'は'? VerbChunk
     #That
 }
 
-BaseCase = {
-    ('とき' / 'の'? 'なら' / '場合' / 'ら' )
-    TEN?
+XBaseCase = {
+    ('とき' TEN / '場合' TEN / 'の'? 'なら' / 'ら' )
     #If
 }
 
-BaseSince = {
-    ('ため' / 'ので' / '為' )
-    TEN?
+XBaseSince = {
+    ('ため' 'には'? / 'には' / 'ので')
+    &TEN
     #Since
 }
 
-VSKIP = ('ます' / 'ください')?
+XPastAnd = { // 提供した+り
+    'り'
+    #And
+}
 
-VerbSuffixSHN = // 例. 行動する 論じる
-    / [しじ] YetBase
-    / [しじ] { ('つつ' / 'ながら') #While }
-    / [しじ] { 'た' #Did }
-    / { [すず] 'れば' #If }
-    / { 'され' [るた]? #Been }
-    / { [すず] 'る' / [しじ] ('て' / 'よう')? #Do } VSKIP
+XNot = //な
+    / { 'ければ' #If }
+    / { 'くな' XNot #Not }
+    / { 'く' 'て'? #And }
+    / { 'い' XBase? #Base }
+    / { 'かった' XBase? #PastBase }
 
+ASuffix = // 書か+ない   探さ+ない
+    / { 'な' XNot #Not }
+    / { 'さ'? 'せ' 'られ'? Mood #Make }
+    / { 'れ' Mood #Been }
 
-VerbSuffix5KA = // 書
-    / 'か' YetBase
-    / 'き' { ('つつ' / 'ながら') #While }
-    / 'い' { 'た' #Did }
-    / { 'けば' #If }
-    / {'く' / 'き' / 'いて' / 'こう' #Do } VSKIP
+PoliteMood =
+    / { 'ます' #Base }
+    / { 'ません' 'でした'? #Not }
+    / { 'ましたら' #If }
+    / { 'ました' #Past }
+    / { 'まして' #And }
 
-VerbSuffix5SA = // 探
-    / 'さ' YetBase
-    / 'し' { 'た' #Did }
-    / 'し' { ('つつ' / 'ながら') #While }
-    / { 'せば' #If }
-    / {'す' / 'して' / 'し' / 'そう' #Do } VSKIP
-
-VerbSuffix5TA = // 勝
-    / 'た' YetBase
-    / 'っ' { 'た' #Did }
-    / 'ち' { ('つつ' / 'ながら') #While }
-    / { 'てば' #If }
-    / {'つ' / 'ち' / 'って' / 'とう' #Do } VSKIP
-
-VerbSuffix5NA = // 死
-    / 'な' YetBase
-    / 'ん' { 'だ' #Did }
-    / 'に' { ('つつ' / 'ながら') #While }
-    / {'ねば' #If }
-    / {'ぬ' / 'に' / 'んで' / 'のう' #Do } VSKIP
-
-VerbSuffix5MA = // 読
-    / 'ま' YetBase
-    / 'ん' { 'だ' #Did }
-    / 'み' { ('つつ' / 'ながら') #While }
-    / {'めば' #If }
-    / {'む' / 'み' / 'んで' / 'もう' #Do } VSKIP
-
-VerbSuffix5RA = // 切
-    / 'ら' YetBase
-    / 'っ' { 'た' #Did }
-    / 'り' { ('つつ' / 'ながら') #While }
+Mood = // でき　　られ
+    / &'ま' PoliteMood
+    / { 'な' XNot #Not }
+    / { 'る' XBase? #Base }
+    / { 'た' (XBase / XPastAnd)? #Past }
     / { 'れば' #If }
-    / {'る' / 'り' / 'って' / 'ろう' #Do } VSKIP
+    / { 'てい' Mood #Being }
+    / { 'て'? #And }
 
-VerbSuffix5WA = // 笑
-    / 'わ' YetBase
-    / 'っ' { 'た' #Did }
-    / 'い' { ('つつ' / 'ながら') #While }
-    / {'えば' #If }
-    / {'う' / 'い' / 'って' / 'おう' #Do } VSKIP
+Being = {
+    'て' Mood #Being
+}
 
-VerbSuffix5GA = // 防
-    / 'が' YetBase
-    / 'い' { 'だ' #Did }
-    / 'ぎ' { ('つつ' / 'ながら') #While }
-    / { 'げば' #If }
-    / {'ぐ' / 'ぎ' / 'いで' / 'ごう' #Do } VSKIP
 
-VerbSuffix5BA = // 遊
-    / 'ば' YetBase
-    / 'ん' { 'だ' #Did }
-    / 'び' { ('つつ' / 'ながら') #While }
-    / {'べば' #If }
-    / {'ぶ' / 'び' / 'んで' / 'ぼう' #Do } VSKIP
-
-VerbSuffix1 = // 着る
-    / YetBase
-    / { 'た' #Did }
+ISuffix = // 書き+つつ  探し+つつ　
+    / &'ま' PoliteMood
+    / { ('やす' / 'よ' ) XNot #EasyTo }   // 書きやすい
+    / { ('にく' / 'がた' / 'づら') XNot #HardTo } //書きがたい
     / { ('つつ' / 'ながら') #While }
-    / { 'れば' #If }
-    / { 'られ' 'る'? #Been }
-    / { ('よう' / 'る' / 'て')? #Do } VSKIP
+
+IXSuffix = // 書い+て   探し+て　
+    / { 'た' (XBase / XPastAnd)? #Past }
+    / { 'てい' Mood #Being }
+    / { 'て' #And }
+
+IXDSuffix = // 遊んだ   遊んで
+    / { 'だ' (XBase / XPastAnd)? #Past }
+    / { 'でい' Mood #Being }
+    / { 'で' #And }
+
+USuffix = // 書く　探す
+    / { XBase? #Base }
+
+ESuffix = // 書け+ば  探せ+ば
+    / { 'ば' #If }
+
+OSuffix = // 書こ+う　探そ+う
+    / { 'う' XBase? #Will }
+
+VSKIP = ''
+
+XNounVerb = // 例. 行動する 論じる
+    / [すず] ('る' USuffix / 'れ' ESuffix)
+    / [しじ] (ASuffix / ISuffix / IXSuffix / 'よ' OSuffix )
+    / { 'され' Mood #Been }
+    / { 'でき' Mood #Can }
+
+XVerb5KA = // 書
+    / 'か' ASuffix
+    / 'き' ISuffix
+    / 'い' IXSuffix
+    / 'く' USuffix
+    / 'け' ESuffix
+    / 'こ' OSuffix
+
+XVerb5SA = // 探
+    / 'さ' ASuffix  // ない
+    / 'し' ISuffix  // ながら
+    / 'し' IXSuffix // て
+    / 'す' USuffix  // 
+    / 'せ' ESuffix  // ば
+    / 'こ' OSuffix  // う
+
+
+XVerb5TA = // 勝
+    / 'た' ASuffix  // ない
+    / 'ち' ISuffix  // ながら
+    / 'っ' IXSuffix // て
+    / 'つ' USuffix  // 
+    / 'て' ESuffix  // ば
+    / 'と' OSuffix  // う
+
+XVerb5NA = // 死
+    / 'な' ASuffix  // ない
+    / 'に' ISuffix  // ながら
+    / 'ん' IXDSuffix // て
+    / 'ぬ' USuffix  // 
+    / 'ね' ESuffix  // ば
+    / 'の' OSuffix  // う
+
+XVerb5MA = // 読
+    / 'ま' ASuffix  // ない
+    / 'み' ISuffix  // ながら
+    / 'ん' IXDSuffix // て
+    / 'む' USuffix  // 
+    / 'め' ESuffix  // ば
+    / 'も' OSuffix  // う
+
+XVerb5RA = // 切
+    / 'ら' ASuffix  // ない
+    / 'り' ISuffix  // ながら
+    / 'っ' IXSuffix // て
+    / 'る' USuffix  // 
+    / 'れ' ESuffix  // ば
+    / 'ろ' OSuffix  // う
+
+XVerb5WA = // 笑
+    / 'わ' ASuffix  // ない
+    / 'い' ISuffix  // ながら
+    / 'っ' IXSuffix // て
+    / 'う' USuffix  // 
+    / 'え' ESuffix  // ば
+    / 'お' OSuffix  // う
+
+XVerb5GA = // 防
+    / 'が' ASuffix  // ない
+    / 'ぎ' ISuffix  // ながら
+    / 'い' IXDSuffix // て
+    / 'ぐ' USuffix  // 
+    / 'げ' ESuffix  // ば
+    / 'ご' OSuffix  // う
+
+XVerb5BA = // 遊
+    / 'ば' ASuffix  // ない
+    / 'び' ISuffix  // ながら
+    / 'ん' IXDSuffix // て
+    / 'ぶ' USuffix  // 
+    / 'べ' ESuffix  // ば
+    / 'ぼ' OSuffix  // う
+
+XVerb1 = // 着る
+    / 'る' USuffix  // 
+    / 'れ' ESuffix  // ば
+    / 'よ' OSuffix  // う
+    / ASuffix  // ない
+    / ISuffix  // ながら
+    / IXSuffix // て
+
 
 /* 形容詞 */
 
@@ -318,7 +377,7 @@ AdjVerbSuffix =
 /* コードは名詞扱い */
 
 Code = {
-    [A-Za-z0-9]+
+    [A-Za-z0-9.(){}, +\-*/%\\]+
     #Code
 }
 
