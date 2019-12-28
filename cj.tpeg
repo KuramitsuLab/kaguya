@@ -22,7 +22,7 @@ Chunk =
 ExtraChunk = {
     Measure // 助数詞
     / Adnominal  // 連体詞
-    / Adverb  // 副詞
+    / Adverb // 副詞
     / Conjunction // 接続詞
     #ExtraChunk
 }
@@ -32,9 +32,8 @@ ExtraChunk = {
 
 Conjunction = { // e.g., こうして
     @choice('cjdic/CONJ.txt') 
-    &TEN
     #Conj 
-} TEN
+}
 
 // CJルール 副詞
 // TODO: 辞書が微妙 もう少し整頓すべき
@@ -80,7 +79,6 @@ example Sentence ハワイに着いて
 
 NounSuffix = 
     / { [はがも] #Subject }
-    / { 'のいずれか' #EachOf }
     / { 'の' #Of }
     / { 'から' / 'より' #From }
     / { 'まで' #Until }
@@ -90,6 +88,7 @@ NounSuffix =
     / { 'である' / 'です' / 'だ' #Be }
     / { 'とする' / 'として' #Let }
     / { [をとにで] #Object }
+    / { 'な' #Adj }
     / { [や] #AndOr }
 
 /*
@@ -116,7 +115,7 @@ NounVerb =  // サ変動詞 〜する
 // CJルール 名詞
 
 ForeignNoun = {
-    NONHIRA+
+    NONHIRA+ 'など'?
     #Noun
 }
 
@@ -174,6 +173,7 @@ Verb1 = { @choice('dic/Verb/VERB1.txt') #Verb1 }
 
 XBase = 
     / XBaseCase
+    / XBaseOnly
     / XBaseSince
     / XBaseThat
 
@@ -182,14 +182,18 @@ XBaseThat = {
     #That
 }
 
+XBaseOnly = { // 一見しただけでは
+    'だけでは' / 'のみでは' / 'のでは'
+    #OnlyThat
+}
+
 XBaseCase = {
     ('とき' TEN / '場合' TEN / 'の'? 'なら' / 'ら' )
     #If
 }
 
 XBaseSince = {
-    ('ため' 'には'? / 'には' / 'ので')
-    &TEN
+    ('ため' ('に' 'は'? )? / 'には' / 'ので')
     #Since
 }
 
@@ -363,10 +367,7 @@ ADJVERB =
     / @choice('dic/ADJV.txt')
 AdjVerb = { ADJVERB #Adjv }
 
-AdjSuffix =
-    / { 'ければ' #If }
-    / { 'くない' #Not }
-    / { [くい] #Be }
+AdjSuffix = XNot
 
 AdjVerbSuffix =
     / { 'ならば' #If }
