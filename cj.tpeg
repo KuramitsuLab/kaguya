@@ -47,19 +47,30 @@ Adverb = {   // e.g., 少し 順次
 // Code に数量を表す語が続く
 
 Measure = {
+    UnitPrefix?
     Code 
-    SPC?
     Unit
     'ほど'?
+    NounSuffix?
     #Measure
 }
+
+UnitPrefix = 
+    / { '約' / 'およそ' #Aprox }
+    / { '高々'/ 'たかだか' / '多くとも' #AtMost }
+    / { '少なくとも' #AtLeast }
 
 Unit = {
     @choice('cjdic/UNIT.txt')
     #Unit
 }
 
-/* 連体詞 ADNM */
+// 連体詞
+// 名詞があとに続くが、単独では名詞でも形容動詞でも解釈できない
+// 「こ」の 連体詞　「一部」の　名詞＋「の」
+// 「~たる」は除外　微々たる, 切々たる 
+// 「~しき」は除外　奇しき, 悪しき 
+
 Adnominal = { 
     @choice('cjdic/ADNM.txt') 
     #Adnominal 
