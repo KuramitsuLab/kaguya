@@ -11,28 +11,20 @@ Sentence = {
 }
 
 Chunk =
+    / Adnominal   // 連体詞は先, 「多くの人」が形容詞にマッチする
     / AdjvChunk    // 形容詞節, 形容動詞節
     / VerbChunk    // 動詞節
-    / ExtraChunk   // 接続詞, 副詞, 連体詞
+    / Measure      // 助数詞
     / NounChunk    // 名詞節
-
-// ExtraChunk
-// 名詞、形容詞、動詞を大域的に修飾するチャンク
-
-ExtraChunk = {
-    Measure // 助数詞
-//    / Adnominal  // 連体詞
-    / Adverb // 副詞
-    / Conjunction // 接続詞
-    #ExtraChunk
-}
+    / Adverb       // 副詞
+    / Conjunction  // 接続詞
 
 // CJルール 接続詞
 // 「しかし、」 のように必ず TEN をつける
 
 Conjunction = { // e.g., こうして
     @choice('cjdic/CONJ.txt') 
-    #Conj 
+    #Conjunction 
 }
 
 // CJルール 副詞
