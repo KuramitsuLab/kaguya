@@ -21,7 +21,7 @@ Chunk =
 
 ExtraChunk = {
     Measure // 助数詞
-    / Adnominal  // 連体詞
+//    / Adnominal  // 連体詞
     / Adverb // 副詞
     / Conjunction // 接続詞
     #ExtraChunk
@@ -36,43 +36,64 @@ Conjunction = { // e.g., こうして
 }
 
 // CJルール 副詞
-// TODO: 辞書が微妙 もう少し整頓すべき
+// ADVERB.txt 副詞辞書
+// ADVERB_NOUM.txt 
+// 副詞名詞辞書 漢字、もしくはカタカナで終わる副詞
 
-Adverb = {   // e.g., 少し 順次
-    @choice('cjdic/ADV.txt') 
+Adverb = {   // e.g., 順次
+    @choice('cjdic/ADVERB.txt') // 次に
+    / @choice('cjdic/ADVERB_NOUN.txt') &TEN // 順次、
     #Adverb 
 }
 
-// CJルール 助数詞
+// 助数詞
 // Code に数量を表す語が続く
 
 Measure = {
     UnitPrefix?
-    Code 
+    (Code / NumericNoun ) 
     Unit
-    'ほど'?
+    UnitPostfix?
     NounSuffix?
     #Measure
 }
 
 UnitPrefix = 
     / { '約' / 'およそ' #Aprox }
+    / { 'もう' / 'さらに' / '更に' #More }
     / { '高々'/ 'たかだか' / '多くとも' #AtMost }
     / { '少なくとも' #AtLeast }
 
+NumericNoun = {
+    '複数' / [一二三毎数先今次]  // 複数回 毎回 今回
+    #Numeric
+}
+
+// 単位
+// カタカナ (例. ドル、メートル)
+// もしくは、cjdic/UNIT 単位辞書に登録する
+
 Unit = {
-    @choice('cjdic/UNIT.txt')
+    @choice('cjdic/UNIT.txt') / KATA+
     #Unit
 }
+
+UnitPostfix = 
+    / { '程' / 'ほど' #Aprox }
+    / { '以上' #Gte }
+    / { '以下' #Lte }
+    / { '未満' #Lt }
+
 
 // 連体詞
 // 名詞があとに続くが、単独では名詞でも形容動詞でも解釈できない
 // 「こ」の 連体詞　「一部」の　名詞＋「の」
+// 辞書 ADNOUN.txt
 // 「~たる」は除外　微々たる, 切々たる 
 // 「~しき」は除外　奇しき, 悪しき 
 
 Adnominal = { 
-    @choice('cjdic/ADNM.txt') 
+    @choice('cjdic/ADNOUN.txt') 
     #Adnominal 
 }
 
@@ -244,7 +265,6 @@ Mood = // でき　　られ
 Being = {
     'て' Mood #Being
 }
-
 
 ISuffix = // 書き+つつ  探し+つつ　
     / &'ま' PoliteMood
