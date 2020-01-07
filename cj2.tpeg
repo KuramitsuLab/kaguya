@@ -114,6 +114,16 @@ NounSuffix =
     / { [をとにで] #Object }
     / { 'な' #Adj }
     / { [や] #AndOr }
+    / { NOUNSUFFIX #Classic }
+
+NOUNSUFFIX1 = [のはかにともやがで]
+NOUNSUFFIX2 = 
+    / 'など' / 'だけ' / 'まで' / 'から'
+    / 'のみ' / 'でも' / 'しか' 
+    / 'および' / 'とも' / 'ほど'
+    / 'ばかり' / 'さえ' / 'くらい' / 'かも'
+
+NOUNSUFFIX = NOUNSUFFIX2 NOUNSUFFIX1 / NOUNSUFFIX1
 
 /*
 名詞 Noun
@@ -164,17 +174,7 @@ XVERB = @choice('cjdic/XVERB.txt')
 XNOUN = @choice('cjdic/XNOUN.txt')
 
 DictNoun = {
-    @choice('dic/NOUN.txt')
-    / 'ところ'
-    / 'ため'
-    / 'こと'
-    / 'もの'
-    / 'うち'
-    / 'あと'
-    / ([こそど]/'あそ') 'こ'
-    / [こそあど] 'れ'
-    / NUM [つこ個] [め目]?
-    / ('ひと'/'ふた'/'みっ'/'よっ'/'いつ'/'むっ'/'なな'/'やっ'/'ここの') 'つ' [め目]?
+    @choice('cjdic/NOUN.txt')
     #Noun
 }
 
