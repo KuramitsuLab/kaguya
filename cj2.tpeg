@@ -106,9 +106,8 @@ example Sentence ハワイについて
 example Sentence ハワイに着いて
 
 NounSuffix = 
-    / May
     / Of
-    / Be
+    / NounMood
     / { [はがも] #Subject }
     / { ('から' / 'より') Of? #From }
     / { 'まで' Of? #Until }
@@ -125,7 +124,15 @@ NounSuffix =
 HAMO = [はも]?
 Of = { 'の' !'み' Like? #Of }
 Like = { 'よう' XNAdjective #Like }
-Be = { 'である' / 'です' / 'だ' #Be }
+
+NounMood = &[でだな] Be / May
+Be = // すべき
+    / { 'である' XBase? / 'であり' PoliteMood / 'です' / 'だ' XBase? #Base }
+    / { 'でな' XNot #Not} 
+    / { 'でしょう' / 'だろう' #WouldBe }
+    / { 'でした' XBase? / 'だった' XBase? #Past }
+    / { 'なら' #If }
+    / { 'な' #Adjective }
 
 NOUNSUFFIX1 = [のはかにともやがで]
 NOUNSUFFIX2 = 
@@ -196,7 +203,8 @@ DictNoun = {
 */
 
 VerbChunk = {
-      Verb5KA XVerb5KA
+    NounVerb XNounVerb // 愛する　と　愛す（サ行５段）
+    / Verb5KA XVerb5KA
     / Verb5SA XVerb5SA
     / Verb5TA XVerb5TA
     / Verb5NA XVerb5NA
@@ -206,7 +214,7 @@ VerbChunk = {
     / Verb5GA XVerb5GA
     / Verb5BA XVerb5BA
     / Verb1 XVerb1
-    / NounVerb XNounVerb
+    / VerbKA
     #VerbChunk  
 }
 
@@ -225,9 +233,10 @@ XBase =
     / XBaseCase
     / XBaseOnly
     / XBaseSince
+    / XBaseAs
     / XBaseThat
     / XBaseWhether
-    / May
+    / NounMood
 
 XBaseThat = {
     'と' HAMO VerbChunk
@@ -244,7 +253,6 @@ XBaseWhether = { // 異なるのか
     #Whether
 }
 
-
 XBaseCase = {
     ('とき' TEN / '場合' TEN / 'の'? 'なら' / 'ら' )
     #If
@@ -253,6 +261,11 @@ XBaseCase = {
 XBaseSince = {
     ('ため' NounSuffix? / 'には' / 'ので')
     #Since
+}
+
+XBaseAs = {
+    ('通り' / 'とおり' / 'ように')
+    #As
 }
 
 XPastAnd = { // 提供した+り
@@ -273,7 +286,7 @@ ASuffix = // 書か+ない   探さ+ない
     / { 'れ' Mood #Been }
 
 PoliteMood =
-    / { 'ます' #Base }
+    / { 'ます' / 'ましょう' #Base }
     / { 'ません' 'でした'? #Not }
     / { 'ましたら' #If }
     / { 'ました' #Past }
@@ -297,7 +310,7 @@ Being = {
 
 ISuffix = // 書き+つつ  探し+つつ　
     / &'ま' PoliteMood
-    / { ('た' ) XNot #WantTo }   // 書きたい
+    / { 'た' XNot #WantTo }   // 書きたい
     / { ('やす' / 'よ' ) XNot #EasyTo }   // 書きやすい
     / { ('にく' / 'がた' / 'づら') XNot #HardTo } //書きがたい
     / { ('つつ' / 'ながら') #While }
@@ -313,7 +326,10 @@ IXDSuffix = // 遊んだ   遊んで
     / { 'で' #And }
 
 USuffix = // 書く　探す
+    / Should
     / { XBase? #Base }
+
+Should = { 'べき' NounMood? / 'べし' #Should }
 
 ESuffix = // 書け+ば  探せ+ば
     / { 'ば' #If }
@@ -324,10 +340,17 @@ OSuffix = // 書こ+う　探そ+う
 VSKIP = ''
 
 XNounVerb = // 例. 行動する 論じる
-    / [すず] ('る' USuffix / 'れ' ESuffix)
+    / [すず] ('る' USuffix / Should / 'れ' ESuffix)
     / [しじ] (ASuffix / ISuffix / IXSuffix / 'よ' OSuffix )
     / { 'され' Mood #Been }
     / { 'でき' Mood #Can }
+
+// カ行変格活用動詞
+VerbKA = 
+    / { 'こ' ASuffix #VerbKA }
+    / { 'き' IXSuffix #VerbKA }
+    / { 'くる' XBase? #VerbKA }
+    / { 'くれば' #IfVerbKA }
 
 XVerb5KA = // 書
     / 'か' ASuffix
@@ -411,7 +434,6 @@ XVerb1 = // 着る 述べ
     / ISuffix  // ながら
     / IXSuffix // て
 
-
 /* 形容詞 */
 
 AdjectiveChunk = {
@@ -443,12 +465,8 @@ NOUNADJ_CHECK = 'そう' / [さにでだな]
 XAdjective = XNot / { 'さ' NounSuffix? #Noun }
 
 XNAdjective = //素敵
-    / May // かも知れない
+    / NounMood // だ、です、かも知れない
     / { 'ならば' #If }
-    / { 'でな' XNot #Not }
-    / { 'で' !HIRA #And }
-    / { 'な' XBase? #Base }
-    / { 'だった' XBase? #PastBase }
     / { 'さ'? NounSuffix? #Noun }
 
 /* コードは名詞扱い */
