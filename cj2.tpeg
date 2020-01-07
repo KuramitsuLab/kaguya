@@ -48,7 +48,7 @@ Adverb = {   // e.g., 順次
 Measure = {
     UnitPrefix?
     (Code / NumericNoun ) 
-    Unit
+    !NONUNIT Unit
     UnitPostfix?
     NounSuffix?
     #Measure
@@ -73,6 +73,8 @@ Unit = {
     @choice('cjdic/UNIT.txt') / KATA+
     #Unit
 }
+
+NONUNIT = @choice('cjdic/NONUNIT.txt')
 
 UnitPostfix = 
     / { '程' / 'ほど' #Aprox }
@@ -127,7 +129,7 @@ Like = { 'よう' XNAdjective #Like }
 
 NounMood = &[でだな] Be / May
 Be = // すべき
-    / { 'である' XBase? / 'であり' PoliteMood / 'です' / 'だ' XBase? #Base }
+    / { 'である' XBase? / 'であり' / 'です' / 'だ' XBase? #Base }
     / { 'でな' XNot #Not} 
     / { 'でしょう' / 'だろう' #WouldBe }
     / { 'でした' XBase? / 'だった' XBase? #Past }
@@ -249,7 +251,7 @@ XBaseOnly = { // 一見しただけでは
 }
 
 XBaseWhether = { // 異なるのか
-    'の'? 'か' NounSuffix?
+    'の'? 'か' TEN? (XBaseThat/NounSuffix)?
     #Whether
 }
 
@@ -503,3 +505,5 @@ SYMBOL = [^＾~〜\-ー_＿!！?？#＃$＄&＆=＝@＠*＊+＋/・]
 // 多少異なっている
 // 以下のような記述形式をとります
 // 記述では
+// 山田孝雄は、係助詞が陳述に影響を及ぼすとしている
+// 一分野か　一分、野球する
