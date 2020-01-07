@@ -1,7 +1,7 @@
 ipadic-2.7.0/
 local/
 test/result/
-graph/
+graph_*/
 
 test_result/
 java_se_text/

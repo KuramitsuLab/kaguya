@@ -18,9 +18,12 @@ FP = Path(__file__).resolve().parent
 NEOLOGD_PATH = Path('/Users/xps/Documents/mecab-dic/neolog/mecab-ipadic-neologd')
 if not NEOLOGD_PATH.exists():
   NEOLOGD_PATH = Path('/usr/local/lib/mecab/dic/mecab-ipadic-neologd')
+UNIDIC_PATH = Path('/Users/xps/Documents/mecab-dic/unidic-cwj-2.3.0')
 LOG_PATH = FP/'analyze_log'
 LOG_PATH.mkdir(exist_ok=True)
 
+# DIC_PATH = NEOLOGD_PATH
+DIC_PATH = UNIDIC_PATH
 
 class MecabToken():
   def __init__(self, line):
@@ -267,7 +270,7 @@ class Statistics():
 
 # MeCab Tester
 def mecab():
-  dict_path = f' -d {NEOLOGD_PATH}' if NEOLOGD_PATH.exists() else ''
+  dict_path = f' -d {DIC_PATH}' if DIC_PATH.exists() else ''
   m = MeCab.Tagger(dict_path)
   st = Statistics()
   while True:
@@ -283,9 +286,49 @@ def mecab():
       print(e)
 
 
+def noun_check():
+  result = {
+    'Code': 0,
+    'ひらがなのみ': 0,
+    'カタカナのみ': 0,
+    '漢字のみ': 0,
+    'ひらがな以外': 0,
+    'ひらがな含む': 0,
+    'その他': 0
+  }
+  with open(LOG_PATH/'JavadocNoun.txt', 'r', encoding='utf_8') as f:
+    csv = f.read()
+  TOTAL = len(csv)
+  for line in csv:
+    noun = line.split(',')
+    if len(noun) > 2:
+      print(f'Invalid Noun: {noun}')
+    else:
+      noun = noun[0]
+      if   re.fullmatch(r'[A-Za-z0-9.(){}, +\-*/%\\]+', noun):
+        result['Code'] += 1
+      elif re.fullmatch(r'[ぁ-ん]+', noun):
+        result['ひらがなのみ'] += 1
+      elif re.fullmatch(r'[ァ-ヶー・]+', noun):
+        result['カタカナのみ'] += 1
+      elif re.fullmatch(r'[㐀-䶵一-龠々〇〻ーご]+', noun):
+        result['漢字のみ'] += 1
+      elif not re.search(r'[ぁ-ん]', noun):
+        result['ひらがな以外'] += 1
+      elif re.serch(r'[ぁ-ん]', noun):
+        result['ひらがな含む'] += 1
+      else:
+        result['その他'] += 1
+  with open(LOG_PATH/'noun_detail.txt', 'w', encoding='utf_8') as f:
+    s = ''
+    for k,v in result.items():
+      s += f'{k}: {v}個: {round(100*v/TOTAL, 3)}%\n'
+    f.write(s)
+
+
 # Sentence Text -> Statistic -> Log
 def analyze():
-  dict_path = f' -d {NEOLOGD_PATH}' if NEOLOGD_PATH.exists() else ''
+  dict_path = f' -d {DIC_PATH}' if DIC_PATH.exists() else ''
   m = MeCab.Tagger(dict_path)
   st = Statistics()
   with open(FP/'test'/'javadoc.txt', 'r', encoding='utf_8') as f:

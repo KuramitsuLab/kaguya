@@ -1,6 +1,7 @@
 import sys
 import time
 import re
+import string
 from pathlib import Path
 import unicodedata
 import subprocess
@@ -16,27 +17,27 @@ def txt2array(path):
         s = f.read()
     s = re.sub(r'[ ]', '', s)  # スペースの除去は入力文字列にあわせて適宜行う方がよいかも
     # s = re.sub(r'[。]', '。\n', s)
-    return list(filter(lambda x: not x == '', s.split('\n')))[1:]
+    return list(filter(lambda x: not x == '', set(s.split('\n'))))[1:]
 
 
 def write_result(fpath, results):
     with open(fpath, mode='w', encoding='utf_8') as f:
         s = ''
         print('Now Caching Result')
-        for bl, cnt, ipt, res in results:
-            sf = 'OK' if bl else 'NG'
-            s += f'{cnt},{sf}: {ipt}\n'
-            s += f'{res}\n\n'
+        for cnt, ast in results:
+            OKorNG = 'NG' if ast.tag == 'err' else 'OK'
+            # s += f'{cnt},{sf}\n'
+            s += f'{cnt},{OKorNG}: {ast.inputs}\n'
+            s += f'{ast}\n\n'
         print('Now Writing Result')
         f.write(s[:-2])
 
 
-def print_err(lst):
-    fails = list(filter(lambda l: not l[0], lst))
-    if len(fails) > 0:
-        for _, cnt, s, remain in fails:
-            print(f'入力: {s}')
-            print(f'残り: {remain}')
+def print_err(results):
+    for cnt, ast in results:
+        if ast.tag == 'err':
+            print(f'入力: {ast.inputs}')
+            print(f'残り: {ast.inputs[ast.epos:]}')
 
 
 # sub functions for test_with_graph()
@@ -147,6 +148,7 @@ def template(s, node, edge):
         '        charset = "UTF-8",\n'
         '        label = "%s",\n'
         '        labelloc = t,\n'
+        '        fontname = "MS Gothic",\n'
         '        fontsize = 18,\n'
         '        dpi = 300,\n'
         '    ];\n\n'
@@ -170,32 +172,38 @@ def template(s, node, edge):
         '}' % (s, node, edge))
 
 
-def gen_dot(input_str, d):
-    def_node = ''
-    def_edge = ''
-    for k, v in d.items():
-        bt = ''
-        for c in v["tag"]:
-            if unicodedata.east_asian_width(c) in ['W', 'F', 'H']:
-                bt = ', labelloc = "bottom"'
-                break
-        label = '' if v["label"] == 'None' else f' [label = "{v["label"]}"]'
-        def_node += f'    n_{k} [label = "{v["tag"]}"{bt}];\n'
-        def_edge += '' if v["parent"] == '' else f'    n_{v["parent"]} -> n_{k}{label};\n'
-    return template(input_str, def_node, def_edge)
+DOT = '''\
+digraph sample {
+    graph [
+        charset = "UTF-8",
+        label = "$input_text",
+        labelloc = t,
+        fontname = "MS Gothic",
+        fontsize = 18,
+        dpi = 300,
+    ];
 
+    edge [
+        dir = none,
+        fontname = "MS Gothic",
+        fontcolor = "#252525",
+        fontsize = 12,
+    ];
 
-def make_dir(dn):
-    try:
-        Path(dn).mkdir(parents=True, exist_ok=False)
-    except FileExistsError:
-        print(f'"{dn}": This directory already exist, can I overwrite it?')
-        choice = input('(y/n): ')
-        if choice in 'yY':
-            shutil.rmtree(dn)
-            make_dir(dn)
-        else:
-            sys.exit()
+    node [
+        shape = box,
+        style = "rounded,filled",
+        color = "#3c3c3c",
+        fillcolor = "#f5f5f5",
+        fontname = "MS Gothic",
+        fontsize = 16,
+        fontcolor = "#252525",
+    ];
+
+    $node_description
+
+    $edge_description
+}'''
 
 
 def escape(s):
@@ -209,17 +217,66 @@ def escape(s):
         return after
 
 
-def gen_graph(input_str, ast_str, path='graph.png'):
+def bottom_check(s):
+        for c in s:
+            if unicodedata.east_asian_width(c) in ['W', 'F', 'H']:
+                return ', labelloc = "bottom"'
+        return ''
+
+
+def make_dict(t, d, nid):
+    d['node'].append(f'n{nid} [label="#{t.tag}"]')
+    if len(t.subs()) == 0:
+        leaf = str(t)
+        d['node'].append(f'n{nid}_0 [label="{escape(leaf)}"{bottom_check(leaf)}]')
+        d['edge'].append(f'n{nid} -> n{nid}_0')
+    else:
+        for i, (fst, snd) in enumerate(t.subs()):
+            label = f' [label="{fst}"]' if fst != '' else ''
+            d['edge'].append(f'n{nid} -> n{nid}_{i}{label}')
+            make_dict(snd, d, f'{nid}_{i}')
+
+
+def gen_dot(t):
+    d = {'node': [], 'edge': []}
+    if t.tag == 'err':
+        leaf = escape(t.inputs[t.epos:])
+        d['node'].append(f'n0 [label="#Remain"]')
+        d['node'].append(f'n0_0 [label="{leaf}"{bottom_check(leaf)}]')
+        d['edge'].append(f'n0 -> n0_0')
+    else:
+        make_dict(t, d, 0)
+    context = {
+        'input_text': escape(t.inputs),
+        'node_description': ';\n    '.join(d['node']),
+        'edge_description': ';\n    '.join(d['edge']),
+    }
+    return string.Template(DOT).substitute(context)
+
+
+def gen_graph(ast, path='graph.png'):
     GEN_DOT_PATH = '.temp.dot'
-    if not shutil.which('dot'):
-        print('Not find "dot" command')
-        print('Please install "Graphviz"')
-        sys.exit()
     with open(GEN_DOT_PATH, mode='w', encoding='utf_8') as f:
-        f.write(gen_dot(input_str, parse_ast(ast_str)))
+        f.write(gen_dot(ast))
     cmd = ['dot', '-Tpng', GEN_DOT_PATH, '-o', path]
     res = subprocess.call(cmd)
-    Path(GEN_DOT_PATH).unlink()
+    if res != 0:
+        Path(GEN_DOT_PATH).rename(f'.erred.dot')
+    else:
+        Path(GEN_DOT_PATH).unlink()
+
+
+def make_dir(dn):
+    try:
+        Path(dn).mkdir(parents=True, exist_ok=False)
+    except FileExistsError:
+        print(f'"{dn}": This directory already exist, can I overwrite it?')
+        choice = input('(y/n): ')
+        if choice in 'yY':
+            shutil.rmtree(dn)
+            make_dir(dn)
+        else:
+            sys.exit()
 
 
 def leaf2token(word, nodes):
@@ -263,10 +320,8 @@ def gen_compare(ast, count):
     return words
 
 
-# main tester functions
-def test(target_name, grammar='kaguya0.tpeg', print_log='True', _='y or n'):
-    target = Path(target_name)
-    options = parse_options(['-g', grammar])
+def test(target, grammar):
+    options = parse_options(['-g', str(grammar)])
     peg = load_grammar(options)
     parser = generator(options)(peg, **options)
     results = []
@@ -274,7 +329,6 @@ def test(target_name, grammar='kaguya0.tpeg', print_log='True', _='y or n'):
     fail_cnt = 0
 
     input_list = txt2array(target)
-    FILE_NAME = target.stem
     Path('test/result').mkdir(parents=True, exist_ok=True)
 
     START = time.time()
@@ -285,52 +339,67 @@ def test(target_name, grammar='kaguya0.tpeg', print_log='True', _='y or n'):
         except Exception as e:
             print(e)
         if tree.tag == 'err':
-            results.append((False, count+1, s, tree.inputs[tree.epos:]))
+            # results.append((False, count+1, s, tree))
             fail_cnt += 1
-        else:
-            results.append((True, count+1, s, repr(tree)))
+        # else:
+        results.append((count+1, tree))
             # compare_words += gen_compare(tree, count)
         sys.stdout.flush()
     print()
-    write_result(f'test/result/{FILE_NAME}.txt', results)
-    # with open(f'test/result/{FILE_NAME}_for_compare.txt', mode='w', encoding='utf_8') as f:
+    write_result(f'test/result/{target.stem}_{grammar.stem}.txt', results)
+    # with open(f'test/result/{target.stem}_for_compare.txt', mode='w', encoding='utf_8') as f:
     #     f.write('\n'.join(compare_words))
-    if not print_log in ['0', 'false', 'False']:
-        print_err(results)
     END = time.time() - START
     TOTAL = len(input_list)
     print(f'SUCCESS RATE  : {TOTAL-fail_cnt}/{TOTAL} => {100*(TOTAL-fail_cnt)/TOTAL}[%]')
-    print(f'EXECUTION TIME: {END}[sec]')
+    print(f'TEST EXECUTION TIME: {END}[sec]')
     return results
 
 
-def test_with_graph(target_file, grammar_file, print_log='True', _='y or n'):
-    if not shutil.which('dot'):
-        print('Not find "dot" command')
-        print('Please install "Graphviz"')
-        sys.exit()
-    FILE_NAME = target_file[target_file.rfind('/')+1: target_file.rfind('.')]
-    results = test(target_file, grammar_file, print_log)
-    MAX_COUNT = len(results)
-    make_dir(f'graph_{FILE_NAME}')
-    for count, (bl, ln, s, ast) in enumerate(results):
-        sys.stdout.write(f'\rNow Processing: {count+1}/{MAX_COUNT}')
-        if bl:
-            gen_graph(escape(s), ast, f'graph_{FILE_NAME}/{count}.png')
+def main(args):
+    def arg2dict(d, l):
+        if len(l) < 1:return 0
+        head = l.pop(0)
+        if head in ['-t', '-g']:
+            d[head] = Path(l.pop(0))
+            arg2dict(d, l)
+        elif head in ['-Graph', '-Log']:
+            d[head] = True
+            arg2dict(d, l)
         else:
-            gen_graph(escape(s), f'[#Remain \'{escape(ast)}\']', f'graph_{FILE_NAME}/{count}.png')
-        sys.stdout.flush()
-    print()
+            print(f'Invalid argument: {head}')
+            sys.exit()
+    
+    options = {
+        '-t': None,
+        '-g': None,
+        '-Graph': False,
+        '-Log': False,
+    }
+    arg2dict(options, args)
+    results = test(options['-t'], options['-g'])
+    if options['-Log']:
+        print_err(results)
+    if options['-Graph']:
+        if not shutil.which('dot'):
+            print('Not find "dot" command')
+            print('Please install "Graphviz"')
+            sys.exit()
+        else:
+            MAX_COUNT = len(results)
+            FILE_NAME = options['-t'].stem
+            GRAMMAR_NAME = options['-g'].stem
+            make_dir(f'graph_{FILE_NAME}_{GRAMMAR_NAME}')
+            START = time.time()
+            for count, (ln, ast) in enumerate(results):
+                sys.stdout.write(f'\rNow Processing: {count+1}/{MAX_COUNT}')
+                gen_graph(ast, f'graph_{FILE_NAME}_{GRAMMAR_NAME}/{count}.png')
+                sys.stdout.flush()
+            print()
+            END = time.time() - START
+            print(f'GEN_GRAPH EXECUTION TIME: {END}[sec]')
 
 
 if __name__ == "__main__":
-    # example: python tester.py test/ethereum.txt gakkou.tpeg
-    if len(sys.argv) >= 5:
-        s = sys.argv[4]
-    else:
-        print('Do test with generating graph?')
-        s = input('(y/n): ')
-    if s == 'y':
-        test_with_graph(*sys.argv[1:])
-    elif s == 'n':
-        test(*sys.argv[1:])
+    # python tester.py -t test/javadoc.txt -g gk.tpeg -Graph -Log
+    main(sys.argv[1:])
