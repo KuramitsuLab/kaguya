@@ -12,8 +12,8 @@ Sentence = {
 
 Chunk =
     / Adnominal    // 連体詞は先, 「多くの人」が形容詞にマッチする
-    / AdjvChunk    // 形容詞節, 形容動詞節
     / VerbChunk    // 動詞節
+    / AdjectiveChunk  // 形容詞節, 形容動詞節
     / Measure      // 助数詞
     / NounChunk    // 名詞節
     / Adverb       // 副詞
@@ -395,29 +395,41 @@ XVerb1 = // 着る
 
 /* 形容詞 */
 
-AdjvChunk =
-    / { Adj AdjSuffix #AdjChunk }
-    / { AdjVerb AdjVerbSuffix #AdjChunk }
-
-// 美し
-Adj = { 
-    @choice('dic/ADJ.txt') &[かくけい] #Adj 
+AdjectiveChunk = {
+    Adjective XAdjective / NAdjective XNAdjective
+    #AdjectiveChunk
 }
 
-// 素敵
-ADJVERB = 
-    / @cat(@choice('dic/ADJV.txt'), 'そう')
-    / @choice('dic/ADJV.txt')
-AdjVerb = { ADJVERB #Adjv }
+// 形容詞: 美し
 
-AdjSuffix = XNot
+Adjective = {
+    ADJ
+    #Adjective
+}
 
-AdjVerbSuffix =
+ADJ = @choice('dic/ADJ.txt') &ADJ_CHECK
+ADJ_CHECK = 'そう' / [さかくけい]
+
+// 形容動詞: 素敵
+
+NAdjective = {
+    NOUNADJ 'そう'? / ADJ 'そう'
+    #NounAdjective
+}
+
+NOUNADJ = 
+    (@choice('cjdic/NOUNADJ.txt') / NONHIRA+) &NOUNADJ_CHECK
+NOUNADJ_CHECK = 'そう' / [さにでだな]
+
+XAdjective = XNot / { 'さ' NounSuffix? #Noun }
+
+XNAdjective = //素敵
     / { 'ならば' #If }
-    / { 'でない' #Not }
-    / { [にでだな] #Be }
-
-
+    / { 'でな' XNot #Not }
+    / { 'で' #And }
+    / { 'な' #Base }
+    / { 'だった' XBase? #PastBase }
+    / { 'さ' NounSuffix? #Noun }
 /* コードは名詞扱い */
 
 Code = {
