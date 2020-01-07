@@ -12,11 +12,11 @@ Sentence = {
 
 Chunk =
     / Adnominal    // 連体詞は先, 「多くの人」が形容詞にマッチする
+    / Adverb       // 副詞
+    / Measure      // 助数詞
     / VerbChunk    // 動詞節
     / AdjectiveChunk  // 形容詞節, 形容動詞節
-    / Measure      // 助数詞
     / NounChunk    // 名詞節
-    / Adverb       // 副詞
     / Conjunction  // 接続詞
 
 IGNORED = 
@@ -24,7 +24,6 @@ IGNORED =
     / 'ください'
 
 // CJルール 接続詞
-// 「しかし、」 のように必ず TEN をつける
 
 Conjunction = { // e.g., こうして
     @choice('cjdic/CONJ.txt') 
@@ -35,10 +34,11 @@ Conjunction = { // e.g., こうして
 // ADVERB.txt 副詞辞書
 // ADVERB_NOUM.txt 
 // 副詞名詞辞書 漢字、もしくはカタカナで終わる副詞
+// 例. 過去に戻る 過去、言った
 
 Adverb = {   // e.g., 順次
     @choice('cjdic/ADVERB.txt') // 次に
-    / @choice('cjdic/ADVERB_NOUN.txt') &TEN // 順次、
+    / @choice('cjdic/ADVERB_NOUN.txt') NounSuffix?  // 順次、
     #Adverb 
 }
 
@@ -76,10 +76,10 @@ Unit = {
 
 UnitPostfix = 
     / { '程' / 'ほど' #Aprox }
+    / { 'ごと' / '毎' #Each }
     / { '以上' #Gte }
     / { '以下' #Lte }
     / { '未満' #Lt }
-
 
 // 連体詞
 // 名詞があとに続くが、単独では名詞でも形容動詞でも解釈できない
@@ -106,19 +106,26 @@ example Sentence ハワイについて
 example Sentence ハワイに着いて
 
 NounSuffix = 
+    / May
+    / Of
+    / Be
     / { [はがも] #Subject }
-    / { 'から' / 'より' #From }
-    / { 'まで' #Until }
-    / { 'の' !'み' #Of }
-    / { 'による' / 'によって' / 'により' #By }
-    / { 'に対する' / 'に対して' #Against }
-    / { 'について' / 'に関' ('して' / 'する') #About }
-    / { 'である' / 'です' / 'だ' #Be }
-    / { 'とする' / 'として' #Let }
-    / { [をとにで] #Object }
-    / { 'な' #Adj }
-    / { [や] #AndOr }
+    / { ('から' / 'より') Of? #From }
+    / { 'まで' Of? #Until }
+    / { 'の' !'み' Like? #Of }
+    / { 'による' / 'によっ' ('て' (Of / HAMO))? / 'により' #By }
+    / { 'に対する' / 'に対し' ('て' (Of / HAMO))? #Against }
+    / { 'について' (Of / HAMO) / 'に関' ('し' ('て' (Of / HAMO))? / 'する') #About }
+    / { 'とする' / 'とし' ('て' (Of / HAMO))? #Let }
+    / { 'を' / [とにで] HAMO #Object }
+    / { 'な' #Adjective }
+    / { 'や' #AndOr }
     / { NOUNSUFFIX #Classic }
+
+HAMO = [はも]?
+Of = { 'の' !'み' Like? #Of }
+Like = { 'よう' XNAdjective #Like }
+Be = { 'である' / 'です' / 'だ' #Be }
 
 NOUNSUFFIX1 = [のはかにともやがで]
 NOUNSUFFIX2 = 
@@ -219,16 +226,24 @@ XBase =
     / XBaseOnly
     / XBaseSince
     / XBaseThat
+    / XBaseWhether
+    / May
 
 XBaseThat = {
-    'と' 'は'? VerbChunk
+    'と' HAMO VerbChunk
     #That
 }
 
 XBaseOnly = { // 一見しただけでは
-    'だけでは' / 'のみでは' / 'のでは'
+    ('だけで' / 'のみで' / 'ので') HAMO
     #OnlyThat
 }
+
+XBaseWhether = { // 異なるのか
+    'の'? 'か' NounSuffix?
+    #Whether
+}
+
 
 XBaseCase = {
     ('とき' TEN / '場合' TEN / 'の'? 'なら' / 'ら' )
@@ -236,7 +251,7 @@ XBaseCase = {
 }
 
 XBaseSince = {
-    ('ため' ('に' 'は'? )? / 'には' / 'ので')
+    ('ため' NounSuffix? / 'には' / 'ので')
     #Since
 }
 
@@ -263,6 +278,9 @@ PoliteMood =
     / { 'ましたら' #If }
     / { 'ました' #Past }
     / { 'まして' #And }
+
+May =
+    { 'かも' ('知'/'し') 'れ' ('ない' / 'ません') #May }
 
 Mood = // でき　　られ
     / &'ま' PoliteMood
@@ -384,9 +402,10 @@ XVerb5BA = // 遊
     / 'べ' ESuffix  // ば
     / 'ぼ' OSuffix  // う
 
-XVerb1 = // 着る
+XVerb1 = // 着る 述べ
     / 'る' USuffix  // 
     / 'れ' ESuffix  // ば
+    / { 'られ' Mood #Been }   // 述べられています
     / 'よ' OSuffix  // う
     / ASuffix  // ない
     / ISuffix  // ながら
@@ -424,12 +443,14 @@ NOUNADJ_CHECK = 'そう' / [さにでだな]
 XAdjective = XNot / { 'さ' NounSuffix? #Noun }
 
 XNAdjective = //素敵
+    / May // かも知れない
     / { 'ならば' #If }
     / { 'でな' XNot #Not }
-    / { 'で' #And }
-    / { 'な' #Base }
+    / { 'で' !HIRA #And }
+    / { 'な' XBase? #Base }
     / { 'だった' XBase? #PastBase }
-    / { 'さ' NounSuffix? #Noun }
+    / { 'さ'? NounSuffix? #Noun }
+
 /* コードは名詞扱い */
 
 Code = {
@@ -455,9 +476,12 @@ TEN = [、，,\n]
 KANJI = [㐀-䶵一-龠々〇〻ーご]
 KATA = [ァ-ヶー・]
 HIRA = [ぁ-ん]
-NONHIRA = (!HIRA .)
+NONHIRA = (!HIRA !TEN .)
 ALPHA = [a-zA-Zａ-ｚＡ-Ｚ]
 NUM = [\.,0-9０-９一二三四五六七八九十百千万億兆京垓秭穰溝澗正載極]
 SYMBOL = [^＾~〜\-ー_＿!！?？#＃$＄&＆=＝@＠*＊+＋/・]
 
 
+// 多少異なっている
+// 以下のような記述形式をとります
+// 記述では
