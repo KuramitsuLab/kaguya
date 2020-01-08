@@ -112,8 +112,8 @@ NounSuffix =
     / !'に' NounMood
     / LookLike
     / { [はがも] #Subject }
-    / { ('から' / 'より') Of? #From }
-    / { 'まで' Of? #Until }
+    / { ('から' / 'より') (Of / HAMO) #From }
+    / { 'まで' (Of / HAMO) #Until }
     / { 'による' / 'によっ' ('て' (Of / HAMO) / 'た')? / 'により' #By }
     / { 'に対する' / 'に対し' ('て' (Of / HAMO) / 'た')? #Against }
     / { 'について' (Of / HAMO) / 'に関' ('し' ('て' (Of / HAMO) / 'た')? / 'する') #About }
@@ -126,7 +126,7 @@ NounSuffix =
     / { 'または' #Or }
     / { NOUNSUFFIX #Classic }
 
-HAMO = [はも]?
+HAMO = [はもが]?
 Of = { 'の' !'み' Like? #Of }
 Like = { 'よう' NounMood #Like }
 
