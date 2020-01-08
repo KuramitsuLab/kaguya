@@ -286,18 +286,22 @@ def parse_ast(file_path):
   with open(file_path, 'r', encoding='utf_8') as f:
     lines = f.read().split('\n')
     err = 0
+    err_list = []
     AMOUNT = len(lines) // 3
     for i in range(AMOUNT):
-      print(f'\r{i}', end='')
+      print(f'\rNow Processing: {i}/{AMOUNT}', end='')
       is_success = lines.pop(0).split(',')[1]
       input_text = lines.pop(0)
+      tree_text = lines.pop(0)
       if is_success == 'OK':
-        tree = parser(lines.pop(0))
-        if have_err(tree): err += 1
-      else:
-        lines.pop(0)
-    print(f'\ncount of err sentence: {err}/{AMOUNT}')
-
+        tree = parser(tree_text)
+        if have_err(tree):
+          err += 1
+          err_list.append(input_text)
+          err_list.append(tree_text)
+  print(f'\n#err rate: {err}/{AMOUNT} => {round(100*err/AMOUNT, 3)}[%]')
+  with open(f'err_list_of_{fp.stem}.txt', 'w', encoding='utf_8') as f:
+    f.write('\n'.join(err_list))
 
 
 # MeCab Tester

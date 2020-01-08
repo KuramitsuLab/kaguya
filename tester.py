@@ -220,8 +220,8 @@ def test(target, grammar):
     #     f.write('\n'.join(compare_words))
     END = time.time() - START
     TOTAL = len(input_list)
-    print(f'SUCCESS RATE  : {TOTAL-fail_cnt}/{TOTAL} => {100*(TOTAL-fail_cnt)/TOTAL}[%]')
-    print(f'TEST EXECUTION TIME: {END}[sec]')
+    print(f'SUCCESS RATE  : {TOTAL-fail_cnt}/{TOTAL} => {round(100*(TOTAL-fail_cnt)/TOTAL, 3)}[%]')
+    print(f'TEST EXECUTION TIME: {round(END, 3)}[sec]')
     return results
 
 
