@@ -16,7 +16,7 @@ Chunk =
     / Adverb       // 副詞
     / Measure      // 助数詞
     / AdjectiveChunk  // 形容詞節
-    / NounChunk    // 名詞節, 形容動詞節
+    / NounChunk    // 名詞節, 形容動詞節　「組み合わせ」を先にマッチする
     / VerbChunk    // 動詞節
 
 IGNORED = 
