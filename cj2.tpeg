@@ -11,13 +11,13 @@ Sentence = {
 }
 
 Chunk =
+    / Conjunction  // 接続詞
     / Adnominal    // 連体詞は先, 「多くの人」が形容詞にマッチする
     / Adverb       // 副詞
     / Measure      // 助数詞
     / AdjectiveChunk  // 形容詞節
-    / VerbChunk    // 動詞節
     / NounChunk    // 名詞節, 形容動詞節
-    / Conjunction  // 接続詞
+    / VerbChunk    // 動詞節
 
 IGNORED = 
     / 'です' 
@@ -121,7 +121,9 @@ NounSuffix =
     / { 'へ' Of? #To }
     / { 'と' (Of / HAMO) #Object }
     / { 'を' / [にで] HAMO #Object }
+    / { 'か' 'どうか' (Of / HAMO) #Whether }  // 可能かどうか
     / { 'や' #AndOr }
+    / { 'または' #Or }
     / { NOUNSUFFIX #Classic }
 
 HAMO = [はも]?
@@ -150,7 +152,7 @@ LookLike =
 NOUNSUFFIX1 = [のはかにともやがで]
 NOUNSUFFIX2 = 
     / 'など' / 'だけ' / 'まで' / 'から'
-    / 'のみ' / 'でも' / 'しか' 
+    / 'のみ' / 'でも' / 'しか' / 'かどうか'
     / 'および' / 'とも' / 'ほど'
     / 'ばかり' / 'さえ' / 'くらい' / 'かも'
 
@@ -265,7 +267,7 @@ XBaseOnly = { // 一見しただけでは
 }
 
 XBaseWhether = { // 異なるのか
-    'の'? 'か' TEN? (XBaseThat/NounSuffix)?
+    'の'? 'か' 'どうか'? TEN? (XBaseThat/NounSuffix)?
     #Whether
 }
 
@@ -363,7 +365,7 @@ OSuffix = // 書こ+う　探そ+う
 
 XNounVerb = // 例. 行動する 論じる
     / [すず] ('る' USuffix / Should / 'れ' ESuffix)
-    / [しじ] (ASuffix / ISuffix / IXSuffix / 'よ' OSuffix )
+    / [しじ] (ASuffix / 'よ' OSuffix / IXSuffix / ISuffix )
     / { 'され' Mood #Been }
     / { 'でき' Mood #Can }
 
@@ -376,7 +378,7 @@ VerbKA =
 
 VerbSA = // 例. 参考に+する
     / { 'す' ('る' USuffix / Should / 'れ' ESuffix) #VerbSA }
-    / { 'し' (ASuffix / ISuffix / IXSuffix / 'よ' OSuffix ) #VerbSA }
+    / { 'し' (ASuffix / 'よ' OSuffix/ IXSuffix / ISuffix ) #VerbSA }
     / { 'され' Mood #Been }
     / { 'でき' Mood #Can }
 
