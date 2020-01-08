@@ -14,9 +14,9 @@ Chunk =
     / Adnominal    // 連体詞は先, 「多くの人」が形容詞にマッチする
     / Adverb       // 副詞
     / Measure      // 助数詞
+    / AdjectiveChunk  // 形容詞節
     / VerbChunk    // 動詞節
-    / AdjectiveChunk  // 形容詞節, 形容動詞節
-    / NounChunk    // 名詞節
+    / NounChunk    // 名詞節, 形容動詞節
     / Conjunction  // 接続詞
 
 IGNORED = 
@@ -92,7 +92,7 @@ UnitPostfix =
 
 Adnominal = { 
     @choice('cjdic/ADNOUN.txt') 
-    #Adnominal 
+    #Adjective 
 }
 
 /*
@@ -101,7 +101,7 @@ Adnominal = {
 
 NounChunk = { 
     Noun NounSuffix? 
-    #NounChunk 
+    #NChunk 
 } 
 
 example Sentence ハワイについて
@@ -109,25 +109,29 @@ example Sentence ハワイに着いて
 
 NounSuffix = 
     / Of
-    / NounMood
+    / !'に' NounMood
+    / LookLike
     / { [はがも] #Subject }
     / { ('から' / 'より') Of? #From }
     / { 'まで' Of? #Until }
-    / { 'の' !'み' Like? #Of }
     / { 'による' / 'によっ' ('て' (Of / HAMO) / 'た')? / 'により' #By }
     / { 'に対する' / 'に対し' ('て' (Of / HAMO) / 'た')? #Against }
     / { 'について' (Of / HAMO) / 'に関' ('し' ('て' (Of / HAMO) / 'た')? / 'する') #About }
     / { 'とする' / 'とし' ('て' (Of / HAMO) / 'た')? #Let }
     / { 'を' / [とにで] HAMO #Object }
-    / { 'な' #Adjective }
     / { 'や' #AndOr }
     / { NOUNSUFFIX #Classic }
 
 HAMO = [はも]?
 Of = { 'の' !'み' Like? #Of }
-Like = { 'よう' XNAdjective #Like }
+Like = { 'よう' NounMood #Like }
 
-NounMood = &[でだな] Be / May
+There = {
+    'あ' Mood 
+    #There
+}
+
+NounMood = &[でだなに] Be / May
 Be = // すべき
     / { 'である' XBase? / 'であり' / 'です' / 'だ' XBase? #Base }
     / { 'でな' XNot #Not} 
@@ -135,6 +139,11 @@ Be = // すべき
     / { 'でした' XBase? / 'だった' XBase? #Past }
     / { 'なら' #If }
     / { 'な' #Adjective }
+    / { 'に' #Adverb }
+
+LookLike = 
+    / { 'そう' NounMood #Seem }
+    / { 'さ' !'れ' NounSuffix? #Noun }
 
 NOUNSUFFIX1 = [のはかにともやがで]
 NOUNSUFFIX2 = 
@@ -143,7 +152,9 @@ NOUNSUFFIX2 =
     / 'および' / 'とも' / 'ほど'
     / 'ばかり' / 'さえ' / 'くらい' / 'かも'
 
-NOUNSUFFIX = NOUNSUFFIX2 NOUNSUFFIX1 / NOUNSUFFIX1
+NOUNSUFFIX = 
+    / NOUNSUFFIX2 NOUNSUFFIX1 
+    / NOUNSUFFIX1
 
 /*
 名詞 Noun
@@ -216,8 +227,9 @@ VerbChunk = {
     / Verb5GA XVerb5GA
     / Verb5BA XVerb5BA
     / Verb1 XVerb1
+    / VerbSA
     / VerbKA
-    #VerbChunk  
+    #VChunk  
 }
 
 Verb5KA = { @choice('dic/Verb/VERB5KA.txt') &[か-こい] #VerbKA }
@@ -306,6 +318,13 @@ Mood = // でき　　られ
     / { 'てい' Mood #Being }
     / { 'て'? #And }
 
+AMood = // あ+る
+    / 'り' &'ま' PoliteMood
+    / { 'る' XBase? #Base }
+    / { 'った' (XBase / XPastAnd)? #Past }
+    / { 'れば' #If }
+    / { 'って'? #And }
+
 Being = {
     'て' Mood #Being
 }
@@ -340,8 +359,6 @@ ESuffix = // 書け+ば  探せ+ば
 OSuffix = // 書こ+う　探そ+う
     / { 'う' XBase? #Will }
 
-VSKIP = ''
-
 XNounVerb = // 例. 行動する 論じる
     / [すず] ('る' USuffix / Should / 'れ' ESuffix)
     / [しじ] (ASuffix / ISuffix / IXSuffix / 'よ' OSuffix )
@@ -354,6 +371,12 @@ VerbKA =
     / { 'き' IXSuffix #VerbKA }
     / { 'くる' XBase? #VerbKA }
     / { 'くれば' #IfVerbKA }
+
+VerbSA = // 例. 参考に+する
+    / { 'す' ('る' USuffix / Should / 'れ' ESuffix) #VerbSA }
+    / { 'し' (ASuffix / ISuffix / IXSuffix / 'よ' OSuffix ) #VerbSA }
+    / { 'され' Mood #Been }
+    / { 'でき' Mood #Can }
 
 XVerb5KA = // 書
     / 'か' ASuffix
@@ -440,8 +463,8 @@ XVerb1 = // 着る 述べ
 /* 形容詞 */
 
 AdjectiveChunk = {
-    Adjective XAdjective / NAdjective XNAdjective
-    #AdjectiveChunk
+    Adjective ('そう' XNAdjective / XAdjective )
+    #AChunk
 }
 
 // 形容詞: 美し
@@ -465,7 +488,7 @@ NOUNADJ =
     (@choice('cjdic/NOUNADJ.txt') / NONHIRA+) &NOUNADJ_CHECK
 NOUNADJ_CHECK = 'そう' / [さにでだな]
 
-XAdjective = XNot / { 'さ' NounSuffix? #Noun }
+XAdjective = XNot / LookLike
 
 XNAdjective = //素敵
     / NounMood // だ、です、かも知れない
