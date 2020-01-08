@@ -118,7 +118,9 @@ NounSuffix =
     / { 'に対する' / 'に対し' ('て' (Of / HAMO) / 'た')? #Against }
     / { 'について' (Of / HAMO) / 'に関' ('し' ('て' (Of / HAMO) / 'た')? / 'する') #About }
     / { 'とする' / 'とし' ('て' (Of / HAMO) / 'た')? #Let }
-    / { 'を' / [とにで] HAMO #Object }
+    / { 'へ' Of? #To }
+    / { 'と' (Of / HAMO) #Object }
+    / { 'を' / [にで] HAMO #Object }
     / { 'や' #AndOr }
     / { NOUNSUFFIX #Classic }
 
@@ -127,7 +129,7 @@ Of = { 'の' !'み' Like? #Of }
 Like = { 'よう' NounMood #Like }
 
 There = {
-    'あ' Mood 
+    'あ' AMood 
     #There
 }
 
@@ -205,7 +207,7 @@ XVERB = @choice('cjdic/XVERB.txt')
 XNOUN = @choice('cjdic/XNOUN.txt')
 
 DictNoun = {
-    @choice('cjdic/NOUN.txt')
+    @choice('cjdic/NOUN.txt') / @choice('cjdic/NOUNADJ.txt') 
     #Noun
 }
 
