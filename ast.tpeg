@@ -1,0 +1,30 @@
+/* Syntax of TPEG AST */
+
+Input = {
+  '[' Tag (_ Tree)+ ']'
+  #AST
+}
+
+Tree = {
+    Label? '[' Tag (_ Tree)+ ']'
+  / ['] Literal [']
+  / ["] Literal ["]
+  #Tree
+}
+
+Literal = {
+  (!(['] ']') .)*
+  #Literal
+}
+
+Tag = '#' { W #Tag }
+
+Label = { W #Label } ':'
+
+W = [a-zA-Z0-9_.]*
+_ = [ \t\n]*
+
+example Input [#Add left:[#Num '3'] right:[#Num '4']]
+example Input [#Word.JP [#Hoge_Fuga ''Hello'と表示する']]
+
+example Input [#S [#NounChunk [#Noun '所定'] [#Of 'の']] [#NounChunk [#Code 'DES']] [#NounChunk [#Noun '鍵データ'] [#Subject 'が']] [#NounChunk [#Noun '脆弱(weak)']] [#Adverb 'また'] [#err 'は'] [#NounChunk [#Noun '準脆弱(semi-weak)'] [#Of 'の']] [#NounChunk [# 'どちら'] [#Be 'である']] [#err 'かを'] [#VerbChunk [#Noun 'チェック'] [#Base 'ます']] [#NounChunk [#Noun '。']]]

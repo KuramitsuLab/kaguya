@@ -7,6 +7,7 @@ from pathlib import Path
 from bs4 import BeautifulSoup
 import requests
 import MeCab
+from pegpy.main import *
 import matplotlib.pyplot as plt
 import matplotlib.ticker as ticker
 from matplotlib import rcParams
@@ -15,9 +16,8 @@ rcParams['font.sans-serif'] = ['Hiragino Maru Gothic Pro', 'Yu Gothic', 'Meirio'
 
 
 FP = Path(__file__).resolve().parent
-NEOLOGD_PATH = Path('/Users/xps/Documents/mecab-dic/neolog/mecab-ipadic-neologd')
-if not NEOLOGD_PATH.exists():
-  NEOLOGD_PATH = Path('/usr/local/lib/mecab/dic/mecab-ipadic-neologd')
+NEOLOGD_PATH = Path('/Users/xps/Documents/mecab-dic/neolog/mecab-ipadic-neologd')  # winPC
+# NEOLOGD_PATH = Path('/usr/local/lib/mecab/dic/mecab-ipadic-neologd')  # macbook
 UNIDIC_PATH = Path('/Users/xps/Documents/mecab-dic/unidic-cwj-2.3.0')
 LOG_PATH = FP/'analyze_log'
 LOG_PATH.mkdir(exist_ok=True)
@@ -25,10 +25,12 @@ LOG_PATH.mkdir(exist_ok=True)
 # DIC_PATH = NEOLOGD_PATH
 DIC_PATH = UNIDIC_PATH
 
+
 class MecabToken():
   def __init__(self, line):
     (self.word, detail) = line.split('\t')
     details = detail.split(',')
+    details = list(map(lambda d: '*' if d == '' else d, details))
     details += ['*'] * (9-len(details))
     (
       self.品詞,
@@ -40,7 +42,7 @@ class MecabToken():
       self.原形,
       self.読み,
       self.発音
-    ) = details
+    ) = details[0:9]
 
   def __str__(self):
     return self.word
@@ -267,18 +269,47 @@ class Statistics():
     plt.savefig(LOG_PATH/'aux_len_rate.png')
 
 
+def parse_ast(file_path):
+  def have_err(tree):
+    if tree.tag == 'Tag' and str(tree) == 'err':
+      return True
+    if len(tree.subs()) > 0:
+      for _, child in tree.subs():
+        if have_err(child): return True
+    return False
+
+  fp = Path(file_path)
+  options = parse_options(['-g', 'ast.tpeg'])
+  peg = load_grammar(options)
+  parser = generator(options)(peg, **options)
+
+  with open(file_path, 'r', encoding='utf_8') as f:
+    lines = f.read().split('\n')
+    err = 0
+    AMOUNT = len(lines) // 3
+    for i in range(AMOUNT):
+      print(f'\r{i}', end='')
+      is_success = lines.pop(0).split(',')[1]
+      input_text = lines.pop(0)
+      if is_success == 'OK':
+        tree = parser(lines.pop(0))
+        if have_err(tree): err += 1
+      else:
+        lines.pop(0)
+    print(f'\ncount of err sentence: {err}/{AMOUNT}')
+
+
 
 # MeCab Tester
 def mecab():
   dict_path = f' -d {DIC_PATH}' if DIC_PATH.exists() else ''
   m = MeCab.Tagger(dict_path)
-  st = Statistics()
   while True:
     try:
       s = input('>> ')
       res = MecabToken.fromParsedData(m.parse(s))
-      pp(res)
-      st.add_sentence(res)
+      for w in res:
+        print(repr(w))
     except KeyboardInterrupt:
       print()
       break
@@ -415,7 +446,7 @@ def main(args):
   if len(args) < 3:
     globals()[fname]()
   else:
-    globals()[fname](args[2:])
+    globals()[fname](*args[2:])
 
 
 if __name__ == "__main__":
