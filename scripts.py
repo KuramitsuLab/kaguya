@@ -304,6 +304,23 @@ def parse_ast(file_path):
     f.write('\n'.join(err_list))
 
 
+def extract_err_sentence(file_path):
+  fp = Path(file_path)
+  with open(file_path, 'r', encoding='utf_8') as f:
+    lines = f.read().split('\n')
+    err_list = []
+    AMOUNT = len(lines) // 3
+    for i in range(AMOUNT):
+      print(f'\rNow Processing: {i}/{AMOUNT}', end='')
+      is_success = lines.pop(0).split(',')[1]
+      input_text = lines.pop(0)
+      tree_text = lines.pop(0)
+      if is_success == 'NG':
+        err_list.append(input_text)
+  with open(f'err_cases_{fp.stem}.txt', 'w', encoding='utf_8') as f:
+    f.write('\n'.join(err_list))
+
+
 # MeCab Tester
 def mecab():
   dict_path = f' -d {DIC_PATH}' if DIC_PATH.exists() else ''
