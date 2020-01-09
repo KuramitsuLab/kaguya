@@ -47,6 +47,7 @@ XNoun = // もの
     / { 'で' (There/Suffix)? #Object }     // Aでの~, 
     / { 'か' ('どうか'/'否か') XNoun? #Whether }  // 可能かどうか
     / { ('のみ'/'だけ'/'ばかり'/'さえ') XNoun? #Only }    // 彼のみを
+    / { 'らし' XNot #Sound }   // 単語らしい
     / { 'ごと' XNoun? #Each }    // 単語ごと+で
     / { 'など' XNoun? #Etc }    // 単語など+で
     / { 'なし' XNoun? #No }    // 単語なし+の
@@ -61,6 +62,7 @@ XNoun = // もの
 
 XBase = // する+ した+
     / MayBe
+    / { 'らし' XNot #Sound }   // するらしい
     / { ('のみ'/ 'だけ') XNoun? #OnlyThat }
     / { (('ため' / '為') XNoun? ) / ('ので'/'から') #Because }
     / { 'の'? 'か' ('どうか'/'否か')? XNoun? #Whether }
@@ -351,6 +353,7 @@ ISuffix = // 書き+つつ  探し+つつ　
     / { 'た' XNot #WantTo }   // 書きたい
     / { ('やす' / 'よ' ) XNot #EasyTo }   // 書きやすい
     / { ('にく' / 'がた' / 'づら') XNot #HardTo } //書きがたい
+    / { 'がち' XNoun? #Likely } //休みがちだ
     / { ('つつ' / 'ながら') #While }
     / { XNoun / TEN / EOF #Noun }   // 書出し
     / { !MOOD1 #And }
