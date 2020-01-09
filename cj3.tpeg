@@ -69,8 +69,10 @@ XBase = // する+ した+
     / { ('かぎり' / '限り') XNoun? #AsLong }
     / { 'の'? 'か' ('どうか'/'否か')? XNoun? #Whether }
     / { (('とき' / 'と' TEN / '時' / '場合' / '際' / 'ところ') XNoun?) / 'のなら' 'ば'? #If }
-    / { 'と' 'か'? XNoun? #That }
     / { ('とおり' / 'よう') XNoun? #As }
+    / { 'と' 'か'? XNoun? #That }
+    / { 'まで' XNoun? #Until }
+    / { 'まま' XNoun? #AsIs }
     / { 'には' #That }
     / { 'の' XNoun? #That }
 
@@ -302,6 +304,7 @@ Verb1 = { !'それ' @choice('dic/Verb/VERB1.txt') #Verb1 }
 XNot = //な
     / { 'ければ' #If }
     / { 'くな' XNot #Not }
+    / { 'くても' #EvenIf }
     / { 'く' 'て'? #And }
     / { 'い' XBase? #Base }
     / { 'かった' XPast? #Past }
@@ -311,6 +314,7 @@ PoliteMood =
     / { 'ません' 'でした'? XBase? #Not }
     / { 'ましたら' #If }
     / { 'ました' XPast? #Past }
+    / { 'ましても' #EvenIf }
     / { 'まして' #And }
 
 Mood = // でき+　　られ+
@@ -319,6 +323,7 @@ Mood = // でき+　　られ+
     / { 'る' XBase? #Base }
     / { 'た' XPast? #Past }
     / { 'れば' #If }
+    / { 'てから' #After }
     / { 'ても' #EvenIf }
     / { ('て' XMood?)?  #And }
 
@@ -329,6 +334,7 @@ AMood = // あ+る
     / { 'る' XBase? #Base }
     / { 'った' XPast? #Past }
     / { 'れば' #If }
+    / { 'ってから' #After }
     / { 'っても' #EvenIf }
     / { 'って' #And }
 
@@ -348,11 +354,13 @@ ASuffix = // 書か+ない   探さ+ない
 
 IXSuffix = // 書い+て   探し+て　
     / { 'た' XPast? #Past }
+    / { 'てから' #After }
     / { 'ても' #EvenIf }
     / { 'て' XMood? #And }
 
 IXDSuffix = // 遊んだ   遊んで
     / { 'だ' XPast? #Past }
+    / { 'でから' #After }
     / { 'でも' #EvenIf }
     / { 'で' XMood? #And }
 
