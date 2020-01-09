@@ -63,7 +63,7 @@ XNoun = // もの
     / Suffix
 
 XBase = // する+ した+
-    / MayBe
+    / MayBe / Should
     / { 'らし' XNot #Sound }   // するらしい
     / { ('のみ'/ 'だけ') XNoun? #OnlyThat }
     / { (('ため' / '為') XNoun? ) / ('ので'/'から') #Because }
@@ -99,6 +99,9 @@ Despite = // に +
 
 MayBe =
     { 'かも' ('知'/'し') 'れ' ('ない' / 'ません' / Mood) #May }
+
+Should = 
+    { ('べき' / 'べし' / 'はず' ) XNoun? #Should }
 
 Be = // すべき
     / { 'で' ('すら' / 'さえ') #Though }     // 首相ですら 
@@ -376,11 +379,7 @@ ISuffix = // 書き+つつ  探し+つつ　
     / { !MOOD1 #And }
 
 USuffix = // 書く　探す
-    / Should
     / { XBase? #Base }
-
-Should = 
-    { ('べき' / 'べし') XNoun? #Should }
 
 ESuffix = // 書け+ば  探せ+ば
     / { 'ば' #If }
@@ -490,7 +489,7 @@ XVerb1 = // 着る 述べ
     / 'よ' OSuffix  // う
     / ASuffix  // ない
     / IXSuffix // て
-    / &HIRA ISuffix  // ながら
+    / &HIRA ISuffix  // 視野が視るにマッチするのを防ぐ
 
 /* 形容詞 */
 
