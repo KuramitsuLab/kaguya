@@ -319,6 +319,7 @@ Mood = // でき+　　られ+
     / { 'る' XBase? #Base }
     / { 'た' XPast? #Past }
     / { 'れば' #If }
+    / { 'ても' #EvenIf }
     / { ('て' XMood?)?  #And }
 
 MOOD1 = [まなるたれて]
@@ -328,6 +329,7 @@ AMood = // あ+る
     / { 'る' XBase? #Base }
     / { 'った' XPast? #Past }
     / { 'れば' #If }
+    / { 'っても' #EvenIf }
     / { 'って' #And }
 
 // 補助動詞
@@ -346,11 +348,13 @@ ASuffix = // 書か+ない   探さ+ない
 
 IXSuffix = // 書い+て   探し+て　
     / { 'た' XPast? #Past }
+    / { 'ても' #EvenIf }
     / { 'て' XMood? #And }
 
 IXDSuffix = // 遊んだ   遊んで
     / { 'だ' XPast? #Past }
-    / { 'でい' XMood? #And }
+    / { 'でも' #EvenIf }
+    / { 'で' XMood? #And }
 
 ISuffix = // 書き+つつ  探し+つつ　
     / &'ま' PoliteMood
