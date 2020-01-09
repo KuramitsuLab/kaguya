@@ -11,23 +11,24 @@ Sentence = {
 }
 
 Chunk =
-    / Conjunction  // 接続詞
-    / Adnominal    // 連体詞は先, 「多くの人」が形容詞にマッチする
+    / Conjunction TEN // 接続詞 TEN付きの優先度をあげる
     / Adverb       // 副詞
     / Measure      // 助数詞
+    / Adnominal    // 連体詞は先, 「多くの人」が形容詞にマッチする
     / AdjectiveChunk  // 形容詞節
     / NounChunk0   // 優先名詞チャンク　「組み合わせ」を先にする
     / VerbChunk    // 動詞節
     / NounChunk    // 名詞節, 形容動詞節
+    / Conjunction  // 接続詞 優先度を下げる
 
 // 接辞
 
-// 主格　Aは, 
-Subject = { ('こそ' / [はがも]) There? #Subject }  
+// 主格　Aは,   結果のもっとも
+Subject = { ('こそ' / !'もっとも' [はがも]) There? #Subject }  
 
 // 所有格 の
 OfCase = 
-    / { 'の' XNoun? #That } // Aのは Aの(もの)に
+    / { 'の' XNoun #That } // Aのは Aの(もの)に
     / { 'の' !'み' Like? #Of }   // 
 
 Like = { 'よう' XNoun? #Like }
@@ -41,11 +42,14 @@ XNoun = // もの
     / { ('から' / 'より') Suffix? #From }
     / { 'まで' Suffix? #Until }
     / { 'へ' Suffix? #To }         // Aへの, Aへは
-    / { 'に' (Against / About / Let / By / Suffix)? #Adverb }     // Aにの~ , Aには~
+    / { 'に' (Against / About / Let / By / Despite / Suffix)? #Adverb }     // Aにの~ , Aには~
     / { 'と' 'か'? (Let / Suffix)? #Object }     // Aとの~ , Aとは~
     / { 'で' (There/Suffix)? #Object }     // Aでの~, 
     / { 'か' ('どうか'/'否か') XNoun? #Whether }  // 可能かどうか
     / { ('のみ'/'だけ'/'ばかり'/'さえ') XNoun? #Only }    // 彼のみを
+    / { 'ごと' XNoun? #Each }    // 単語ごと+で
+    / { 'など' XNoun? #Etc }    // 単語など+で
+    / { 'なし' XNoun? #No }    // 単語なし+の
     / { 'そう' XNoun? #Seem }    // 正確そう
     / { 'さ' !'れ' XNoun? #Noun }  // 正確さ
     / { 'なら' 'ば'? #If }  // 正確ならば
@@ -60,9 +64,10 @@ XBase = // する+ した+
     / { 'と' 'か'? XNoun? #That }
     / { ('のみ'/ 'だけ') XNoun? #OnlyThat }
     / { (('ため' / '為') XNoun? ) / ('ので'/'から') #Because }
-    / { 'の'? 'か' ('どうか'/'否か')? #Whether }
-    / { (('とき' / '時' / '場合' / 'ところ') XNoun?) / 'のなら' 'ば'? #If }
+    / { 'の'? 'か' ('どうか'/'否か')? XNoun? #Whether }
+    / { (('とき' / '時' / '場合' / '際' / 'ところ') XNoun?) / 'のなら' 'ば'? #If }
     / { ('とおり' / 'よう') XNoun? #As }
+    / { 'には' #That }
     / { 'の' XNoun? #That }
 
 XPast = // した
@@ -82,11 +87,14 @@ About = // に +
 By = // に + 
     { 'よる' / 'よっ' ('て' Suffix? / 'た' )? / 'より' #About }
 
+Despite = // に + 
+    { ('かか'/'関') 'わらず' / '関係なく' #Despite }
+
 MayBe =
     { 'かも' ('知'/'し') 'れ' ('ない' / 'ません' / Mood) #May }
 
 Be = // すべき
-    / { ('です' / 'だ') XBase? #Base }
+    / { ('です' / 'だ' !'け') XBase? #Base }
     / { 'でな' XNot #Not} 
     / { ('でしょう' / 'だろう') XBase? #WouldBe }
     / { ('でした' / 'だった') XPast? #Past }
@@ -103,9 +111,9 @@ IGNORED =
     / 'ください'
 
 // CJルール 接続詞
-
+// 優先度
 Conjunction = { // e.g., こうして
-    @choice('cjdic/CONJ.txt') 
+    @choice('cjdic/CONJ.txt')
     #Conjunction 
 }
 
@@ -116,8 +124,8 @@ Conjunction = { // e.g., こうして
 // 例. 過去に戻る 過去、言った
 
 Adverb = {   // e.g., 順次
-    @choice('cjdic/ADVERB.txt') // 次に
-    / @choice('cjdic/ADVERB_NOUN.txt') XNoun?  // 順次、
+    (@choice('cjdic/ADVERB.txt') // 次に
+    / @choice('cjdic/ADVERB_NOUN.txt')) XNoun?  // 順次、
     #Adverb 
 }
 
@@ -136,8 +144,8 @@ Measure = {
 UnitPrefix = 
     / { '約' / 'およそ' #Aprox }
     / { 'もう' / 'さらに' / '更に' #More }
-    / { '高々'/ 'たかだか' / '多くとも' #AtMost }
-    / { '少なくとも' #AtLeast }
+    / { '高々'/ 'たかだか' / '多くとも' / '最大' #AtMost }
+    / { '少なくとも' / '最小' #AtLeast }
 
 NumericNoun = {
     '複数' / [一二三毎数先今次]  // 複数回 毎回 今回
@@ -283,7 +291,7 @@ Verb5RA = { @choice('dic/Verb/VERB5RA.txt') &[ら-ろっ] #VerbRA }
 Verb5WA = { @choice('dic/Verb/VERB5WA.txt') &[わいうえおっ] #VerbWA }
 Verb5GA = { @choice('dic/Verb/VERB5GA.txt') &[が-ごい] #VerbGA }
 Verb5BA = { @choice('dic/Verb/VERB5BA.txt') &[ば-ぼん] #VerbBA }
-Verb1 = { @choice('dic/Verb/VERB1.txt') #Verb1 }
+Verb1 = { !'それ' @choice('dic/Verb/VERB1.txt') #Verb1 }
 
 XNot = //な
     / { 'ければ' #If }
@@ -307,6 +315,8 @@ Mood = // でき+　　られ+
     / { 'れば' #If }
     / { ('て' XMood?)?  #And }
 
+MOOD1 = [まなるたれて]
+
 AMood = // あ+る
     / 'り' &'ま' PoliteMood
     / { 'る' XBase? #Base }
@@ -324,8 +334,9 @@ XMood = // て
 
 ASuffix = // 書か+ない   探さ+ない
     / { 'な' XNot #Not }
+    / { 'ず' #Not }
     / { 'さ'? 'せ' 'られ'? Mood #Make }
-    / { 'れ' Mood #Been }
+    / { 'れ' &MOOD1 Mood #Been }   // これる vs. これは
 
 IXSuffix = // 書い+て   探し+て　
     / { 'た' XPast? #Past }
@@ -341,7 +352,8 @@ ISuffix = // 書き+つつ  探し+つつ　
     / { ('やす' / 'よ' ) XNot #EasyTo }   // 書きやすい
     / { ('にく' / 'がた' / 'づら') XNot #HardTo } //書きがたい
     / { ('つつ' / 'ながら') #While }
-    / { #And }
+    / { XNoun / TEN / EOF #Noun }   // 書出し
+    / { !MOOD1 #And }
 
 USuffix = // 書く　探す
     / Should
@@ -384,10 +396,10 @@ XVerb5KA = // 書
     / 'け' ESuffix
     / 'こ' OSuffix
 
-XVerb5SA = // 探
+XVerb5SA = // 探 出
     / 'さ' ASuffix  // ない
-    / 'し' ISuffix  // ながら
     / 'し' IXSuffix // て
+    / 'し' ISuffix  // ながら
     / 'す' USuffix  // 
     / 'せ' ESuffix  // ば
     / 'こ' OSuffix  // う
@@ -449,14 +461,16 @@ XVerb5BA = // 遊
     / 'べ' ESuffix  // ば
     / 'ぼ' OSuffix  // う
 
+// 「それる」は除外
+
 XVerb1 = // 着る 述べ
     / 'る' USuffix  // 
     / 'れ' ESuffix  // ば
     / { 'られ' Mood #Been }   // 述べられています
     / 'よ' OSuffix  // う
     / ASuffix  // ない
-    / ISuffix  // ながら
     / IXSuffix // て
+    / ISuffix  // ながら
 
 /* 形容詞 */
 
