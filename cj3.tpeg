@@ -490,7 +490,7 @@ XVerb1 = // 着る 述べ
     / 'よ' OSuffix  // う
     / ASuffix  // ない
     / IXSuffix // て
-    / ISuffix  // ながら
+    / &HIRA ISuffix  // ながら
 
 /* 形容詞 */
 
