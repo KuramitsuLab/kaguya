@@ -16,8 +16,87 @@ Chunk =
     / Adverb       // 副詞
     / Measure      // 助数詞
     / AdjectiveChunk  // 形容詞節
+    / NounChunk0   // 優先名詞チャンク　「組み合わせ」を先にする
     / VerbChunk    // 動詞節
-    / NounChunk    // 名詞節, 形容動詞節　「組み合わせ」を先にマッチする
+    / NounChunk    // 名詞節, 形容動詞節
+
+// 接辞
+
+// 主格　Aは, 
+Subject = { ('こそ' / [はがも]) There? #Subject }  
+
+// 所有格 の
+OfCase = 
+    / { 'の' XNoun? #That } // Aのは Aの(もの)に
+    / { 'の' !'み' Like? #Of }   // 
+
+Like = { 'よう' XNoun? #Like }
+
+Suffix = 
+    / Subject
+    / OfCase
+
+XNoun = // もの
+    / IsMood
+    / { ('から' / 'より') Suffix? #From }
+    / { 'まで' Suffix? #Until }
+    / { 'へ' Suffix? #To }         // Aへの, Aへは
+    / { 'に' (Against / About / Let / By / Suffix)? #Adverb }     // Aにの~ , Aには~
+    / { 'と' 'か'? (Let / Suffix)? #Object }     // Aとの~ , Aとは~
+    / { 'で' (There/Suffix)? #Object }     // Aでの~, 
+    / { 'か' ('どうか'/'否か') XNoun? #Whether }  // 可能かどうか
+    / { ('のみ'/'だけ'/'ばかり'/'さえ') XNoun? #Only }    // 彼のみを
+    / { 'そう' XNoun? #Seem }    // 正確そう
+    / { 'さ' !'れ' XNoun? #Noun }  // 正確さ
+    / { 'なら' 'ば'? #If }  // 正確ならば
+    / { 'な' #Adjective }  // 正確な
+    / { 'を' #Object }
+    / { 'や' #AndOr }
+    / { 'または' #Or }
+    / Suffix
+
+XBase = // する+ した+
+    / MayBe
+    / { 'と' 'か'? XNoun? #That }
+    / { ('のみ'/ 'だけ') XNoun? #OnlyThat }
+    / { (('ため' / '為') XNoun? ) / ('ので'/'から') #Because }
+    / { 'の'? 'か' ('どうか'/'否か')? #Whether }
+    / { (('とき' / '時' / '場合' / 'ところ') XNoun?) / 'のなら' 'ば'? #If }
+    / { ('とおり' / 'よう') XNoun? #As }
+    / { 'の' XNoun? #That }
+
+XPast = // した
+    / { 'り' #AndThen }
+    / { 'な'? 'ら' 'ば'? #If } 
+    / XBase
+
+Let = // と +
+    { 'する' XBase? / 'し' ('て' Suffix? / 'た' XPast? )? #Let }
+
+Against = // に + 
+    { '対する' / '対し' ('て' Suffix? / 'た' XPast? )? #Against }
+
+About = // に + 
+    { 'ついて' Suffix? / '関し' ('て' Suffix? / 'た' XPast? )? #About }
+
+By = // に + 
+    { 'よる' / 'よっ' ('て' Suffix? / 'た' )? / 'より' #About }
+
+MayBe =
+    { 'かも' ('知'/'し') 'れ' ('ない' / 'ません' / Mood) #May }
+
+Be = // すべき
+    / { ('です' / 'だ') XBase? #Base }
+    / { 'でな' XNot #Not} 
+    / { ('でしょう' / 'だろう') XBase? #WouldBe }
+    / { ('でした' / 'だった') XPast? #Past }
+
+IsMood = &[でだ] Be / MayBe
+
+There = {
+    'あ' AMood 
+    #There
+}
 
 IGNORED = 
     / 'です' 
@@ -38,7 +117,7 @@ Conjunction = { // e.g., こうして
 
 Adverb = {   // e.g., 順次
     @choice('cjdic/ADVERB.txt') // 次に
-    / @choice('cjdic/ADVERB_NOUN.txt') NounSuffix?  // 順次、
+    / @choice('cjdic/ADVERB_NOUN.txt') XNoun?  // 順次、
     #Adverb 
 }
 
@@ -50,7 +129,7 @@ Measure = {
     (Code / NumericNoun ) 
     !NONUNIT Unit
     UnitPostfix?
-    NounSuffix?
+    XNoun?
     #Measure
 }
 
@@ -97,68 +176,36 @@ Adnominal = {
 
 /*
 名詞 NounChunk 名詞らしいもので始まる
+優先度 0
 */
 
+NounChunk0 = {
+    VerbalNoun 
+    // 「組み込み」ますのように動詞でないことを保証する
+    (XNoun / TEN / EOF)
+    #NChunk
+}
+
+// 動詞から派生した複合名詞 
+VerbalNoun = {
+    XVERB XVERB 
+    #Noun
+}
+
+// XVERB 
+// 呼び + 出し のようにふたつ組み合わせて名詞になる動詞
+// 組み+ 込み 戻り+値 上+ 付け   
+// 「~ ます」に続く
+
+XVERB = @choice('cjdic/XVERB.txt') 
+
 NounChunk = { 
-    Noun NounSuffix? 
+    Noun XNoun? 
     #NChunk 
 } 
 
 example Sentence ハワイについて
 example Sentence ハワイに着いて
-
-NounSuffix = 
-    / Of
-    / !'に' NounMood
-    / LookLike
-    / { [はがも] #Subject }
-    / { ('から' / 'より') (Of / HAMO) #From }
-    / { 'まで' (Of / HAMO) #Until }
-    / { 'による' / 'によっ' ('て' (Of / HAMO) / 'た')? / 'により' #By }
-    / { 'に対する' / 'に対し' ('て' (Of / HAMO) / 'た')? #Against }
-    / { 'について' (Of / HAMO) / 'に関' ('し' ('て' (Of / HAMO) / 'た')? / 'する') #About }
-    / { 'とする' / 'とし' ('て' (Of / HAMO) / 'た')? #Let }
-    / { 'へ' Of? #To }
-    / { 'と' (Of / HAMO) #Object }
-    / { 'を' / [にで] HAMO #Object }
-    / { 'か' 'どうか' (Of / HAMO) #Whether }  // 可能かどうか
-    / { 'や' #AndOr }
-    / { 'または' #Or }
-    / { NOUNSUFFIX #Classic }
-
-HAMO = [はもが]?
-Of = { 'の' !'み' Like? #Of }
-Like = { 'よう' NounMood #Like }
-
-There = {
-    'あ' AMood 
-    #There
-}
-
-NounMood = &[でだなに] Be / May
-Be = // すべき
-    / { 'である' XBase? / 'であり' / 'です' / 'だ' XBase? #Base }
-    / { 'でな' XNot #Not} 
-    / { 'でしょう' / 'だろう' #WouldBe }
-    / { 'でした' XBase? / 'だった' XBase? #Past }
-    / { 'なら' #If }
-    / { 'な' #Adjective }
-    / { 'に' #Adverb }
-
-LookLike = 
-    / { 'そう' NounMood #Seem }
-    / { 'さ' !'れ' NounSuffix? #Noun }
-
-NOUNSUFFIX1 = [のはかにともやがで]
-NOUNSUFFIX2 = 
-    / 'など' / 'だけ' / 'まで' / 'から'
-    / 'のみ' / 'でも' / 'しか' / 'かどうか'
-    / 'および' / 'とも' / 'ほど'
-    / 'ばかり' / 'さえ' / 'くらい' / 'かも'
-
-NOUNSUFFIX = 
-    / NOUNSUFFIX2 NOUNSUFFIX1 
-    / NOUNSUFFIX1
 
 /*
 名詞 Noun
@@ -170,7 +217,6 @@ NOUNSUFFIX =
 // 平仮名が含まれる名詞は
 //  あらかじめ辞書に登録する  DictNone 
 //  「奥の細道」のようにカッコで書く  NewNoun
-
 
 Noun = 
     / Code
@@ -198,13 +244,6 @@ PatNoun = {
     #Noun
 }
 
-// XVERB 
-// 呼び + 出し のようにふたつ組み合わせて名詞になる動詞
-// 組み+ 込み 戻り+値 上+ 付け   
-// 「~ ます」に続く
-
-XVERB = @choice('cjdic/XVERB.txt') 
-
 // XVERB 以外の名詞の接尾詞
 XNOUN = @choice('cjdic/XNOUN.txt')
 
@@ -221,6 +260,7 @@ DictNoun = {
 
 VerbChunk = {
     NounVerb XNounVerb // 愛する　と　愛す（サ行５段）
+    / There / Do / Come
     / Verb5KA XVerb5KA
     / Verb5SA XVerb5SA
     / Verb5TA XVerb5TA
@@ -231,8 +271,6 @@ VerbChunk = {
     / Verb5GA XVerb5GA
     / Verb5BA XVerb5BA
     / Verb1 XVerb1
-    / VerbSA
-    / VerbKA
     #VChunk  
 }
 
@@ -247,91 +285,55 @@ Verb5GA = { @choice('dic/Verb/VERB5GA.txt') &[が-ごい] #VerbGA }
 Verb5BA = { @choice('dic/Verb/VERB5BA.txt') &[ば-ぼん] #VerbBA }
 Verb1 = { @choice('dic/Verb/VERB1.txt') #Verb1 }
 
-XBase = 
-    / XBaseCase
-    / XBaseOnly
-    / XBaseSince
-    / XBaseAs
-    / XBaseThat
-    / XBaseWhether
-    / NounMood
-
-XBaseThat = {
-    'と' HAMO VerbChunk
-    #That
-}
-
-XBaseOnly = { // 一見しただけでは
-    ('だけで' / 'のみで' / 'ので') HAMO
-    #OnlyThat
-}
-
-XBaseWhether = { // 異なるのか
-    'の'? 'か' 'どうか'? TEN? (XBaseThat/NounSuffix)?
-    #Whether
-}
-
-XBaseCase = {
-    ('とき' TEN / '場合' TEN / 'の'? 'なら' / 'ら' )
-    #If
-}
-
-XBaseSince = {
-    ('ため' NounSuffix? / 'には' / 'ので')
-    #Since
-}
-
-XBaseAs = {
-    ('通り' / 'とおり' / 'ように')
-    #As
-}
-
-XPastAnd = { // 提供した+り
-    'り'
-    #And
-}
-
 XNot = //な
     / { 'ければ' #If }
     / { 'くな' XNot #Not }
     / { 'く' 'て'? #And }
     / { 'い' XBase? #Base }
-    / { 'かった' XBase? #PastBase }
+    / { 'かった' XPast? #Past }
+
+PoliteMood =
+    / { ('ます' / 'ましょう') XBase? #Base }
+    / { 'ません' 'でした'? XBase? #Not }
+    / { 'ましたら' #If }
+    / { 'ました' XPast? #Past }
+    / { 'まして' #And }
+
+Mood = // でき+　　られ+
+    / &'ま' PoliteMood
+    / { 'な' XNot #Not }
+    / { 'る' XBase? #Base }
+    / { 'た' XPast? #Past }
+    / { 'れば' #If }
+    / { ('て' XMood?)?  #And }
+
+AMood = // あ+る
+    / 'り' &'ま' PoliteMood
+    / { 'る' XBase? #Base }
+    / { 'った' XPast? #Past }
+    / { 'れば' #If }
+    / { 'って' #And }
+
+// 補助動詞
+XMood = // て
+    / { 'い' Mood #Now }    // 笑っている
+    / { 'み' Mood #TryTo }  // 笑ってみる
+    / There                 // 笑ってある 
+    / Come                  // 笑ってくる
+
 
 ASuffix = // 書か+ない   探さ+ない
     / { 'な' XNot #Not }
     / { 'さ'? 'せ' 'られ'? Mood #Make }
     / { 'れ' Mood #Been }
 
-PoliteMood =
-    / { 'ます' / 'ましょう' #Base }
-    / { 'ません' 'でした'? #Not }
-    / { 'ましたら' #If }
-    / { 'ました' #Past }
-    / { 'まして' #And }
+IXSuffix = // 書い+て   探し+て　
+    / { 'た' XPast? #Past }
+    / { 'て' XMood? #And }
 
-May =
-    { 'かも' ('知'/'し') 'れ' ('ない' / 'ません') #May }
-
-Mood = // でき　　られ
-    / &'ま' PoliteMood
-    / { 'な' XNot #Not }
-    / { 'る' XBase? #Base }
-    / { 'た' (XBase / XPastAnd)? #Past }
-    / { 'れば' #If }
-    / { 'てい' Mood #Being }
-    / { 'て'? #And }
-
-AMood = // あ+る
-    / 'り' &'ま' PoliteMood
-    / { 'る' XBase? #Base }
-    / { 'った' (XBase / XPastAnd)? #Past }
-    / { 'れば' #If }
-    / { 'って'? #And }
-
-Being = {
-    'て' Mood #Being
-}
+IXDSuffix = // 遊んだ   遊んで
+    / { 'だ' XPast? #Past }
+    / { 'でい' XMood? #And }
 
 ISuffix = // 書き+つつ  探し+つつ　
     / &'ま' PoliteMood
@@ -341,21 +343,12 @@ ISuffix = // 書き+つつ  探し+つつ　
     / { ('つつ' / 'ながら') #While }
     / { #And }
 
-IXSuffix = // 書い+て   探し+て　
-    / { 'た' (XBase / XPastAnd)? #Past }
-    / { 'てい' Mood #Being }
-    / { 'て' #And }
-
-IXDSuffix = // 遊んだ   遊んで
-    / { 'だ' (XBase / XPastAnd)? #Past }
-    / { 'でい' Mood #Being }
-    / { 'で' #And }
-
 USuffix = // 書く　探す
     / Should
     / { XBase? #Base }
 
-Should = { 'べき' NounMood? / 'べし' #Should }
+Should = 
+    { ('べき' / 'べし') XNoun? #Should }
 
 ESuffix = // 書け+ば  探せ+ば
     / { 'ば' #If }
@@ -369,18 +362,19 @@ XNounVerb = // 例. 行動する 論じる
     / { 'され' Mood #Been }
     / { 'でき' Mood #Can }
 
-// カ行変格活用動詞
-VerbKA = 
-    / { 'こ' ASuffix #VerbKA }
-    / { 'き' IXSuffix #VerbKA }
-    / { 'くる' XBase? #VerbKA }
-    / { 'くれば' #IfVerbKA }
-
-VerbSA = // 例. 参考に+する
-    / { 'す' ('る' USuffix / Should / 'れ' ESuffix) #VerbSA }
-    / { 'し' (ASuffix / 'よ' OSuffix/ IXSuffix / ISuffix ) #VerbSA }
+Do = // 例. 参考に+する
+    / { 'す' ('る' USuffix / Should / 'れ' ESuffix) #Do }
+    / { 'し' (ASuffix / 'よ' OSuffix/ IXSuffix / ISuffix ) #Do }
     / { 'され' Mood #Been }
     / { 'でき' Mood #Can }
+
+// カ行変格活用動詞
+Come = 
+    / { 'こ' ASuffix #Come }
+    / { 'き' IXSuffix #Come }
+    / { 'くる' XBase? #Come }
+    / { 'くれ' { 'ば' #If} #Come }
+
 
 XVerb5KA = // 書
     / 'か' ASuffix
@@ -467,7 +461,7 @@ XVerb1 = // 着る 述べ
 /* 形容詞 */
 
 AdjectiveChunk = {
-    Adjective ('そう' XNAdjective / XAdjective )
+    Adjective ('そう' XNounAdj / XAdjective )
     #AChunk
 }
 
@@ -481,23 +475,14 @@ Adjective = {
 ADJ = @choice('dic/ADJ.txt') &ADJ_CHECK
 ADJ_CHECK = 'そう' / [さかくけい]
 
-// 形容動詞: 素敵
+XAdjective = 
+    / XNot 
+    / { 'さ' !'れ' XNoun? #Noun }
+    / { 'そう' XNounAdj #Noun }
 
-NAdjective = {
-    NOUNADJ 'そう'? / ADJ 'そう'
-    #NounAdjective
-}
-
-NOUNADJ = 
-    (@choice('cjdic/NOUNADJ.txt') / NONHIRA+) &NOUNADJ_CHECK
-NOUNADJ_CHECK = 'そう' / [さにでだな]
-
-XAdjective = XNot / LookLike
-
-XNAdjective = //素敵
-    / NounMood // だ、です、かも知れない
+XNounAdj = //素敵
+    / XNoun // だ、です、かも知れない
     / { 'ならば' #If }
-    / { 'さ'? NounSuffix? #Noun }
 
 /* コードは名詞扱い */
 
