@@ -47,6 +47,7 @@ XNoun = // もの
     / { 'で' (There/Suffix)? #Object }     // Aでの~,
     / { ('かぎり' / '限り') XNoun? #AsLong }  // その場かぎり
     / { 'か' ('どうか'/'否か') XNoun? #Whether }  // 可能かどうか
+    / { 'か' XNoun? #OrElse }  // 可能か不可能か
     / { ('のみ'/'だけ'/'ばかり'/'さえ') XNoun? #Only }    // 彼のみを
     / { 'らし' XNot #Sound }   // 単語らしい
     / { 'ごと' XNoun? #Each }    // 単語ごと+で
