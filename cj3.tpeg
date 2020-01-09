@@ -99,10 +99,10 @@ MayBe =
 
 Be = // すべき
     / { 'で' ('すら' / 'さえ') #Though }     // 首相ですら 
-    / { ('です' / 'だ' !'け') XBase? #Base }
     / { 'でな' XNot #Not} 
     / { ('でしょう' / 'だろう') XBase? #WouldBe }
     / { ('でした' / 'だった') XPast? #Past }
+    / { ('です' / 'だ' !'け') XBase? #Base }
 
 IsMood = &[でだ] Be / MayBe
 
