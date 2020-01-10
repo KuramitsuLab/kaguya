@@ -15,8 +15,8 @@ Chunk =
     / Adverb       // 副詞
     / Measure      // 助数詞
     / Adnominal    // 連体詞は先, 「多くの人」が形容詞にマッチする
-    / AdjectiveChunk  // 形容詞節
     / NounChunk0   // 優先名詞チャンク　「組み合わせ」を先にする
+    / AdjectiveChunk  // 形容詞節
     / VerbChunk    // 動詞節
     / NounChunk    // 名詞節, 形容動詞節
     / Conjunction  // 接続詞 優先度を下げる
@@ -24,7 +24,10 @@ Chunk =
 // 接辞
 
 // 主格　Aは,   結果のもっとも
-Subject = { ('こそ' / !'もっとも' [はがも]) There? #Subject }  
+Subject = { 
+    ('こそ' / !'もっとも' !'もの' [はがも]) 
+    There? #Subject 
+}
 
 // 所有格 の
 OfCase = 
@@ -200,9 +203,9 @@ Adnominal = {
 */
 
 NounChunk0 = {
-    VerbalNoun 
+    VerbalNoun (XNoun / TEN / EOF)
+    / DictNoun XNoun?
     // 「組み込み」ますのように動詞でないことを保証する
-    (XNoun / TEN / EOF)
     #NChunk
 }
 
@@ -265,10 +268,10 @@ PatNoun = {
 }
 
 // XVERB 以外の名詞の接尾詞
-XNOUN = @choice('cjdic/XNOUN.txt')
+XNOUN = !'らしい' @choice('cjdic/XNOUN.txt')
 
 DictNoun = {
-    @choice('cjdic/NOUN.txt') / @choice('cjdic/NOUNADJ.txt') 
+    @choice('cjdic/NOUN.txt') / @choice('cjdic/NOUNADJ.txt') XNOUN?
     #Noun
 }
 
