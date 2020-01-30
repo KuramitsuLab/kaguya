@@ -6,18 +6,21 @@ from pathlib import Path
 import unicodedata
 import subprocess
 import shutil
-from pegpy.main import *
+import platform
+import copy
+from pegpy_old.main import *
 
 sys.setrecursionlimit(2**31-1)
 
 # sub functions for test()
 def txt2array(path):
+    import random
     s = ''
     with open(path, mode='r', encoding='utf_8') as f:
         s = f.read()
     s = re.sub(r'[ ]', '', s)  # スペースの除去は入力文字列にあわせて適宜行う方がよいかも
-    # s = re.sub(r'[。]', '。\n', s)
-    return list(filter(lambda x: not x == '', set(s.split('\n'))))[1:]
+    return list(filter(lambda x: not x.strip() == '', set(s.split('\n')[1:])))
+    # return random.sample(list(filter(lambda x: not x.strip() == '', set(s.split('\n')[1:]))), 100)
 
 
 def write_result(fpath, results):
@@ -26,12 +29,17 @@ def write_result(fpath, results):
         print('Now Caching Result')
         for cnt, ast in results:
             OKorNG = 'NG' if ast.tag == 'err' else 'OK'
+            if ast.tag == 'err':
+                third = f'{ast.inputs[ast.epos:]}\n'
+            else:
+                try:
+                    third = f'{repr(ast)}\n'
+                except Exception as e:
+                    third = f'Error in repr(ast)\n'
+                    OKorNG = 'NG'
             s += f'{cnt},{OKorNG}\n'
             s += f'{ast.inputs}\n'
-            if ast.tag == 'err':
-                s += f'{ast.inputs[ast.epos:]}\n'
-            else:
-                s += f'{repr(ast)}\n'
+            s += third
         print('Now Writing Result')
         f.write(s)
 
@@ -78,21 +86,22 @@ digraph sample {
 
 
 def escape(s):
-        after = ''
-        META_LITERAL = ['\\', '"']
-        for c in s:
-            if c in META_LITERAL:
-                after += f'\\{c}'
-            else:
-                after += c
-        return after
+    after = ''
+    META_LITERAL = ['\\', '"']
+    for c in s:
+        if c in META_LITERAL:
+            after += f'\\{c}'
+        else:
+            after += c
+    return after
 
 
 def bottom_check(s):
+    if platform.system() == 'Darwin':
         for c in s:
             if unicodedata.east_asian_width(c) in ['W', 'F', 'H']:
                 return ', labelloc = "bottom"'
-        return ''
+    return ''
 
 
 def make_dict(t, d, nid):
@@ -150,61 +159,121 @@ def make_dir(dn):
             sys.exit()
 
 
+def gen_mecab_parsed(sentences):
+    import scripts
+    s_list = []
+    m = scripts.MeCab.Tagger()
+    TOTAL = len(sentences)
+    for i,s in enumerate(sentences):
+        print(f'\r{i+1}/{TOTAL}', end='')
+        res = scripts.MecabToken.fromParsedData(m.parse(s))
+        _sub = []
+        skip_token = False
+        for i,t in enumerate(res):
+            if skip_token:
+                skip_token = False
+                continue
+            if t.word in ['、', '。', '！']:
+                continue
+            if t.is_noun() and i+1 < len(res) and res[i+1].is_suru():
+                _sub.append(('#VERB', f'{str(t)}{str(res[i+1])}'))
+                skip_token = True
+            else:
+                _sub.append(t.convert2tag())
+        s_list.append(_sub)
+    return s_list
+
+
 def leaf2token(word, nodes):
     NON_UTILIZE = {
-        'Noun': '名詞',
-        'Block': '名詞',
-        'Postp': '助詞',
-        'Adnominal': '連体詞',
-        'Adverb': '副詞',
-        'Conjunction': '接続詞',
-        'Interjection': '感動詞',
-        'Sentence': 'TEN'
+        'Noun': '#NOUN',
+        'Postp': '#POSTP',
+        'Adnominal': '#ADNM',
+        'Adverb': '#ADV',
+        'Conjunction': '#CONJ',
+        'Interjection': '#INTJ',
     }
     if   nodes[-1].startswith('ADJV'):
-        return f'{word} (形容動詞)'
+        tag = '#ADJV'
     elif nodes[-1].startswith('ADJ'):
-        return f'{word} (形容詞)'
+        tag = '#ADJ'
     elif nodes[-1].startswith('P_'):
-        return f'{word} (助詞)'
+        tag = '#POSTP'
     elif nodes[-1].startswith('AUX'):
-        return f'{word} (助動詞)'
+        tag = '#AUXVERB'
     elif nodes[-1].startswith('V'):
-        return f'{word} (動詞)'
+        tag = '#VERB'
+    elif nodes[-1] in NON_UTILIZE:
+        tag = f'{NON_UTILIZE[nodes[-1]]}'
     else:
-        return f'{word} ({NON_UTILIZE[nodes[-1]]})'
+        tag  = f'#{nodes[-1]}'
+    return (tag, word)
 
 
-def gen_compare(ast, count):
+def ast2list(ast):
     def make_words(tree, words, nodes):
         if len(tree.subs()) == 0:
             leaf = str(tree)
-            current = [tree.tag] if tree.tag != '' else []
-            words.append(leaf2token(leaf, nodes+current))
+            if leaf in ['', '、', '。', '！']:
+                pass
+            else:
+                current = [tree.tag] if tree.tag != '' else []
+                words.append(leaf2token(leaf, nodes+current))
         else:
             for i, (_, child) in enumerate(tree.subs()):
                 current = [tree.tag] if tree.tag != '' else []
                 make_words(child, words, nodes+current)
-
-    words = [f'No_{count}']
+    words = []
     make_words(ast, words, [])
     return words
 
 
-def test(target, grammar):
-    options = parse_options(['-g', str(grammar)])
+def compare_gk_mecab(sentences, gk_result):
+    mp = [gen_mecab_parsed(sentences)]  # tpl[1]: 単語のみ比較
+    mp.append(copy.deepcopy(mp[0]))     # tpl   : 単語と品詞を比較
+    total_sentence, total_token = 0, 0
+    no_diff_sentence, diff_token = [0, 0], [0, 0]
+    s = ['','']
+    for ln, ast in gk_result:
+        if ast.tag != 'err':
+            total_sentence += 1
+            total_token += len(mp2[ln-1])
+            for t in ast2list(ast):
+                for mt in mp[0][ln-1]:
+                    if t[1] == mt[1]:
+                        mp[0][ln-1].remove(mt)
+                        break
+                if t in mp2[ln-1]:
+                    mp2[ln-1].remove(t)
+            for i in range(2):
+                if len(mp[i][ln-1]) > 0:
+                    s[i] += '\n'.join(map(lambda tpl: f'{tpl[0]}, {tpl[1]}', mp[i][ln-1])) + '\n'
+                    diff_token[i] += len(mp[i][ln-1])
+                else:
+                    no_diff_sentence[i] += 1
+    with open('compare_log.txt', 'w', encoding='utf_8') as f:
+        f.write('【単語】\n'+s[0]+'\n【単語と品詞】\n'+s[1][:-1])
+    print('\n【単語】')
+    print(f'Amount of accurate sentence: {no_diff_sentence[0]} / {total_sentence}')
+    print(f'Amount of accurate token   : {total_token - diff_token[0]} / {total_token}')
+    print('【単語と品詞】')
+    print(f'Amount of accurate sentence: {no_diff_sentence[1]} / {total_sentence}')
+    print(f'Amount of accurate token   : {total_token - diff_token[1]} / {total_token}')
+
+
+
+def test(opt):
+    options = parse_options(['-g', str(opt['-g'])])
     peg = load_grammar(options)
     parser = generator(options)(peg, **options)
     results = []
-    # compare_words = []
     fail_cnt = 0
 
-    input_list = txt2array(target)
     Path('test/result').mkdir(parents=True, exist_ok=True)
 
     START = time.time()
-    for count, s in enumerate(input_list):
-        sys.stdout.write(f'\rNow Processing: {count+1}/{len(input_list)}')
+    for count, s in enumerate(opt['inputs']):
+        sys.stdout.write(f'\rNow Processing: {count+1}/{len(opt["inputs"])}')
         try:
             tree = parser(s)
         except Exception as e:
@@ -212,14 +281,11 @@ def test(target, grammar):
         if tree.tag == 'err':
             fail_cnt += 1
         results.append((count+1, tree))
-        # compare_words += gen_compare(tree, count)
         sys.stdout.flush()
     print()
-    write_result(f'test/result/{target.stem}_{grammar.stem}.txt', results)
-    # with open(f'test/result/{target.stem}_for_compare.txt', mode='w', encoding='utf_8') as f:
-    #     f.write('\n'.join(compare_words))
+    write_result(f'test/result/{opt["-t"].stem}_{opt["-g"].stem}.txt', results)
     END = time.time() - START
-    TOTAL = len(input_list)
+    TOTAL = len(opt['inputs'])
     print(f'SUCCESS RATE  : {TOTAL-fail_cnt}/{TOTAL} => {round(100*(TOTAL-fail_cnt)/TOTAL, 3)}[%]')
     print(f'TEST EXECUTION TIME: {round(END, 3)}[sec]')
     return results
@@ -229,24 +295,30 @@ def main(args):
     def arg2dict(d, l):
         if len(l) < 1:return 0
         head = l.pop(0)
-        if head in ['-t', '-g']:
+        if head == '-t':
+            d[head] = Path(l.pop(0))
+            d['inputs'] = txt2array(d[head])
+            arg2dict(d, l)
+        elif head in ['-g']:
             d[head] = Path(l.pop(0))
             arg2dict(d, l)
-        elif head in ['-Graph', '-Log']:
+        elif head in ['-Graph', '-Log', '-Compare']:
             d[head] = True
             arg2dict(d, l)
         else:
             print(f'Invalid argument: {head}')
             sys.exit()
-    
+
     options = {
-        '-t': None,
-        '-g': None,
+        '-t': '<TEXT PATH>',
+        '-g': '<GRAMMAR PATH>',
         '-Graph': False,
         '-Log': False,
+        '-Compare': False,
+        'inputs': [],
     }
     arg2dict(options, args)
-    results = test(options['-t'], options['-g'])
+    results = test(options)
     if options['-Log']:
         print_err(results)
     if options['-Graph']:
@@ -256,19 +328,18 @@ def main(args):
             sys.exit()
         else:
             MAX_COUNT = len(results)
-            FILE_NAME = options['-t'].stem
-            GRAMMAR_NAME = options['-g'].stem
-            make_dir(f'graph_{FILE_NAME}_{GRAMMAR_NAME}')
-            START = time.time()
+            DIR_NAME = f'graph_{options["-t"].stem}_{options["-g"].stem}'
+            make_dir(DIR_NAME)
+            st = time.time()
             for count, (ln, ast) in enumerate(results):
                 sys.stdout.write(f'\rNow Processing: {count+1}/{MAX_COUNT}')
-                gen_graph(ast, f'graph_{FILE_NAME}_{GRAMMAR_NAME}/{count}.png')
+                gen_graph(ast, f'{DIR_NAME}/{count}.png')
                 sys.stdout.flush()
-            print()
-            END = time.time() - START
-            print(f'GEN_GRAPH EXECUTION TIME: {END}[sec]')
-
+            et = time.time() - st
+            print(f'\nGEN_GRAPH EXECUTION TIME: {et}[sec]')
+    if options['-Compare']:
+        compare_gk_mecab(options['inputs'], results)
 
 if __name__ == "__main__":
-    # python tester.py -t test/javadoc.txt -g gk.tpeg -Graph -Log
+    # e.g.) python tester.py -t test/javadoc.txt -g gk.tpeg -Graph -Log
     main(sys.argv[1:])

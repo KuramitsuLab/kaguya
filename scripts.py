@@ -7,7 +7,7 @@ from pathlib import Path
 from bs4 import BeautifulSoup
 import requests
 import MeCab
-from pegpy.main import *
+from pegpy_old.main import *
 import matplotlib.pyplot as plt
 import matplotlib.ticker as ticker
 from matplotlib import rcParams
@@ -16,14 +16,14 @@ rcParams['font.sans-serif'] = ['Hiragino Maru Gothic Pro', 'Yu Gothic', 'Meirio'
 
 
 FP = Path(__file__).resolve().parent
-NEOLOGD_PATH = Path('/Users/xps/Documents/mecab-dic/neolog/mecab-ipadic-neologd')  # winPC
-# NEOLOGD_PATH = Path('/usr/local/lib/mecab/dic/mecab-ipadic-neologd')  # macbook
-UNIDIC_PATH = Path('/Users/xps/Documents/mecab-dic/unidic-cwj-2.3.0')
+DICT = {
+  "neologd_win": Path('/Users/xps/Documents/mecab-dic/neolog/mecab-ipadic-neologd'),  # winPC
+  "neologd_mac": Path('/usr/local/lib/mecab/dic/mecab-ipadic-neologd'),  # macbook
+  "unidic": Path('/Users/xps/Documents/mecab-dic/unidic-cwj-2.3.0'),
+}
+
 LOG_PATH = FP/'analyze_log'
 LOG_PATH.mkdir(exist_ok=True)
-
-# DIC_PATH = NEOLOGD_PATH
-DIC_PATH = UNIDIC_PATH
 
 
 class MecabToken():
@@ -53,6 +53,43 @@ class MecabToken():
   def get_key_list(self):
     return [self.品詞, self.品詞細分1, self.品詞細分2, self.品詞細分3, self.活用型, self.活用形, self.原形, self.読み, self.発音]
 
+  def is_noun(self):
+    if self.品詞 in ['名詞', '代名詞', '記号', '接頭詞', '接尾辞', '補助記号', '形状詞']:
+      return True
+    else:
+      return False
+
+  def is_suru(self):
+    if self.品詞 == '動詞' and self.活用型 in ['サ変・スル', 'サ変・ズル']:
+      return True
+    else:
+      return False
+
+  def convert2tag(self):
+    if self.品詞 in ['名詞', '代名詞', '記号', '接頭詞', '接尾辞', '補助記号', '形状詞']:
+      tag = 'NOUN'
+    elif self.品詞 in ['動詞']:
+      tag = 'VERB'
+    elif self.品詞 in ['形容詞']:
+      tag = 'ADJ'
+    elif self.品詞 in ['副詞']:
+      tag = 'ADV'
+    elif self.品詞 in ['形容動詞']:
+      tag = 'ADJV'
+    elif self.品詞 in ['助詞']:
+      tag = 'POSTP'
+    elif self.品詞 in ['接続詞']:
+      tag = 'CONJ'
+    elif self.品詞 in ['感動詞']:
+      tag = 'INTJ'
+    elif self.品詞 in ['連体詞']:
+      tag = 'ADNM'
+    elif self.品詞 in ['助動詞']:
+      tag = 'AUXVERB'
+    else:
+      return ('#ERR', f'{self.__repr__()}')
+    return (f'#{tag}', f'{self.word}')
+
   def fromParsedData(pd):
     tokens = []
     for line in pd.split('\n')[:-2]:
@@ -67,7 +104,10 @@ class MecabToken():
 
 
 class Statistics():
-  def __init__(self):
+  def __init__(self, _title):
+    self.title = _title  # 何の解析か、e.g. python, javadoc
+    self.log_path = Path(FP/f'analyze_log_{_title}')
+    Path(FP/f'analyze_log_{_title}').mkdir(exist_ok=True)
     self.token_amount_of_sentence = []  # indexが読点の数で、valueは文の構成トークン数を追加していく配列
     self.count_of = {}  # 品詞情報を入れていく、keyがMeCabの単語情報でvalueが{size: keyに当てはまる単語数, data: さらに細分化したデータ}
     # MeCabの品詞情報で"*"にまとめられてしまう「名詞、記号、感動詞」は個別に集計する
@@ -170,21 +210,21 @@ class Statistics():
         return [f'{d["data"]}']
 
     # 各MeCabトークンの出現回数の計測結果の書き出し
-    with open(LOG_PATH/'count_of.json', 'w', encoding='utf_8') as f:
+    with open(self.log_path/'count_of.json', 'w', encoding='utf_8') as f:
       json.dump(self.count_of, f, ensure_ascii=False)
-    with open(LOG_PATH/'count_of.tsv', 'w', encoding='utf_8') as f:
+    with open(self.log_path/'count_of.tsv', 'w', encoding='utf_8') as f:
       f.write('\n'.join(make_tsv({'data': self.count_of})))
     # 名詞辞書の作成
-    with open(LOG_PATH/'JavadocNoun.txt', 'w', encoding='utf_8') as f:
+    with open(self.log_path/'list_of_noun.csv', 'w', encoding='utf_8') as f:
       f.write('\n'.join(list(map(lambda tpl:f'{tpl[0]},{tpl[1]}', sorted(self.set_of_Noun.items(), key=lambda kv: kv[1], reverse=True)))))
     # 助詞辞書の作成
-    with open(LOG_PATH/'JavadocSymbol.txt', 'w', encoding='utf_8') as f:
+    with open(self.log_path/'list_of_symbol.csv', 'w', encoding='utf_8') as f:
       f.write('\n'.join(list(map(lambda tpl:f'{tpl[0]},{tpl[1]}', sorted(self.set_of_Symbol.items(), key=lambda kv: kv[1], reverse=True)))))
     # 動詞辞書の作成
-    with open(LOG_PATH/'JavadocIntj.txt', 'w', encoding='utf_8') as f:
+    with open(self.log_path/'list_of_intj.csv', 'w', encoding='utf_8') as f:
       f.write('\n'.join(list(map(lambda tpl:f'{tpl[0]},{tpl[1]}', sorted(self.set_of_Intj.items(), key=lambda kv: kv[1], reverse=True)))))
     # 文の統計情報の書き出し
-    with open(LOG_PATH/'token_amount_of_sentence.txt', 'w', encoding='utf_8') as f:
+    with open(self.log_path/'token_amount_of_sentence.txt', 'w', encoding='utf_8') as f:
       s = '# 文の統計\n'
       token_amount_rate = []
       comma_rate_label, comma_rate_data = [], []
@@ -216,7 +256,7 @@ class Statistics():
       plt.title('1文に含まれる単語数ごとの文の数（読点の数ごとに区別）')
       plt.xlabel('単語数')
       plt.ylabel('文の数')
-      plt.savefig(LOG_PATH/'token_amount_each_comma.png')
+      plt.savefig(self.log_path/'token_amount_each_comma.png')
       # 単語数の割合（読点は関係なし）
       plt.figure()
       plt.gca().get_xaxis().set_major_locator(ticker.MaxNLocator(integer=True))
@@ -228,16 +268,16 @@ class Statistics():
       plt.title('1文に含まれる単語数ごとの文の数')
       plt.xlabel('単語数')
       plt.ylabel('文の数')
-      plt.savefig(LOG_PATH/'token_amount.png')
+      plt.savefig(self.log_path/'token_amount.png')
       # 読点の数の割合、円グラフ
       plt.figure()
       plt.gca().get_xaxis().set_major_locator(ticker.MaxNLocator(integer=True))
       plt.pie(comma_rate_data, labels=comma_rate_label, counterclock=False, startangle=90)
       plt.tight_layout()
-      plt.savefig(LOG_PATH/'comma_rate.png')
+      plt.savefig(self.log_path/'comma_rate.png')
       f.write(s)
     # 文型の分類結果と、その他に分類された文の書き出し
-    with open(LOG_PATH/'sentence_analyze.txt', 'w', encoding='utf_8') as f:
+    with open(self.log_path/'sentence_analyze.txt', 'w', encoding='utf_8') as f:
       s = ''
       for k,v in self.sentence_type.items():
         s += f'{k}: {v}文\n'
@@ -255,7 +295,7 @@ class Statistics():
     plt.pie(data, labels=label, counterclock=False, startangle=90, autopct='%1.1f%%')
     plt.title('品詞の出現割合（単語数の割合）')
     plt.tight_layout()
-    plt.savefig(LOG_PATH/'hinshi_rate.png')
+    plt.savefig(self.log_path/'hinshi_rate.png')
     # 助動詞の連続回数の統計
     plt.figure()
     label = []
@@ -266,10 +306,20 @@ class Statistics():
     plt.pie(data, labels=label, counterclock=False, startangle=90, autopct='%1.1f%%')
     plt.title('助動詞の連続回数の割合')
     plt.tight_layout()
-    plt.savefig(LOG_PATH/'aux_len_rate.png')
+    plt.savefig(self.log_path/'aux_len_rate.png')
 
 
-def parse_ast(file_path):
+def mecab_parser(d):
+  if d in DICT and DICT[d].exists():
+    d_path = f' -d {DICT[d]}'
+    print(f'Use {d}')
+  else:
+    print('Use ipa')
+    d_path = ''
+  return MeCab.Tagger(d_path)
+
+
+def parse_ast(file_path, write_log=False):
   def have_err(tree):
     if tree.tag == 'Tag' and str(tree) == 'err':
       return True
@@ -300,10 +350,12 @@ def parse_ast(file_path):
           err_list.append(input_text)
           err_list.append(tree_text)
   print(f'\n#err rate: {err}/{AMOUNT} => {round(100*err/AMOUNT, 3)}[%]')
-  with open(f'err_list_of_{fp.stem}.txt', 'w', encoding='utf_8') as f:
-    f.write('\n'.join(err_list))
+  if write_log:
+    with open(f'err_list_of_{fp.stem}.txt', 'w', encoding='utf_8') as f:
+      f.write('\n'.join(err_list))
 
 
+# generate err case sentence file from `test/result/*.txt`
 def extract_err_sentence(file_path):
   fp = Path(file_path)
   with open(file_path, 'r', encoding='utf_8') as f:
@@ -317,14 +369,13 @@ def extract_err_sentence(file_path):
       tree_text = lines.pop(0)
       if is_success == 'NG':
         err_list.append(input_text)
-  with open(f'err_cases_{fp.stem}.txt', 'w', encoding='utf_8') as f:
+  with open(f'test/err_cases_{fp.stem}.txt', 'w', encoding='utf_8') as f:
     f.write('\n'.join(err_list))
 
 
 # MeCab Tester
-def mecab():
-  dict_path = f' -d {DIC_PATH}' if DIC_PATH.exists() else ''
-  m = MeCab.Tagger(dict_path)
+def mecab(d='ipa'):
+  m = mecab_parser(d)
   while True:
     try:
       s = input('>> ')
@@ -338,52 +389,183 @@ def mecab():
       print(e)
 
 
-def noun_check():
-  result = {
-    'Code': 0,
-    'ひらがなのみ': 0,
-    'カタカナのみ': 0,
-    '漢字のみ': 0,
-    'ひらがな以外': 0,
-    'ひらがな含む': 0,
-    'その他': 0
+# MeCab Tester
+def gen_noun(fp, d='ipa'):
+  m = mecab_parser(d)
+  target = Path(fp)
+  nouns = set([])
+  with open(target, 'r', encoding='utf_8') as f:
+    all_sentences = f.read().split('\n')[1:]
+    sentences = list(set(all_sentences))
+  TOTAL = len(sentences)
+  for i,s in enumerate(sentences):
+    print(f'\r{i+1}/{TOTAL}', end='')
+    res = MecabToken.fromParsedData(m.parse(s))
+    for t in res:
+      if t.is_noun():
+        nouns.add(str(t))
+  with open(f'dic/Noun_{target.stem}.txt', 'w', encoding='utf_8') as f:
+    f.write('\n'.join(list(nouns)))
+
+
+def gen_xverb():
+  verbs = {
+    'VERB5KA': 'き',
+    'VERB5SA': 'し',
+    'VERB5TA': 'ち',
+    'VERB5NA': 'に',
+    'VERB5MA': 'み',
+    'VERB5RA': 'り',
+    'VERB5WA': 'い',
+    'VERB5GA': 'ぎ',
+    'VERB5BA': 'び',
+    'SAHEN_SURU': 'し',
+    'SAHEN_ZURU': 'じ',
+    'VERB1': '',
   }
-  with open(LOG_PATH/'JavadocNoun.txt', 'r', encoding='utf_8') as f:
-    csv = f.read()
-  TOTAL = len(csv)
-  for line in csv:
-    noun = line.split(',')
-    if len(noun) > 2:
-      print(f'Invalid Noun: {noun}')
-    else:
-      noun = noun[0]
-      if   re.fullmatch(r'[A-Za-z0-9.(){}, +\-*/%\\]+', noun):
-        result['Code'] += 1
-      elif re.fullmatch(r'[ぁ-ん]+', noun):
-        result['ひらがなのみ'] += 1
-      elif re.fullmatch(r'[ァ-ヶー・]+', noun):
-        result['カタカナのみ'] += 1
-      elif re.fullmatch(r'[㐀-䶵一-龠々〇〻ーご]+', noun):
-        result['漢字のみ'] += 1
-      elif not re.search(r'[ぁ-ん]', noun):
-        result['ひらがな以外'] += 1
-      elif re.serch(r'[ぁ-ん]', noun):
-        result['ひらがな含む'] += 1
-      else:
-        result['その他'] += 1
-  with open(LOG_PATH/'noun_detail.txt', 'w', encoding='utf_8') as f:
-    s = ''
-    for k,v in result.items():
-      s += f'{k}: {v}個: {round(100*v/TOTAL, 3)}%\n'
+  s = ''
+  for k,v in verbs.items():
+    with open(f'dic/Verb/{k}.txt', 'r', encoding='utf_8') as f:
+      s += '\n'.join(map(lambda w: w+v, f.read().split('\n')))
+  with open('cjdic/XVERB_ALL.txt', 'w', encoding='utf_8') as f:
     f.write(s)
 
 
+def culc_dict():
+  dic_cj3_fix = {
+    'cjdic/CONJ.txt': False,
+    'cjdic/ADVERB.txt': False,
+    'cjdic/ADVERB_NOUN.txt': False,
+    'cjdic/UNIT.txt': True,
+    'cjdic/NONUNIT.txt': False,
+    'cjdic/ADNOUN.txt': False,
+    'cjdic/XVERB.txt': True,
+    'cjdic/XNOUN.txt': True,
+    'cjdic/NOUN.txt': True,
+    'cjdic/NOUNADJ.txt': True,
+    'dic/Verb/VERB5KA.txt': False,
+    'dic/Verb/VERB5SA.txt': False,
+    'dic/Verb/VERB5TA.txt': False,
+    'dic/Verb/VERB5NA.txt': False,
+    'dic/Verb/VERB5MA.txt': False,
+    'dic/Verb/VERB5RA.txt': False,
+    'dic/Verb/VERB5WA.txt': False,
+    'dic/Verb/VERB5GA.txt': False,
+    'dic/Verb/VERB5BA.txt': False,
+    'dic/Verb/VERB1.txt': False,
+    'dic/ADJ.txt': False,
+  }
+  dic_gk1 = {
+    'dic/TestNoun.txt': True,
+    'dic/Verb/VERB5KA.txt': False,
+    'dic/Verb/VERB5SA.txt': False,
+    'dic/Verb/VERB5TA.txt': False,
+    'dic/Verb/VERB5NA.txt': False,
+    'dic/Verb/VERB5MA.txt': False,
+    'dic/Verb/VERB5RA.txt': False,
+    'dic/Verb/VERB5WA.txt': False,
+    'dic/Verb/VERB5GA.txt': False,
+    'dic/Verb/VERB5BA.txt': False,
+    'dic/Verb/VERB1.txt': False,
+    'dic/Verb/KAHEN.txt': False,
+    'dic/Verb/SAHEN_SURU.txt': False,
+    'dic/Verb/SAHEN_ZURU.txt': False,
+    'dic/ADJ.txt': False,
+    'dic/ADJV.txt': False,
+    'dic/POSTP.txt': False,
+    'dic/ADNM.txt': False,
+    'dic/ADV.txt': False,
+    'dic/CONJ.txt': False,
+    'dic/INTJ.txt': False,
+  }
+
+  def get_size_amoun(l):
+    import os.path as op
+    size = [0, 0]  # Noun, All
+    token = [0, 0]  # Noun, All
+    for (_p, is_noun) in l.items():
+      p = Path(_p)
+      _size = op.getsize(p)
+      with open(p, 'r', encoding='utf_8') as f:
+        _token = len(f.read().split('\n'))
+      if is_noun:
+        size[1] += _size
+        token[1] += _token
+      size[0] += _size
+      token[0] += _token
+    print(f'<Only Noun> Tokens: {token[1]}, Size: {size[1]//1024} [KB]')
+    print(f'<All  Dict> Tokens: {token[0]}, Size: {size[0]//1024} [KB]')
+  print('@@ dict of gk1')
+  get_size_amoun(dic_gk1)
+  print('@@ dict of cj3_fix')
+  get_size_amoun(dic_cj3_fix)
+
+
+def noun_check(target_csv, min_amount=0, with_plt=False):
+  result = {
+    '英数字記号のみ': [],
+    'ひらがなのみ': [],
+    'カタカナのみ': [],
+    '漢字のみ': [],
+    'ひらがな以外の混合': [],
+    'ひらがなを含む混合': [],
+    'その他': []
+  }
+  csv_path = Path(target_csv)
+  with open(csv_path, 'r', encoding='utf_8') as csv:
+    total = 0
+    each_amount = []
+    label = []
+    for line in csv.read().split('\n'):
+      noun = line.split(',')
+      if len(noun) > 2:
+        print(f'Invalid Noun: {noun}')
+      else:
+        n = noun[0]
+        amount = int(noun[1])
+        if amount < int(min_amount):
+          break
+        total += 1
+        each_amount.append(amount)
+        label.append(n)
+        if   re.fullmatch(r'[A-Za-z0-9.(){}, +\-*/%\\]+', n):
+          result['英数字記号のみ'].append(n)
+        elif re.fullmatch(r'[ぁ-ん]+', n):
+          result['ひらがなのみ'].append(n)
+        elif re.fullmatch(r'[ァ-ヶー・]+', n):
+          result['カタカナのみ'].append(n)
+        elif re.fullmatch(r'[㐀-䶵一-龠々〇〻ーご]+', n):
+          result['漢字のみ'].append(n)
+        elif not re.search(r'[ぁ-ん]', n):
+          result['ひらがな以外の混合'].append(n)
+        elif re.search(r'[ぁ-ん]', n):
+          result['ひらがなを含む混合'].append(n)
+        else:
+          result['その他'].append(n)
+
+  with open(csv_path.parent/'noun_detail.csv', 'w', encoding='utf_8') as f:
+    s = 'KEY,RATE,AMOUNT\n'
+    for k,v in result.items():
+      s += f'{k},{round(100*len(v)/total, 3)},{len(v)}\n'
+      with open(csv_path.parent/f'{k}.txt', 'w', encoding='utf_8') as ff:
+        ff.write('\n'.join(v))
+    f.write(s)
+
+  with_plt = bool(with_plt)
+  if with_plt:
+    plt.figure(figsize=(15,total//5), dpi=80)
+    plt.barh(list(range(total)), list(reversed(each_amount)), tick_label=list(reversed(label)), align='center')
+    plt.grid(which='both', axis='x', color='blue', alpha=0.8, linestyle='--')
+    plt.gca().xaxis.set_minor_locator(ticker.MultipleLocator(500))
+    plt.savefig(csv_path.parent/'noun_distribution.png', bbox_inches='tight', pad_inches=1)
+
+
 # Sentence Text -> Statistic -> Log
-def analyze():
-  dict_path = f' -d {DIC_PATH}' if DIC_PATH.exists() else ''
-  m = MeCab.Tagger(dict_path)
-  st = Statistics()
-  with open(FP/'test'/'javadoc.txt', 'r', encoding='utf_8') as f:
+def analyze(target, d='ipa'):
+  f = Path(target)
+  m = mecab_parser(d)
+  st = Statistics(f.stem)
+  with open(FP/'test'/f.name, 'r', encoding='utf_8') as f:
     all_sentences = f.read().split('\n')
     sentences = list(set(all_sentences))
   TOTAL = len(sentences)
@@ -429,7 +611,6 @@ def listen_choice():
 
 # HTML -> Sentence Text
 def gen_sentence():
-  (title, slct, f_dom, f_inner) = listen_choice()
   def extract_text(html, selectors, for_dom=lambda x: x, for_inner=lambda x: x):
     ss, err = [], []
     soup = BeautifulSoup(html, 'html.parser')
@@ -438,8 +619,6 @@ def gen_sentence():
       txt_list += soup.select(s)
     for i,t in enumerate(txt_list):
       for_dom(t)
-      # for code in t.select('pre'):
-      #   code.decompose()
       for s in for_inner(t.get_text()).split('\u3002'):
         s = s.strip()
         if not re.fullmatch(r'[\u0020\u3002\u000a-\u000d]*', s):
@@ -449,6 +628,7 @@ def gen_sentence():
             ss.append(f'{s}\u3002')
     return ss, err
 
+  (title, slct, f_dom, f_inner) = listen_choice()
   all_sentence = []
   all_err = []
   files = list((FP/f'{title}_html').glob('*.html'))
