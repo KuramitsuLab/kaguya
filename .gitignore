@@ -4,8 +4,8 @@ test/result/
 graph_*/
 
 test_result/
-java_se_text/
-java_se_html/
+javadoc_*/
+nhk_news_*/
 json_visualize/
 
 ~$*

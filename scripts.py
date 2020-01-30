@@ -58,7 +58,7 @@ class MecabToken():
     for line in pd.split('\n')[:-2]:
       tokens.append(MecabToken(line))
     return tokens
-  
+
   def tokens2sentence(tokens):
     s = ''
     for t in tokens:
@@ -398,17 +398,49 @@ def analyze():
   print(f'Execution Time: {time.time() - START}[sec]')
 
 
+def listen_choice():
+  def remove_dom(selector):
+    def inner(t):
+      for code in t.select(selector):
+        code.decompose()
+    return inner
+
+  setting = [
+    (
+      'javadoc',
+      ['li.blockList div.block'],
+      remove_dom('pre'),
+      lambda x: x
+    ),
+    (
+      'nhk_news',
+      ['div#news_textbody', 'div#news_textmore'],
+      lambda x: x,
+      lambda s: re.sub(r'<br>|<br />', '', s)
+    )
+  ]
+  for s in setting:
+    choice = input(f'Use setting of {s[0]}? (Yy/Nn): ')
+    if choice in 'Yy':
+      return s
+  print('Not selected setting')
+  sys.exit()
+
+
 # HTML -> Sentence Text
 def gen_sentence():
-  def extract_text(html):
-    ss = []
-    err = []
+  (title, slct, f_dom, f_inner) = listen_choice()
+  def extract_text(html, selectors, for_dom=lambda x: x, for_inner=lambda x: x):
+    ss, err = [], []
     soup = BeautifulSoup(html, 'html.parser')
-    txt_list = soup.select('li.blockList div.block')
+    txt_list = []
+    for s in selectors:
+      txt_list += soup.select(s)
     for i,t in enumerate(txt_list):
-      for code in t.select('pre'):
-        code.decompose()
-      for s in t.get_text().split('\u3002'):
+      for_dom(t)
+      # for code in t.select('pre'):
+      #   code.decompose()
+      for s in for_inner(t.get_text()).split('\u3002'):
         s = s.strip()
         if not re.fullmatch(r'[\u0020\u3002\u000a-\u000d]*', s):
           if ('\n' in s):
@@ -419,37 +451,39 @@ def gen_sentence():
 
   all_sentence = []
   all_err = []
-  files = list((FP/'java_se_html').glob('*.html'))
+  files = list((FP/f'{title}_html').glob('*.html'))
   TOTAL = len(files)
-  (FP/'java_se_text').mkdir(exist_ok=True)
-  for i,fname in enumerate(files):
+  (FP/f'{title}_text').mkdir(exist_ok=True)
+  for i, fname in enumerate(files):
     print(f'\rProcessing {i+1}/{TOTAL}', end='')
-    # if i>100:break
     with open(fname, 'r', encoding='utf_8') as f_read:
-      with open(FP/'java_se_text'/f'{fname.stem}.txt', 'w', encoding='utf_8') as f_write:
-        ss, err = extract_text(f_read)
+      with open(FP/f'{title}_text'/f'{fname.stem}.txt', 'w', encoding='utf_8') as f_write:
+        ss, err = extract_text(f_read, slct, f_dom, f_inner)
         f_write.write('\n'.join(ss))
         all_sentence += ss
         all_err += err
   print()
-  with open(FP/'test'/'javadoc.txt', 'w', encoding='utf_8') as f:
-    f.write('\n'.join(sorted(all_sentence, key=len, reverse=True)))
-  with open(FP/'test'/'javadoc_invalids.txt', 'w', encoding='utf_8') as f:
-    f.write(f'\n{"="*60}\n'.join(sorted(all_err, key=len, reverse=True)))
+  header = '# created by scripts\n'
+  with open(FP/'test'/f'{title}.txt', 'w', encoding='utf_8') as f:
+    f.write(header + '\n'.join(sorted(all_sentence, key=len, reverse=True)))
+  if len(all_err) > 0:
+    with open(FP/'test'/f'{title}_invalids.txt', 'w', encoding='utf_8') as f:
+      f.write(header + f'\n{"="*60}\n'.join(sorted(all_err, key=len, reverse=True)))
   print(f'valid: {len(all_sentence)}, invalid: {len(all_err)}')
 
 
 # URL List -> HTML
 def get_html():
+  (title, *_) = listen_choice()
   err_log = []
-  with open(FP/'javadoc_api_urls.json', 'r', encoding='utf_8') as f:
-    class_list = json.load(f)
-  TOTAL = len(class_list)
-  (FP/'java_se_html').mkdir(exist_ok=True)
-  for i, (href, cname) in enumerate(class_list):
+  with open(FP/f'{title}.json', 'r', encoding='utf_8') as f:
+    hrefs = json.load(f)
+  TOTAL = len(hrefs)
+  (FP/f'{title}_html').mkdir(exist_ok=True)
+  for i, (href, fname) in enumerate(hrefs):
     print(f'\rProcessing {i+1}/{TOTAL}: Request', end='')
     try:
-      with open(FP/'java_se_html'/f'{cname}.html', 'w', encoding='utf_8') as f:
+      with open(FP/f'{title}_html'/f'{fname}.html', 'w', encoding='utf_8') as f:
         res = requests.get(href)
         res.encoding = res.apparent_encoding
         f.write(res.text)
