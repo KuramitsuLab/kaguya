@@ -8,9 +8,41 @@ import subprocess
 import shutil
 import platform
 import copy
-from pegpy.main import *
 
 sys.setrecursionlimit(2**31-1)
+
+
+# switch pegpy <-> pegtree
+IS_PEGPY = False
+if IS_PEGPY:
+  from pegpy.main import *
+else:
+  from pegtree.main import *
+
+def get_tag(ast):
+  if IS_PEGPY:
+    return ast.tag
+  else:
+    return ast.tag_
+
+def get_inputs(ast):
+  if IS_PEGPY:
+    return ast.inputs
+  else:
+    return ast.inputs_
+
+def get_epos(ast):
+  if IS_PEGPY:
+    return ast.epos
+  else:
+    return ast.epos_
+
+def is_err(ast):
+  if IS_PEGPY:
+    return ast.tag == 'err'
+  else:
+    return ast.isSyntaxError()
+
 
 # sub functions for test()
 def txt2array(path):
@@ -28,9 +60,9 @@ def write_result(fpath, results):
     s = ''
     print('Now Caching Result')
     for cnt, ast in results:
-      OKorNG = 'NG' if ast.tag == 'err' else 'OK'
-      if ast.tag == 'err':
-        third = f'{ast.inputs[ast.epos:]}\n'
+      OKorNG = 'NG' if is_err(ast) else 'OK'
+      if is_err(ast):
+        third = f'{get_inputs(ast)[get_epos(ast):]}\n'
       else:
         try:
           third = f'{repr(ast)}\n'
@@ -38,7 +70,7 @@ def write_result(fpath, results):
           third = f'Error in repr(ast)\n'
           OKorNG = 'NG'
       s += f'{cnt},{OKorNG}\n'
-      s += f'{ast.inputs}\n'
+      s += f'{get_inputs(ast)}\n'
       s += third
     print('Now Writing Result')
     f.write(s)
@@ -46,9 +78,9 @@ def write_result(fpath, results):
 
 def print_err(results):
   for cnt, ast in results:
-    if ast.tag == 'err':
-      print(f'入力: {ast.inputs}')
-      print(f'残り: {ast.inputs[ast.epos:]}')
+    if is_err(ast):
+      print(f'入力: {get_inputs(ast)}')
+      print(f'残り: {get_inputs(ast)[get_epos(ast):]}')
 
 
 DOT = '''\
@@ -105,7 +137,7 @@ def bottom_check(s):
 
 
 def make_dict(t, d, nid):
-  d['node'].append(f'n{nid} [label="#{t.tag}"]')
+  d['node'].append(f'n{nid} [label="#{get_tag(t)}"]')
   if len(t.subs()) == 0:
     leaf = str(t)
     d['node'].append(f'n{nid}_0 [label="{escape(leaf)}"{bottom_check(leaf)}]')
@@ -119,15 +151,15 @@ def make_dict(t, d, nid):
 
 def gen_dot(t):
   d = {'node': [], 'edge': []}
-  if t.tag == 'err':
-    leaf = escape(t.inputs[t.epos:])
+  if is_err(t):
+    leaf = escape(get_inputs()[get_epos():])
     d['node'].append(f'n0 [label="#Remain"]')
     d['node'].append(f'n0_0 [label="{leaf}"{bottom_check(leaf)}]')
     d['edge'].append(f'n0 -> n0_0')
   else:
     make_dict(t, d, 0)
   context = {
-    'input_text': escape(t.inputs),
+    'input_text': escape(get_inputs()),
     'node_description': ';\n  '.join(d['node']),
     'edge_description': ';\n  '.join(d['edge']),
   }
@@ -224,11 +256,11 @@ def ast2list(ast):
       if leaf in ['', '、', '。', '！']:
         pass
       else:
-        current = [tree.tag] if tree.tag != '' else []
+        current = [get_tag(tree)] if get_tag(tree) != '' else []
         words.append(leaf2token(leaf, nodes+current))
     else:
       for i, (_, child) in enumerate(tree.subs()):
-        current = [tree.tag] if tree.tag != '' else []
+        current = [get_tag(tree)] if get_tag(tree) != '' else []
         make_words(child, words, nodes+current)
   words = []
   make_words(ast, words, [])
@@ -242,7 +274,7 @@ def compare_gk_mecab(sentences, gk_result):
   no_diff_sentence, diff_token = [[], []], [0, 0]
   s = ['','']
   for ln, ast in gk_result:
-    if ast.tag != 'err':
+    if not is_err(ast):
       total_sentence += 1
       total_token += len(mp[1][ln-1])
       for t in ast2list(ast):
@@ -257,11 +289,11 @@ def compare_gk_mecab(sentences, gk_result):
       for i in range(2):
         if len(mp[i][ln-1]) > 0:
           s[i] += '<!-- slide -->\n'
-          s[i] += ast.inputs + '\n'
+          s[i] += get_inputs(ast) + '\n'
           s[i] += 'MeCabRemain: ' + ' '.join(map(lambda tpl: f'({tpl[0]}, {tpl[1]})', mp[i][ln-1])) + '\n\n\n'
           diff_token[i] += len(mp[i][ln-1])
         else:
-          no_diff_sentence[i].append(ast.inputs)
+          no_diff_sentence[i].append(get_inputs(ast))
   with open('private/compare_log.md', 'w', encoding='utf_8') as f:
     f.write('<!-- slide -->\n# 【単語】\n\n\n'+s[0]+'<!-- slide -->\n# 【単語と品詞】\n'+s[1][:-1])
   print('\n【単語】')
@@ -291,7 +323,7 @@ def test(opt):
       tree = parser(s)
     except Exception as e:
       print(e)
-    if tree.tag == 'err':
+    if is_err(tree):
       fail_cnt += 1
     results.append((count+1, tree))
     sys.stdout.flush()

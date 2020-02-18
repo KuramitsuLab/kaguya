@@ -6,13 +6,12 @@ from pathlib import Path
 from bs4 import BeautifulSoup
 import requests
 import MeCab
-from pegpy import *
 import matplotlib.pyplot as plt
 import matplotlib.ticker as ticker
 from matplotlib import rcParams
 rcParams['font.family'] = 'sans-serif'
 rcParams['font.sans-serif'] = ['Hiragino Maru Gothic Pro', 'Yu Gothic', 'Meirio', 'Takao', 'IPAexGothic', 'IPAPGothic', 'VL PGothic', 'Noto Sans CJK JP']
-from tester import txt2array
+from tester import txt2array, get_tag, is_err, parse_options, load_grammar
 
 
 ROOT = Path(__file__).resolve().parent
@@ -320,7 +319,7 @@ class Statistics():
 # parse test/result/*.txt with ast.tpeg
 def parse_result(file_path, write_log=False):
   def have_err(tree):
-    if tree.tag == 'Tag' and str(tree) == 'err':
+    if get_tag(tree) == 'Tag' and is_err(tree):
       return True
     if len(tree.subs()) > 0:
       for _, child in tree.subs():
