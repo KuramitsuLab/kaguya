@@ -13,7 +13,7 @@ sys.setrecursionlimit(2**31-1)
 
 
 # switch pegpy <-> pegtree
-IS_PEGPY = False
+IS_PEGPY = True
 if IS_PEGPY:
   from pegpy.main import *
 else:
