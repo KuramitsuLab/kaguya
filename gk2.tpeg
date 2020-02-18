@@ -874,7 +874,7 @@ Aux_Desyo =
 
 // 話すべき、古語の助動詞「べし」の連体形のみ現代でも使われている
 Aux_Beki =
-    / {'べき' #AUXRentai} (Aux_Desu/Aux_Da2/!!(AfterRentaiPostp))
+    / {'べき' #AUXRentai} (Aux_Desu/Aux_Desyo/Aux_Da2/Aux_Rashii/!!(AfterRentaiPostp))
 
 
 /* 外部辞書の読み込み */

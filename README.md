@@ -30,6 +30,10 @@
 + `cj.tpeg`の改良版？
 
 
+### `cj3.tpeg`
++ `cj2.tpeg`の改良版
+
+
 ### `koinu.tpeg`
 + Puppy用の文法？
 
@@ -37,32 +41,27 @@
 ## Scripts
 
 ### `tester.py`
-+ パーステストを行うプログラム
-+ `python tester.py -t <パース対象のファイル> -g <解析に使う文法ファイル>`で実行する
++ 主にGK文法のパーステストを行うプログラム
++ `python tester.py -t <パース対象のファイル> -g <解析に使う文法ファイル> -n <解析に使う名詞辞書>`で実行する
 + パース結果（テキスト）は、`test/result/<ファイル名>_<文法名>.txt`に出力する
-+ 追加引数`-Graph`でグラフも作る
++ 追加引数`-Graph`でグラフを生成する
   + "Graphviz" の`dot`コマンドを使える必要がある
   + Homebrewが入っていれば`brew install graphviz`でインストールできる
   + `graph/<ファイル名>/<行番号>.png`として図を保存する
 + 追加引数`-Log`でコンソールに解析に失敗した文と残り文字列を表示する
++ `-Compare`でMeCab+IPA辞書との比較を行う
 
 
 ### `scripts.py`
 + `parse_ast`: `ast.tpeg`を使ってresultの解析木をもう一回ツリーに変換する
 + `analyze`: MeCabと辞書を使って`javadoc.txt`を解析していろいろ結果を出力する
 + `get~`: JavaAPIDocumentをダウンロードしてテキスト化する
++ mecab_parseの引数に他の辞書を指定可能
+  + `~~/mecab-ipadic-neologd`
+  + `~~/unidic-cwj-2.3.0`
 
 
 ### `gen_dic.py`
-+ IPA辞書を扱うプログラム
++ IPA辞書からGK文法用の辞書を生成する
 + `dic/`下に各品詞の辞書を、`dic/Verb`下に動詞の辞書を生成する
-+ 辞書には "ipadic-2.7.0" を使用している
 
-
-### `gen_noun.py`
-+ Mecabでテストデータに形態素解析をかけて名詞辞書を生成するプログラム
-
-
-### `all_test.sh`
-+ 文法のテストをまとめて行う
-+ `sh all_test.sh python`で実行すると`test_python`に結果をまとめるはず

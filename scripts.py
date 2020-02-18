@@ -2,28 +2,20 @@ import sys
 import json
 import time
 import re
-from pprint import pprint as pp
 from pathlib import Path
 from bs4 import BeautifulSoup
 import requests
 import MeCab
-from pegpy_old.main import *
+from pegpy import *
 import matplotlib.pyplot as plt
 import matplotlib.ticker as ticker
 from matplotlib import rcParams
 rcParams['font.family'] = 'sans-serif'
 rcParams['font.sans-serif'] = ['Hiragino Maru Gothic Pro', 'Yu Gothic', 'Meirio', 'Takao', 'IPAexGothic', 'IPAPGothic', 'VL PGothic', 'Noto Sans CJK JP']
+from tester import txt2array
 
 
-FP = Path(__file__).resolve().parent
-DICT = {
-  "neologd_win": Path('/Users/xps/Documents/mecab-dic/neolog/mecab-ipadic-neologd'),  # winPC
-  "neologd_mac": Path('/usr/local/lib/mecab/dic/mecab-ipadic-neologd'),  # macbook
-  "unidic": Path('/Users/xps/Documents/mecab-dic/unidic-cwj-2.3.0'),
-}
-
-LOG_PATH = FP/'analyze_log'
-LOG_PATH.mkdir(exist_ok=True)
+ROOT = Path(__file__).resolve().parent
 
 
 class MecabToken():
@@ -54,19 +46,25 @@ class MecabToken():
     return [self.品詞, self.品詞細分1, self.品詞細分2, self.品詞細分3, self.活用型, self.活用形, self.原形, self.読み, self.発音]
 
   def is_noun(self):
-    if self.品詞 in ['名詞', '代名詞', '記号', '接頭詞', '接尾辞', '補助記号', '形状詞']:
-      return True
-    else:
-      return False
+    return self.品詞 in ['名詞', '代名詞', '記号', '接頭詞', '接尾辞', '補助記号']
 
   def is_suru(self):
-    if self.品詞 == '動詞' and self.活用型 in ['サ変・スル', 'サ変・ズル']:
-      return True
-    else:
-      return False
+    return self.品詞 == '動詞' and self.原形 in ['する', 'ずる']
+  
+  def is_adjv(self):
+    return self.品詞細分1 in ['形状詞', '形容動詞語幹']
+
+  def is_suffix_adjv(self):
+    return (self.品詞 == '助動詞' and self.原形 in 'だダ') or (self.品詞 == '助詞' and self.word == 'に')
 
   def convert2tag(self):
-    if self.品詞 in ['名詞', '代名詞', '記号', '接頭詞', '接尾辞', '補助記号', '形状詞']:
+    if self.品詞 in ['名詞', '代名詞', '記号', '補助記号']:
+      tag = 'NOUN'
+    elif self.品詞 in ['接頭詞']:
+      tag = 'NOUN'
+    elif self.品詞 in ['形状詞', '形容動詞語幹']:
+      tag = 'ADJV'
+    elif self.品詞 in ['接尾辞']:
       tag = 'NOUN'
     elif self.品詞 in ['動詞']:
       tag = 'VERB'
@@ -101,13 +99,24 @@ class MecabToken():
     for t in tokens:
       s += t.word
     return s
+  
+  def mecab_parser(d):
+    pd = Path(d)
+    if d != 'ipa' and pd.exists():
+      d_path = f' -d {d}'
+      print(f'Use {pd.stem}')
+    else:
+      print('Use ipa')
+      d_path = ''
+    return MeCab.Tagger(d_path)
 
 
+# get any statistic logs
 class Statistics():
   def __init__(self, _title):
     self.title = _title  # 何の解析か、e.g. python, javadoc
-    self.log_path = Path(FP/f'analyze_log_{_title}')
-    Path(FP/f'analyze_log_{_title}').mkdir(exist_ok=True)
+    self.log_path = Path(ROOT/'private'/f'analyze_log_{_title}')
+    Path(ROOT/'private'/f'analyze_log_{_title}').mkdir(exist_ok=True)
     self.token_amount_of_sentence = []  # indexが読点の数で、valueは文の構成トークン数を追加していく配列
     self.count_of = {}  # 品詞情報を入れていく、keyがMeCabの単語情報でvalueが{size: keyに当てはまる単語数, data: さらに細分化したデータ}
     # MeCabの品詞情報で"*"にまとめられてしまう「名詞、記号、感動詞」は個別に集計する
@@ -183,7 +192,6 @@ class Statistics():
           self.aux_len.append(1)
       elif continuing:
         continuing = False
-
 
   def dist_type(self, tokens):
     if tokens[-1].原形 in ['ある', 'ない']:
@@ -309,17 +317,8 @@ class Statistics():
     plt.savefig(self.log_path/'aux_len_rate.png')
 
 
-def mecab_parser(d):
-  if d in DICT and DICT[d].exists():
-    d_path = f' -d {DICT[d]}'
-    print(f'Use {d}')
-  else:
-    print('Use ipa')
-    d_path = ''
-  return MeCab.Tagger(d_path)
-
-
-def parse_ast(file_path, write_log=False):
+# parse test/result/*.txt with ast.tpeg
+def parse_result(file_path, write_log=False):
   def have_err(tree):
     if tree.tag == 'Tag' and str(tree) == 'err':
       return True
@@ -351,7 +350,7 @@ def parse_ast(file_path, write_log=False):
           err_list.append(tree_text)
   print(f'\n#err rate: {err}/{AMOUNT} => {round(100*err/AMOUNT, 3)}[%]')
   if write_log:
-    with open(f'err_list_of_{fp.stem}.txt', 'w', encoding='utf_8') as f:
+    with open(f'private/err_list_of_{fp.stem}.txt', 'w', encoding='utf_8') as f:
       f.write('\n'.join(err_list))
 
 
@@ -375,7 +374,7 @@ def extract_err_sentence(file_path):
 
 # MeCab Tester
 def mecab(d='ipa'):
-  m = mecab_parser(d)
+  m = MecabToken.mecab_parser(d)
   while True:
     try:
       s = input('>> ')
@@ -389,14 +388,12 @@ def mecab(d='ipa'):
       print(e)
 
 
-# MeCab Tester
+# generate Noun_~.txt from sentence text
 def gen_noun(fp, d='ipa'):
-  m = mecab_parser(d)
+  m = MecabToken.mecab_parser(d)
   target = Path(fp)
   nouns = set([])
-  with open(target, 'r', encoding='utf_8') as f:
-    all_sentences = f.read().split('\n')[1:]
-    sentences = list(set(all_sentences))
+  sentences = txt2array(target)
   TOTAL = len(sentences)
   for i,s in enumerate(sentences):
     print(f'\r{i+1}/{TOTAL}', end='')
@@ -408,29 +405,7 @@ def gen_noun(fp, d='ipa'):
     f.write('\n'.join(list(nouns)))
 
 
-def gen_xverb():
-  verbs = {
-    'VERB5KA': 'き',
-    'VERB5SA': 'し',
-    'VERB5TA': 'ち',
-    'VERB5NA': 'に',
-    'VERB5MA': 'み',
-    'VERB5RA': 'り',
-    'VERB5WA': 'い',
-    'VERB5GA': 'ぎ',
-    'VERB5BA': 'び',
-    'SAHEN_SURU': 'し',
-    'SAHEN_ZURU': 'じ',
-    'VERB1': '',
-  }
-  s = ''
-  for k,v in verbs.items():
-    with open(f'dic/Verb/{k}.txt', 'r', encoding='utf_8') as f:
-      s += '\n'.join(map(lambda w: w+v, f.read().split('\n')))
-  with open('cjdic/XVERB_ALL.txt', 'w', encoding='utf_8') as f:
-    f.write(s)
-
-
+# get size of dictionary (exclude not used dict)
 def culc_dict():
   dic_cj3_fix = {
     'cjdic/CONJ.txt': False,
@@ -501,6 +476,7 @@ def culc_dict():
   get_size_amoun(dic_cj3_fix)
 
 
+# list_of_noun.csv -> rate of each noun group
 def noun_check(target_csv, min_amount=0, with_plt=False):
   result = {
     '英数字記号のみ': [],
@@ -543,13 +519,8 @@ def noun_check(target_csv, min_amount=0, with_plt=False):
         else:
           result['その他'].append(n)
 
-  with open(csv_path.parent/'noun_detail.csv', 'w', encoding='utf_8') as f:
-    s = 'KEY,RATE,AMOUNT\n'
-    for k,v in result.items():
-      s += f'{k},{round(100*len(v)/total, 3)},{len(v)}\n'
-      with open(csv_path.parent/f'{k}.txt', 'w', encoding='utf_8') as ff:
-        ff.write('\n'.join(v))
-    f.write(s)
+  for k,v in result.items():
+    print(f'{k} : {len(v)}単語 : {round(100*len(v)/total, 3)}[%]')
 
   with_plt = bool(with_plt)
   if with_plt:
@@ -563,15 +534,12 @@ def noun_check(target_csv, min_amount=0, with_plt=False):
 # Sentence Text -> Statistic -> Log
 def analyze(target, d='ipa'):
   f = Path(target)
-  m = mecab_parser(d)
+  m = MecabToken.mecab_parser(d)
   st = Statistics(f.stem)
-  with open(FP/'test'/f.name, 'r', encoding='utf_8') as f:
-    all_sentences = f.read().split('\n')
-    sentences = list(set(all_sentences))
+  sentences = txt2array(ROOT/'test'/f.name)
   TOTAL = len(sentences)
   START = time.time()
   for i,s in enumerate(sentences):
-    # if i > 99:break
     print(f'\r{i+1}/{TOTAL}', end='')
     res = MecabToken.fromParsedData(m.parse(s))
     st.add_sentence(res)
@@ -580,6 +548,7 @@ def analyze(target, d='ipa'):
   print(f'Execution Time: {time.time() - START}[sec]')
 
 
+# Used in gen_sentence and get_html
 def listen_choice():
   def remove_dom(selector):
     def inner(t):
@@ -631,39 +600,39 @@ def gen_sentence():
   (title, slct, f_dom, f_inner) = listen_choice()
   all_sentence = []
   all_err = []
-  files = list((FP/f'{title}_html').glob('*.html'))
+  files = list((ROOT/f'{title}_html').glob('*.html'))
   TOTAL = len(files)
-  (FP/f'{title}_text').mkdir(exist_ok=True)
+  (ROOT/f'{title}_text').mkdir(exist_ok=True)
   for i, fname in enumerate(files):
     print(f'\rProcessing {i+1}/{TOTAL}', end='')
     with open(fname, 'r', encoding='utf_8') as f_read:
-      with open(FP/f'{title}_text'/f'{fname.stem}.txt', 'w', encoding='utf_8') as f_write:
+      with open(ROOT/f'{title}_text'/f'{fname.stem}.txt', 'w', encoding='utf_8') as f_write:
         ss, err = extract_text(f_read, slct, f_dom, f_inner)
         f_write.write('\n'.join(ss))
         all_sentence += ss
         all_err += err
   print()
   header = '# created by scripts\n'
-  with open(FP/'test'/f'{title}.txt', 'w', encoding='utf_8') as f:
+  with open(ROOT/'test'/f'{title}.txt', 'w', encoding='utf_8') as f:
     f.write(header + '\n'.join(sorted(all_sentence, key=len, reverse=True)))
   if len(all_err) > 0:
-    with open(FP/'test'/f'{title}_invalids.txt', 'w', encoding='utf_8') as f:
+    with open(ROOT/'test'/f'{title}_invalids.txt', 'w', encoding='utf_8') as f:
       f.write(header + f'\n{"="*60}\n'.join(sorted(all_err, key=len, reverse=True)))
   print(f'valid: {len(all_sentence)}, invalid: {len(all_err)}')
 
 
-# URL List -> HTML
+# URL List (json) -> HTML
 def get_html():
   (title, *_) = listen_choice()
   err_log = []
-  with open(FP/f'{title}.json', 'r', encoding='utf_8') as f:
+  with open(ROOT/f'{title}.json', 'r', encoding='utf_8') as f:
     hrefs = json.load(f)
   TOTAL = len(hrefs)
-  (FP/f'{title}_html').mkdir(exist_ok=True)
+  (ROOT/f'{title}_html').mkdir(exist_ok=True)
   for i, (href, fname) in enumerate(hrefs):
     print(f'\rProcessing {i+1}/{TOTAL}: Request', end='')
     try:
-      with open(FP/f'{title}_html'/f'{fname}.html', 'w', encoding='utf_8') as f:
+      with open(ROOT/f'{title}_html'/f'{fname}.html', 'w', encoding='utf_8') as f:
         res = requests.get(href)
         res.encoding = res.apparent_encoding
         f.write(res.text)
@@ -672,7 +641,7 @@ def get_html():
     print(f'\rProcessing {i+1}/{TOTAL} :Interval', end='')
     time.sleep(1.0)
   print('')
-  with open(FP/'err_log.txt', 'w', encoding='utf_8') as f:
+  with open(ROOT/'err_log.txt', 'w', encoding='utf_8') as f:
     f.write('\n'.join(err_log))
 
 

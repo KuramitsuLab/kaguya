@@ -1,11 +1,10 @@
 ipadic-2.7.0/
-local/
 test/result/
 graph_*/
 
-test_result/
 javadoc_*/
 nhk_news_*/
-json_visualize/
 
 ~$*
+
+private/*

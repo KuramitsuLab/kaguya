@@ -202,7 +202,7 @@ KoSoADo = { [こそあど] 'の' #Adnominal }
 */
 AdverbPhrase = {
       Adverb AuxVerbForAdv PostpPhrase?  // すぐ です ので
-    / Adverb PostpNo !!(Chunk/Eol)  // しばらく の 間
+    / Adverb PostpPhrase !!(Chunk/Eol)  // しばらく の 間
     / Adverb !!(Chunk/Eol)  // もっと
     #AdverbPhrase
 }
@@ -313,7 +313,7 @@ Renyo = {
 /*
 動詞の連用形に連接可能な助動詞群
 */
-AuxV5Renyo = Aux_Tai/Aux_Tagaru/Aux_Souda1/Aux_Masu
+AuxV5Renyo = Aux_Tai/Aux_Tagaru/Aux_Ta/Aux_Souda1/Aux_Masu
 AuxV1Renyo = Aux_Tai/Aux_Tagaru/Aux_Ta/Aux_Souda1/Aux_Masu
 AuxVSaRenyo = Aux_Tai/Aux_Tagaru/Aux_Ta/Aux_Souda1/Aux_Masu
 AuxVKaRenyo = Aux_Tai/Aux_Tagaru/Aux_Ta/Aux_Souda1/Aux_Masu
@@ -606,7 +606,7 @@ Aux_Tai =
     / {'たかろ' #AUXMizen} (Aux_U)
     / {'たかっ' #AUXRenyo} (Aux_Ta)
     / {'たく' #AUXRenyo} (!!(Chunk/Eol/PostpPhrase))
-    / {'たい' #AUXSyushi} (Aux_Souda2/Aux_Rashii/Aux_Daro/Aux_Desyo/!!(Chunk/Eol/PostpPhrase))
+    / {'たい' #AUXSyushi} (Aux_Souda2/Aux_Rashii/Aux_Daro/Aux_Desyo/Aux_Desu/!!(Chunk/Eol/PostpPhrase))
     / {'たい' #AUXRentai} (Aux_Youda/!!(PostpPhrase))
     / {'たけれ' #AUXKatei} (!!('ば'))
 
